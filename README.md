@@ -72,6 +72,13 @@ python inference.py \
 
 If you trained some good models, please, share them. You can post config and model weights [in this issue](https://github.com/ZFTurbo/Music-Source-Separation-Training/issues/1).
 
+| Model Type | Instruments | Metrics | Config | Checkpoint |
+|:-------------:|:-------------:|:-----:|:-----:|:-----:|
+| MDX23C | vocals / other | SDR vocals: 10.17 | [Link]() | [Link]() |
+| HT Demucs | vocals / other | SDR vocals: 8.78 | [Link]() | [Link]() |
+| Segm Models (VitLarge23) | vocals / other | SDR vocals: 9.77 | [Link]() | [Link]() |
+| Mel Band RoFormer | **vocals** / other | SDR vocals: 8.42 | [Link]() | [Link]() |
+
 ## Dataset types
 
 Look here: [Dataset types](docs/dataset_types.md)

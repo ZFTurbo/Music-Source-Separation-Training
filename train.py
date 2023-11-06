@@ -104,7 +104,7 @@ def valid(model, args, config, device, verbose=False):
     return sdr_avg
 
 
-def train(args):
+def train_model(args):
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_type", type=str, default='mdx23c', help="One of mdx23c, demucs, segm_models, mel_band_roformer, bs_roformer")
     parser.add_argument("--config_path", type=str, help="path to config file")
@@ -303,4 +303,4 @@ def load_not_compatible_weights(model, weights, verbose=False):
 
 
 if __name__ == "__main__":
-    train(None)
+    train_model(None)
