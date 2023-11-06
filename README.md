@@ -1,4 +1,4 @@
-# MDX23-Training-Code
+# Music Source Separation Universal Training Code
 
 Repository for training models for music source separation. Repository is based on [kuielab code](https://github.com/kuielab/sdx23/tree/mdx_AB/my_submission/src) for [SDX23 challenge](https://github.com/kuielab/sdx23/tree/mdx_AB/my_submission/src). The main idea of this repository is to create training code, which is easy to modify for experiments. Brought to you by [MVSep.com](https://mvsep.com).
 
@@ -9,13 +9,13 @@ Model can be chosen with `--model_type` arg.
 Available models for training:
 * MDX23C based on [KUIELab TFC TDF v3 architecture](https://github.com/kuielab/sdx23/). Key: `mdx23c`.
 * Demucs4HT [[Paper](https://arxiv.org/abs/2211.08553)]. Key: `htdemucs`.
-* VitLarge23 based on [Segmentation Models Pytorch](https://github.com/qubvel/segmentation_models.pytorch). See additional note below. Key: `segm_models`. 
+* VitLarge23 based on [Segmentation Models Pytorch](https://github.com/qubvel/segmentation_models.pytorch). Key: `segm_models`. 
 * Band Split RoFormer [[Paper](https://arxiv.org/abs/2309.02612)]. Key: `bs_roformer`. 
 * Mel-Band RoFormer [[Paper](https://arxiv.org/abs/2309.02612)]. Key: `mel_band_roformer`.
  
  **Note 1**: For `segm_models` there are many different encoders is possible. [Look here](https://github.com/qubvel/segmentation_models.pytorch#encoders-).
  
- **Note 2**: Thanks to [@lucidrains](https://github.com/lucidrains) for recreating the model based on papers.
+ **Note 2**: Thanks to [@lucidrains](https://github.com/lucidrains) for recreating the RoFormer models based on papers.
 
 ## How to train
 
