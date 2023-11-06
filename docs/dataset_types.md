@@ -36,7 +36,7 @@ Example:
 
 * **Type 3 (CSV file)**:
 
-You can provide CSV-file with following structure:
+You can provide CSV-file (or list of CSV-files) with following structure:
 ```
 type,path
 vocals,/path/to/dataset/vocals_1.wav
@@ -46,8 +46,6 @@ vocals,/path/to/dataset3/vocals_some.wav
 drums,/path/to/dataset/drums_good.wav
 ...
 ```
-
-**Note**: Currently supported only type 1
 
 ### Dataset for validation
 
