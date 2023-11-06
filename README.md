@@ -39,6 +39,8 @@ python train.py \
     --device_ids 0
 ```
 
+All available training parameters you can find [here](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/train.py#L109).
+
 ## How to inference
 
 #### Example
@@ -51,6 +53,8 @@ python inference.py \
     --input_folder input/wavs/ \
     --store_dir separation_results/
 ```
+
+All available inference parameters you can find [here](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/inference.py#L54).
 
 ## Useful notes
 
