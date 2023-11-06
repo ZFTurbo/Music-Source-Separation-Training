@@ -22,7 +22,7 @@ Available models for training:
 To train model you need to:
 
 1) Choose model type with key `--model_type`. Possible values: `mdx23c`, `htdemucs`, `segm_models`, `mel_band_roformer`, `bs_roformer`.
-2) Choose location of config for model `--config_path` `<config path>`. You can find examples of configs in [configs folder](configs/). Suffix `_musdb18` are examples for [MUSDB18 dataset](https://sigsep.github.io/datasets/musdb.html).
+2) Choose location of config for model `--config_path` `<config path>`. You can find examples of configs in [configs folder](configs/). Prefixes `config_musdb18_` are examples for [MUSDB18 dataset](https://sigsep.github.io/datasets/musdb.html).
 3) If you have some check-point from the same model or from the similar model you can use it with: `--start_check_point` `<weights path>`
 4) Choose path where to store results of training `--results_path` `<results folder path>`
 
