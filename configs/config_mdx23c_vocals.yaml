@@ -1,0 +1,53 @@
+audio:
+  chunk_size: 261120
+  dim_f: 4096
+  dim_t: 256
+  hop_length: 1024
+  n_fft: 8192
+  num_channels: 2
+  sample_rate: 44100
+  min_mean_abs: 0.001
+
+model:
+  act: gelu
+  bottleneck_factor: 4
+  growth: 128
+  norm: InstanceNorm
+  num_blocks_per_scale: 2
+  num_channels: 128
+  num_scales: 5
+  num_subbands: 4
+  scale:
+  - 2
+  - 2
+
+training:
+  batch_size: 6
+  grad_clip: 0
+  instruments:
+  - vocals
+  - other
+  lr: 9.0e-05
+  patience: 2
+  reduce_factor: 0.95
+  target_instrument: null
+  num_epochs: 1000
+  num_steps: 1000
+  augmentation: false # enable augmentations by audiomentations and pedalboard
+  augmentation_type: simple1
+  use_mp3_compress: false # Deprecated
+  augmentation_mix: true # Mix several stems of the same type with some probability
+  augmentation_loudness: true # randomly change loudness of each stem
+  augmentation_loudness_type: 1 # Type 1 or 2
+  augmentation_loudness_min: 0.1
+  augmentation_loudness_max: 0.9
+  q: 0.95
+  coarse_loss_clip: true
+  ema_momentum: 0.999
+  optimizer: adam
+  other_fix: true # it's needed for checking on multisong dataset if other is actually instrumental
+
+inference:
+  batch_size: 1
+  dim_t: 256
+  num_overlap: 4
