@@ -70,7 +70,7 @@ python inference.py \
 
 ## Pre-trained models
 
-If you trained some good models, please, share them. You can post config and model weights in this issue.
+If you trained some good models, please, share them. You can post config and model weights [in this issue](issues/1).
 
 ## Dataset types
 
