@@ -11,7 +11,7 @@ Available models for training:
 * Demucs4HT [[Paper](https://arxiv.org/abs/2211.08553)]. Key: `htdemucs`.
 * VitLarge23 based on [Segmentation Models Pytorch](https://github.com/qubvel/segmentation_models.pytorch). Key: `segm_models`. 
 * Band Split RoFormer [[Paper](https://arxiv.org/abs/2309.02612)]. Key: `bs_roformer`. 
-* Mel-Band RoFormer [[Paper](https://arxiv.org/abs/2309.02612)]. Key: `mel_band_roformer`.
+* Mel-Band RoFormer [[Paper](https://arxiv.org/abs/2310.01809)]. Key: `mel_band_roformer`.
  
  **Note 1**: For `segm_models` there are many different encoders is possible. [Look here](https://github.com/qubvel/segmentation_models.pytorch#encoders-).
  
