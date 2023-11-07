@@ -15,8 +15,8 @@ def get_model_from_config(model_type, config):
         from models.demucs4ht import get_model
         model = get_model(config)
     elif model_type == 'segm_models':
-        from models.segm_models import TFC_TDF_net
-        model = TFC_TDF_net(config)
+        from models.segm_models import Segm_Models_Net
+        model = Segm_Models_Net(config)
     elif model_type == 'mel_band_roformer':
         from models.bs_roformer import MelBandRoformer
         model = MelBandRoformer(

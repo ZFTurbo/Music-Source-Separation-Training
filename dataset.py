@@ -50,7 +50,7 @@ def get_transforms_simple(instr):
 class MSSDataset(torch.utils.data.Dataset):
     def __init__(self, config, data_path, metadata_path="metadata.pkl", dataset_type=1):
         self.config = config
-        self.dataset_type = dataset_type # 1, 2 or 3
+        self.dataset_type = dataset_type # 1, 2, 3 or 4
         self.instruments = instruments = config.training.instruments
 
         # Augmentation block
@@ -79,7 +79,7 @@ class MSSDataset(torch.utils.data.Dataset):
             print('Loading songs data from cache: {}. If you updated dataset remove {} before training!'.format(metadata_path, os.path.basename(metadata_path)))
         except Exception:
             print('Collecting metadata for', str(data_path), 'Dataset type:', self.dataset_type)
-            if self.dataset_type == 1:
+            if self.dataset_type in [1, 4]:
                 metadata = []
                 track_paths = []
                 if type(data_path) == list:
@@ -145,7 +145,7 @@ class MSSDataset(torch.utils.data.Dataset):
 
             pickle.dump(metadata, open(metadata_path, 'wb'))
 
-        if self.dataset_type == 1:
+        if self.dataset_type in [1, 4]:
             print('Found tracks in dataset: {}'.format(len(metadata)))
         else:
             for instr in self.instruments:
@@ -159,7 +159,7 @@ class MSSDataset(torch.utils.data.Dataset):
 
     def load_source(self, metadata, instr):
         while True:
-            if self.dataset_type == 1:
+            if self.dataset_type in [1, 4]:
                 track_path, track_length = random.choice(metadata)
                 source = load_chunk(track_path + f'/{instr}.wav', track_length, self.chunk_size)
             else:
@@ -170,6 +170,46 @@ class MSSDataset(torch.utils.data.Dataset):
         if self.aug:
             source = self.augm_data(source, instr)
         return torch.tensor(source, dtype=torch.float32)
+
+    def load_random_mix(self):
+        res = []
+        for instr in self.instruments:
+            # Multiple mix of sources
+            s1 = self.load_source(self.metadata, instr)
+            if self.config.training.augmentation_mix:
+                if random.uniform(0, 1) < 0.2:
+                    s2 = self.load_source(self.metadata, instr)
+                    w1 = random.uniform(0.5, 1.5)
+                    w2 = random.uniform(0.5, 1.5)
+                    s1 = (w1 * s1 + w2 * s2) / (w1 + w2)
+                    if random.uniform(0, 1) < 0.1:
+                        s2 = self.load_source(self.metadata, instr)
+                        w1 = random.uniform(0.5, 1.5)
+                        w2 = random.uniform(0.5, 1.5)
+                        s1 = (w1 * s1 + w2 * s2) / (w1 + w2)
+
+            res.append(s1)
+        res = torch.stack(res)
+        return res
+
+    def load_aligned_data(self):
+        track_path, track_length = random.choice(self.metadata)
+        res = []
+        for i in self.instruments:
+            attempts = 10
+            while attempts:
+                source = load_chunk(track_path + f'/{i}.wav', track_length, self.chunk_size)
+                if np.abs(source).mean() >= self.min_mean_abs:  # remove quiet chunks
+                    break
+                attempts -= 1
+                if attempts <= 0:
+                    print('Attempts max!', track_path)
+            res.append(source)
+        res = np.stack(res, axis=0)
+        if self.aug:
+            for i, instr in enumerate(self.instruments):
+                res[i] = self.augm_data(res[i], instr)
+        return torch.tensor(res, dtype=torch.float32)
 
     def augm_data(self, source, instr):
         # source.shape = (2, 261120)
@@ -282,24 +322,10 @@ class MSSDataset(torch.utils.data.Dataset):
         return source
 
     def __getitem__(self, index):
-        res = []
-        for instr in self.instruments:
-            # Multiple mix of sources
-            s1 = self.load_source(self.metadata, instr)
-            if self.config.training.augmentation_mix:
-                if random.uniform(0, 1) < 0.2:
-                    s2 = self.load_source(self.metadata, instr)
-                    w1 = random.uniform(0.5, 1.5)
-                    w2 = random.uniform(0.5, 1.5)
-                    s1 = (w1 * s1 + w2 * s2) / (w1 + w2)
-                    if random.uniform(0, 1) < 0.1:
-                        s2 = self.load_source(self.metadata, instr)
-                        w1 = random.uniform(0.5, 1.5)
-                        w2 = random.uniform(0.5, 1.5)
-                        s1 = (w1 * s1 + w2 * s2) / (w1 + w2)
-
-            res.append(s1)
-        res = torch.stack(res)
+        if self.dataset_type in [1, 2, 3]:
+            res = self.load_random_mix()
+        else:
+            res = self.load_aligned_data()
 
         # Randomly change loudness of each stem
         if self.config.training.augmentation_loudness:

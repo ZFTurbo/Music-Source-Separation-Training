@@ -111,7 +111,7 @@ def train_model(args):
     parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint to start training")
     parser.add_argument("--results_path", type=str, help="path to folder where results will be stored (weights, metadata)")
     parser.add_argument("--data_path", nargs="+", type=str, help="dataset path. Can be several parameters.")
-    parser.add_argument("--dataset_type", type=int, default=1, help="Dataset type. Must be one of: 1, 2 or 3. Details here: https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/dataset_types.md")
+    parser.add_argument("--dataset_type", type=int, default=1, help="Dataset type. Must be one of: 1, 2, 3 or 4. Details here: https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/dataset_types.md")
     parser.add_argument("--valid_path", type=str, help="validate path")
     parser.add_argument("--num_workers", type=int, default=0, help="dataloader num_workers")
     parser.add_argument("--pin_memory", type=bool, default=False, help="dataloader pin_memory")

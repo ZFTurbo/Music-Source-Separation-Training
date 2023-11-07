@@ -47,6 +47,10 @@ drums,/path/to/dataset/drums_good.wav
 ...
 ```
 
+* **Type 4 (MUSDB Aligned)**:
+
+The same as Type 1, but during training all instruments will be from the same position of song. 
+
 ### Dataset for validation
 
 * Validation dataset must be the same as Type 1 for training.
