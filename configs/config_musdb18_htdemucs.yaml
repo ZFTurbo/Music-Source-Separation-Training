@@ -16,9 +16,9 @@ training:
   use_mp3_compress: false # Deprecated
   augmentation_mix: true # Mix several stems of the same type with some probability
   augmentation_loudness: true # randomly change loudness of each stem
-  augmentation_loudness_type: 1 # Type 1 or 2
-  augmentation_loudness_min: 0.1
-  augmentation_loudness_max: 0.9
+  augmentation_loudness_type: 2 # Type 1 or 2
+  augmentation_loudness_min: 0.5
+  augmentation_loudness_max: 1.5
   batch_size: 8
   num_epochs: 1000
   num_steps: 1000

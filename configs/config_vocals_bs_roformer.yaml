@@ -117,8 +117,8 @@ training:
   augmentation_mix: true # Mix several stems of the same type with some probability
   augmentation_loudness: true # randomly change loudness of each stem
   augmentation_loudness_type: 1 # Type 1 or 2
-  augmentation_loudness_min: 0.1
-  augmentation_loudness_max: 0.9
+  augmentation_loudness_min: 0.5
+  augmentation_loudness_max: 1.5
   q: 0.95
   coarse_loss_clip: true
   ema_momentum: 0.999
