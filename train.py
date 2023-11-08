@@ -135,6 +135,9 @@ def train_model(args):
 
     print("Instruments: {}".format(config.training.instruments))
 
+    if not os.path.isdir(args.results_path):
+        os.mkdir(args.results_path)
+
     trainset = MSSDataset(
         config,
         args.data_path,
