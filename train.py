@@ -1,5 +1,6 @@
 # coding: utf-8
 __author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
+__version__ = '1.0.1'
 
 import random
 import argparse
@@ -190,8 +191,21 @@ def train_model(args):
     else:
         print('Unknown optimizer: {}'.format(config.training.optimizer))
         exit()
+
+    gradient_accumulation_steps = 1
+    try:
+        gradient_accumulation_steps = int(config.training.gradient_accumulation_steps)
+    except:
+        pass
+
+    print("Patience: {} Reduce factor: {} Batch size: {} Grad accum steps: {} Effective batch size: {}".format(
+        config.training.patience,
+        config.training.reduce_factor,
+        config.training.batch_size,
+        gradient_accumulation_steps,
+        config.training.batch_size * gradient_accumulation_steps,
+    ))
     # Reduce LR if no SDR improvements for several epochs
-    print("Patience: {} Reduce factor: {}".format(config.training.patience, config.training.reduce_factor))
     scheduler = ReduceLROnPlateau(optimizer, 'max', patience=config.training.patience, factor=config.training.reduce_factor)
 
     scaler = GradScaler()
@@ -202,9 +216,10 @@ def train_model(args):
         print('Train epoch: {} Learning rate: {}'.format(epoch, optimizer.param_groups[0]['lr']))
         loss_val = 0.
         total = 0
+
+        # total_loss = None
         pbar = tqdm(train_loader)
         for i, (batch, mixes) in enumerate(pbar):
-
             y = batch.to(device)
             x = mixes.to(device)  # mixture
 
@@ -229,17 +244,21 @@ def train_model(args):
                             coarse=config.training.coarse_loss_clip
                         )
 
+            loss /= gradient_accumulation_steps
             scaler.scale(loss).backward()
             if config.training.grad_clip:
                 nn.utils.clip_grad_norm_(model.parameters(), config.training.grad_clip)
-            scaler.step(optimizer)
-            scaler.update()
-            optimizer.zero_grad(set_to_none=True)
 
-            li = loss.item()
+            if ((i + 1) % gradient_accumulation_steps == 0) or (i == len(train_loader) - 1):
+                scaler.step(optimizer)
+                scaler.update()
+                optimizer.zero_grad(set_to_none=True)
+
+            li = loss.item() * gradient_accumulation_steps
             loss_val += li
             total += 1
             pbar.set_postfix({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1)})
+            loss.detach()
 
         print('Training loss: {:.6f}'.format(loss_val / total))
         sdr_avg = valid(model, args, config, device, verbose=False)

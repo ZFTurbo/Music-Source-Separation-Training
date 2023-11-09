@@ -101,6 +101,7 @@ model:
 
 training:
   batch_size: 10
+  gradient_accumulation_steps: 1
   grad_clip: 0
   instruments:
   - vocals
