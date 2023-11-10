@@ -83,6 +83,8 @@ If you trained some good models, please, share them. You can post config and mod
 | Segm Models (VitLarge23) | vocals / other | SDR vocals: 9.77 | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/config_vocals_segm_models.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/model_vocals_segm_models_sdr_9.77.ckpt) |
 | Mel Band RoFormer | vocals (*) / other | SDR vocals: 8.42 | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/config_vocals_mel_band_roformer.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/model_vocals_mel_band_roformer_sdr_8.42.ckpt) |
 
+**Note**: Metrics measured on [Multisong Dataset](https://mvsep.com/en/quality_checker).
+
 ## Dataset types
 
 Look here: [Dataset types](docs/dataset_types.md)
