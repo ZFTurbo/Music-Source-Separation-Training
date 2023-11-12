@@ -69,6 +69,7 @@ def valid(model, args, config, device, verbose=False):
     if not verbose:
         all_mixtures_path = tqdm(all_mixtures_path)
 
+    pbar_dict = {}
     for path in all_mixtures_path:
         mix, sr = sf.read(path)
         folder = os.path.dirname(path)
@@ -93,6 +94,9 @@ def valid(model, args, config, device, verbose=False):
             if verbose:
                 print(instr, res[instr].shape, sdr_val)
             all_sdr[instr].append(sdr_val)
+            pbar_dict['sdr_{}'.format(instr)] = sdr_val
+        if not verbose:
+            all_mixtures_path.set_postfix(pbar_dict)
 
     sdr_avg = 0.0
     for instr in instruments:
