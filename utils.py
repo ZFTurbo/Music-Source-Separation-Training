@@ -62,11 +62,13 @@ def demix_track(config, model, mix, device):
                 i += step
 
             estimated_sources = result / counter
+            estimated_sources = estimated_sources.cpu().numpy()
+            np.nan_to_num(estimated_sources, copy=False, nan=0.0)
 
     if config.training.target_instrument is None:
-        return {k: v for k, v in zip(config.training.instruments, estimated_sources.cpu().numpy())}
+        return {k: v for k, v in zip(config.training.instruments, estimated_sources)}
     else:
-        return {k: v for k, v in zip([config.training.target_instrument], estimated_sources.cpu().numpy())}
+        return {k: v for k, v in zip([config.training.target_instrument], estimated_sources)}
 
 
 def demix_track_demucs(config, model, mix, device):
