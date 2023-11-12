@@ -76,16 +76,21 @@ def proc_folder(args):
     if args.start_check_point != '':
         print('Start from checkpoint: {}'.format(args.start_check_point))
         model.load_state_dict(
-            torch.load(args.start_check_point)
+            torch.load(args.start_check_point, map_location=torch.device('cpu'))
         )
 
-    device_ids = args.device_ids
-    if type(device_ids)==int:
-        device = torch.device(f'cuda:{device_ids}')
-        model = model.to(device)
+    if torch.cuda.is_available():
+        device_ids = args.device_ids
+        if type(device_ids)==int:
+            device = torch.device(f'cuda:{device_ids}')
+            model = model.to(device)
+        else:
+            device = torch.device(f'cuda:{device_ids[0]}')
+            model = nn.DataParallel(model, device_ids=device_ids).to(device)
     else:
-        device = torch.device(f'cuda:{device_ids[0]}')
-        model = nn.DataParallel(model, device_ids=device_ids).to(device)
+        device = 'cpu'
+        print('CUDA is not avilable. Run inference on CPU. It will be very slow...')
+        model = model.to(device)
 
     run_folder(model, args, config, device, verbose=False)
 
