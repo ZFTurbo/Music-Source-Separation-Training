@@ -125,6 +125,7 @@ training:
   ema_momentum: 0.999
   optimizer: adam
   other_fix: false # it's needed for checking on multisong dataset if other is actually instrumental
+  use_amp: true # enable or disable usage of mixed precision (float16) - usually it must be true
 
 inference:
   batch_size: 1

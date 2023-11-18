@@ -143,6 +143,12 @@ def train_model(args):
     if not os.path.isdir(args.results_path):
         os.mkdir(args.results_path)
 
+    use_amp = True
+    try:
+        use_amp = config.training.use_amp
+    except:
+        pass
+
     trainset = MSSDataset(
         config,
         args.data_path,
@@ -227,7 +233,7 @@ def train_model(args):
             y = batch.to(device)
             x = mixes.to(device)  # mixture
 
-            with torch.cuda.amp.autocast():
+            with torch.cuda.amp.autocast(enabled=use_amp):
                 if args.model_type in ['mel_band_roformer', 'bs_roformer']:
                     # loss is computed in forward pass
                     loss = model(x, y)
