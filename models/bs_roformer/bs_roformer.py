@@ -1,3 +1,5 @@
+from functools import partial
+
 import torch
 from torch import nn, einsum, Tensor
 from torch.nn import Module, ModuleList
@@ -5,9 +7,11 @@ import torch.nn.functional as F
 
 from models.bs_roformer.attend import Attend
 
-from beartype.typing import Tuple, Optional, List
+from beartype.typing import Tuple, Optional, List, Callable
 from beartype import beartype
+
 from rotary_embedding_torch import RotaryEmbedding
+
 from einops import rearrange, pack, unpack
 
 
@@ -280,11 +284,13 @@ class BSRoformer(Module):
             # 10ms at 44100Hz, from sections 4.1, 4.4 in the paper - @faroit recommends // 2 or // 4 for better reconstruction
             stft_win_length=2048,
             stft_normalized=False,
+            stft_window_fn: Optional[Callable] = None,
             mask_estimator_depth=2,
             multi_stft_resolution_loss_weight=1.,
             multi_stft_resolutions_window_sizes: Tuple[int, ...] = (4096, 2048, 1024, 512, 256),
             multi_stft_hop_size=147,
-            multi_stft_normalized=False
+            multi_stft_normalized=False,
+            multi_stft_window_fn: Callable = torch.hann_window
     ):
         super().__init__()
 
@@ -322,6 +328,8 @@ class BSRoformer(Module):
             normalized=stft_normalized
         )
 
+        self.stft_window_fn = partial(default(stft_window_fn, torch.hann_window), stft_win_length)
+
         freqs = torch.stft(torch.randn(1, 4096), **self.stft_kwargs, return_complex=True).shape[1]
 
         assert len(freqs_per_bands) > 1
@@ -351,11 +359,16 @@ class BSRoformer(Module):
         self.multi_stft_resolution_loss_weight = multi_stft_resolution_loss_weight
         self.multi_stft_resolutions_window_sizes = multi_stft_resolutions_window_sizes
         self.multi_stft_n_fft = stft_n_fft
+        self.multi_stft_window_fn = multi_stft_window_fn
 
         self.multi_stft_kwargs = dict(
             hop_length=multi_stft_hop_size,
             normalized=multi_stft_normalized
         )
+
+    @property
+    def device(self):
+        return next(self.parameters()).device
 
     def forward(
             self,
@@ -386,7 +399,9 @@ class BSRoformer(Module):
 
         raw_audio, batch_audio_channel_packed_shape = pack_one(raw_audio, '* t')
 
-        stft_repr = torch.stft(raw_audio, **self.stft_kwargs, return_complex=True)
+        stft_window = self.stft_window_fn(device=self.device)
+
+        stft_repr = torch.stft(raw_audio, **self.stft_kwargs, window=stft_window, return_complex=True)
         stft_repr = torch.view_as_real(stft_repr)
 
         stft_repr = unpack_one(stft_repr, batch_audio_channel_packed_shape, '* f t c')
@@ -435,7 +450,7 @@ class BSRoformer(Module):
 
         stft_repr = rearrange(stft_repr, 'b n (f s) t -> (b n s) f t', s=self.audio_channels)
 
-        recon_audio = torch.istft(stft_repr, **self.stft_kwargs, return_complex=False)
+        recon_audio = torch.istft(stft_repr, **self.stft_kwargs, window=stft_window, return_complex=False)
 
         recon_audio = rearrange(recon_audio, '(b n s) t -> b n s t', s=self.audio_channels, n=num_stems)
 
@@ -464,6 +479,7 @@ class BSRoformer(Module):
                 n_fft=max(window_size, self.multi_stft_n_fft),  # not sure what n_fft is across multi resolution stft
                 win_length=window_size,
                 return_complex=True,
+                window=self.multi_stft_window_fn(window_size, device=self.device),
                 **self.multi_stft_kwargs,
             )
 
