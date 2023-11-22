@@ -398,10 +398,6 @@ class MelBandRoformer(Module):
 
         self.match_input_audio_length = match_input_audio_length
 
-    @property
-    def device(self):
-        return next(self.parameters()).device
-
     def forward(
             self,
             raw_audio,
@@ -420,6 +416,8 @@ class MelBandRoformer(Module):
         d - feature dimension
         """
 
+        device = raw_audio.device
+
         if raw_audio.ndim == 2:
             raw_audio = rearrange(raw_audio, 'b t -> b 1 t')
 
@@ -434,7 +432,7 @@ class MelBandRoformer(Module):
 
         raw_audio, batch_audio_channel_packed_shape = pack_one(raw_audio, '* t')
 
-        stft_window = self.stft_window_fn(device=self.device)
+        stft_window = self.stft_window_fn(device=device)
 
         stft_repr = torch.stft(raw_audio, **self.stft_kwargs, window=stft_window, return_complex=True)
         stft_repr = torch.view_as_real(stft_repr)
@@ -445,7 +443,7 @@ class MelBandRoformer(Module):
 
         # index out all frequencies for all frequency ranges across bands ascending in one go
 
-        batch_arange = torch.arange(batch, device=self.device)[..., None]
+        batch_arange = torch.arange(batch, device=device)[..., None]
 
         # account for stereo
 
@@ -538,7 +536,7 @@ class MelBandRoformer(Module):
                 n_fft=max(window_size, self.multi_stft_n_fft),  # not sure what n_fft is across multi resolution stft
                 win_length=window_size,
                 return_complex=True,
-                window=self.multi_stft_window_fn(window_size, device=self.device),
+                window=self.multi_stft_window_fn(window_size, device=device),
                 **self.multi_stft_kwargs,
             )
 
