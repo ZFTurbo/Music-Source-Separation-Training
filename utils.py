@@ -43,7 +43,7 @@ def demix_track(config, model, mix, device):
     step = C // N
 
     with torch.cuda.amp.autocast():
-        with torch.no_grad():
+        with torch.inference_mode():
             if config.training.target_instrument is not None:
                 req_shape = (1, ) + tuple(mix.shape)
             else:
@@ -82,7 +82,7 @@ def demix_track_demucs(config, model, mix, device):
     # print(S, C, N, step, mix.shape, mix.device)
 
     with torch.cuda.amp.autocast():
-        with torch.no_grad():
+        with torch.inference_mode():
             mix = mix.to(device)
             req_shape = (S, ) + tuple(mix.shape)
             result = torch.zeros(req_shape, dtype=torch.float32).to(device)
