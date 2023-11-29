@@ -76,7 +76,8 @@ All available inference parameters you can find [here](https://github.com/ZFTurb
 
 If you trained some good models, please, share them. You can post config and model weights [in this issue](https://github.com/ZFTurbo/Music-Source-Separation-Training/issues/1).
 
-| Model Type | Instruments | Metrics | Config | Checkpoint |
+### Vocal models
+| Model Type | Instruments | Metrics (SDR) | Config | Checkpoint |
 |:-------------:|:-------------:|:-----:|:-----:|:-----:|
 | MDX23C | vocals / other | SDR vocals: 10.17 | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/config_vocals_mdx23c.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/model_vocals_mdx23c_sdr_10.17.ckpt) |
 | HT Demucs | vocals / other | SDR vocals: 8.78 | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/config_vocals_htdemucs.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/model_vocals_htdemucs_sdr_8.78.ckpt) |
@@ -84,6 +85,14 @@ If you trained some good models, please, share them. You can post config and mod
 | Mel Band RoFormer | vocals (*) / other | SDR vocals: 8.42 | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/config_vocals_mel_band_roformer.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/model_vocals_mel_band_roformer_sdr_8.42.ckpt) |
 
 **Note**: Metrics measured on [Multisong Dataset](https://mvsep.com/en/quality_checker).
+
+### Multi-stem models
+
+| Model Type | Instruments | Metrics (SDR) | Config | Checkpoint |
+|:-------------:|:-------------:|:-----:|:-----:|:-----:|
+| MDX23C | bass / drums / vocals / other | MUSDB test avg: 7.15 (bass: 5.77, drums: 7.93 vocals: 9.23 other: 5.68) Multisong avg: 7.02 (bass: 8.40, drums: 7.73 vocals: 7.36 other: 4.57) | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.1/config_musdb18_mdx23c.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.1/model_mdx23c_ep_168_sdr_7.0207.ckpt) |
+
+**Note**: Models were trained only on MUSDB18HQ dataset (100 songs train data)
 
 ## Dataset types
 
