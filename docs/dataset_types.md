@@ -14,7 +14,8 @@ Example:
 ------ bass.wav 
 ------ drums.wav
 ------ other.wav
-....
+--- Song 3:
+...........
 ```
 
 * **Type 2 (Stems)**: each folder is "stem name". Folder contains wav files which consists only of required stem.
@@ -31,7 +32,7 @@ Example:
 ------ bass_3.wav
 ------ bass_4.wav
 ------ ...
-...
+...........
 ```
 
 * **Type 3 (CSV file)**:
@@ -53,4 +54,22 @@ The same as Type 1, but during training all instruments will be from the same po
 
 ### Dataset for validation
 
-* Validation dataset must be the same as Type 1 for training.
+* Validation dataset must be the same as Type 1 for training, but also each folder must include `mixture.wav` for each song. `mixture.wav` - it's sum of all stems for song.
+
+Example:
+```
+--- Song 1:
+------ vocals.wav  
+------ bass.wav 
+------ drums.wav
+------ other.wav
+------ mixture.wav
+--- Song 2:
+------ vocals.wav  
+------ bass.wav 
+------ drums.wav
+------ other.wav
+------ mixture.wav
+--- Song 3:
+...........
+```
