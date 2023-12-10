@@ -38,9 +38,16 @@ def get_model_from_config(model_type, config):
 
 
 def demix_track(config, model, mix, device):
-    C = config.audio.hop_length * (config.inference.dim_t - 1)
+    C = config.audio.chunk_size
     N = config.inference.num_overlap
     step = C // N
+    border = C - step
+
+    length_init = mix.shape[-1]
+
+    # Do pad from the beginning and end to account floating window results better
+    if (length_init > 2 * border) and (border > 0):
+        mix = nn.functional.pad(mix, (border, border), mode='reflect')
 
     with torch.cuda.amp.autocast():
         with torch.inference_mode():
@@ -58,7 +65,11 @@ def demix_track(config, model, mix, device):
                 part = mix[:, i:i + C]
                 length = part.shape[-1]
                 if length < C:
-                    part = nn.functional.pad(input=part, pad=(0, C - length, 0, 0), mode='constant', value=0)
+                    while part.shape[-1] < C:
+                        if C - part.shape[-1] > part.shape[-1] - 1:
+                            part = nn.functional.pad(input=part, pad=(0, part.shape[-1]-1), mode='reflect')
+                        else:
+                            part = nn.functional.pad(input=part, pad=(0, C - part.shape[-1]), mode='reflect')
                 x = model(part.unsqueeze(0))[0]
                 result[..., i:i+length] += x[..., :length]
                 counter[..., i:i+length] += 1.
@@ -67,6 +78,10 @@ def demix_track(config, model, mix, device):
             estimated_sources = result / counter
             estimated_sources = estimated_sources.cpu().numpy()
             np.nan_to_num(estimated_sources, copy=False, nan=0.0)
+
+            if (length_init > 2 * border) and (border > 0):
+                # Remove pad
+                estimated_sources = estimated_sources[..., border:-border]
 
     if config.training.target_instrument is None:
         return {k: v for k, v in zip(config.training.instruments, estimated_sources)}

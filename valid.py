@@ -25,8 +25,7 @@ def valid(model, args, config, device, verbose=False):
     start_time = time.time()
     model.eval()
     all_mixtures_path = glob.glob(args.valid_path + '/*/mixture.wav')
-    if verbose:
-        print('Total mixtures: {}'.format(len(all_mixtures_path)))
+    print('Total mixtures: {}'.format(len(all_mixtures_path)))
 
     instruments = config.training.instruments
     if config.training.target_instrument is not None:
