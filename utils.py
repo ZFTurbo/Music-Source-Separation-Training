@@ -30,6 +30,11 @@ def get_model_from_config(model_type, config):
     elif model_type == 'swin_upernet':
         from models.upernet_swin_transformers import Swin_UperNet_Model
         model = Swin_UperNet_Model(config)
+    elif model_type == 'bandit':
+        from models.bandit.core.model import MultiMaskMultiSourceBandSplitRNNSimple
+        model = MultiMaskMultiSourceBandSplitRNNSimple(
+            **config.model
+        )
     else:
         print('Unknown model: {}'.format(model_type))
         model = None
@@ -40,13 +45,14 @@ def get_model_from_config(model_type, config):
 def demix_track(config, model, mix, device):
     C = config.audio.chunk_size
     N = config.inference.num_overlap
-    step = C // N
+    step = int(C // N)
     border = C - step
+    batch_size = config.inference.batch_size
 
     length_init = mix.shape[-1]
 
     # Do pad from the beginning and end to account floating window results better
-    if (length_init > 2 * border) and (border > 0):
+    if length_init > 2 * border and (border > 0):
         mix = nn.functional.pad(mix, (border, border), mode='reflect')
 
     with torch.cuda.amp.autocast():
@@ -60,6 +66,8 @@ def demix_track(config, model, mix, device):
             result = torch.zeros(req_shape, dtype=torch.float32).to(device)
             counter = torch.zeros(req_shape, dtype=torch.float32).to(device)
             i = 0
+            batch_data = []
+            batch_locations = []
             while i < mix.shape[1]:
                 # print(i, i + C, mix.shape[1])
                 part = mix[:, i:i + C]
@@ -70,16 +78,25 @@ def demix_track(config, model, mix, device):
                             part = nn.functional.pad(input=part, pad=(0, part.shape[-1]-1), mode='reflect')
                         else:
                             part = nn.functional.pad(input=part, pad=(0, C - part.shape[-1]), mode='reflect')
-                x = model(part.unsqueeze(0))[0]
-                result[..., i:i+length] += x[..., :length]
-                counter[..., i:i+length] += 1.
+                batch_data.append(part)
+                batch_locations.append((i, length))
                 i += step
+
+                if len(batch_data) >= batch_size or (i >= mix.shape[1]):
+                    arr = torch.stack(batch_data, dim=0)
+                    x = model(arr)
+                    for j in range(len(batch_locations)):
+                        start, l = batch_locations[j]
+                        result[..., start:start+l] += x[j][..., :l]
+                        counter[..., start:start+l] += 1.
+                    batch_data = []
+                    batch_locations = []
 
             estimated_sources = result / counter
             estimated_sources = estimated_sources.cpu().numpy()
             np.nan_to_num(estimated_sources, copy=False, nan=0.0)
 
-            if (length_init > 2 * border) and (border > 0):
+            if length_init > 2 * border and (border > 0):
                 # Remove pad
                 estimated_sources = estimated_sources[..., border:-border]
 
