@@ -111,7 +111,7 @@ def valid(model, args, config, device, verbose=False):
 
 def train_model(args):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_type", type=str, default='mdx23c', help="One of mdx23c, demucs, segm_models, mel_band_roformer, bs_roformer")
+    parser.add_argument("--model_type", type=str, default='mdx23c', help="One of mdx23c, htdemucs, segm_models, mel_band_roformer, bs_roformer, swin_upernet")
     parser.add_argument("--config_path", type=str, help="path to config file")
     parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint to start training")
     parser.add_argument("--results_path", type=str, help="path to folder where results will be stored (weights, metadata)")
