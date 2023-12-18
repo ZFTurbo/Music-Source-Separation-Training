@@ -104,7 +104,7 @@ def valid(model, args, config, device, verbose=False):
 
 def check_validation(args):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_type", type=str, default='mdx23c', help="One of mdx23c, htdemucs, segm_models, mel_band_roformer, bs_roformer, swin_upernet")
+    parser.add_argument("--model_type", type=str, default='mdx23c', help="One of mdx23c, htdemucs, segm_models, mel_band_roformer, bs_roformer, swin_upernet, bandit")
     parser.add_argument("--config_path", type=str, help="path to config file")
     parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint to valid weights")
     parser.add_argument("--valid_path", type=str, help="validate path")

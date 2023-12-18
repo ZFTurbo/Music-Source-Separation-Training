@@ -52,7 +52,55 @@ def manual_seed(seed):
     os.environ["PYTHONHASHSEED"] = str(seed)
 
 
+def load_not_compatible_weights(model, weights, verbose=False):
+    new_model = model.state_dict()
+    old_model = torch.load(weights)
+
+    for el in new_model:
+        if el in old_model:
+            if verbose:
+                print('Match found for {}!'.format(el))
+            if new_model[el].shape == old_model[el].shape:
+                if verbose:
+                    print('Action: Just copy weights!')
+                new_model[el] = old_model[el]
+            else:
+                if len(new_model[el].shape) != len(old_model[el].shape):
+                    if verbose:
+                        print('Action: Different dimension! Too lazy to write the code... Skip it')
+                else:
+                    if verbose:
+                        print('Shape is different: {} != {}'.format(tuple(new_model[el].shape), tuple(old_model[el].shape)))
+                    ln = len(new_model[el].shape)
+                    max_shape = []
+                    slices_old = []
+                    slices_new = []
+                    for i in range(ln):
+                        max_shape.append(max(new_model[el].shape[i], old_model[el].shape[i]))
+                        slices_old.append(slice(0, old_model[el].shape[i]))
+                        slices_new.append(slice(0, new_model[el].shape[i]))
+                    # print(max_shape)
+                    # print(slices_old, slices_new)
+                    slices_old = tuple(slices_old)
+                    slices_new = tuple(slices_new)
+                    max_matrix = np.zeros(max_shape, dtype=np.float32)
+                    for i in range(ln):
+                        max_matrix[slices_old] = old_model[el].cpu().numpy()
+                    max_matrix = torch.from_numpy(max_matrix)
+                    new_model[el] = max_matrix[slices_new]
+        else:
+            if verbose:
+                print('Match not found for {}!'.format(el))
+    model.load_state_dict(
+        new_model
+    )
+
+
 def valid(model, args, config, device, verbose=False):
+    # For multiGPU extract single model
+    if len(args.device_ids) > 1:
+        model = model.module
+
     model.eval()
     all_mixtures_path = glob.glob(args.valid_path + '/*/mixture.wav')
     if verbose:
@@ -111,7 +159,7 @@ def valid(model, args, config, device, verbose=False):
 
 def train_model(args):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_type", type=str, default='mdx23c', help="One of mdx23c, htdemucs, segm_models, mel_band_roformer, bs_roformer, swin_upernet")
+    parser.add_argument("--model_type", type=str, default='mdx23c', help="One of mdx23c, htdemucs, segm_models, mel_band_roformer, bs_roformer, swin_upernet, bandit")
     parser.add_argument("--config_path", type=str, help="path to config file")
     parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint to start training")
     parser.add_argument("--results_path", type=str, help="path to folder where results will be stored (weights, metadata)")
@@ -121,7 +169,7 @@ def train_model(args):
     parser.add_argument("--num_workers", type=int, default=0, help="dataloader num_workers")
     parser.add_argument("--pin_memory", type=bool, default=False, help="dataloader pin_memory")
     parser.add_argument("--seed", type=int, default=0, help="random seed")
-    parser.add_argument("--device_ids", nargs='+', type=int, default=0, help='list of gpu ids')
+    parser.add_argument("--device_ids", nargs='+', type=int, default=[0], help='list of gpu ids')
     parser.add_argument("--use_mse_loss", action='store_true', help="Use default MSE loss")
     parser.add_argument("--use_l1_loss", action='store_true', help="Use L1 loss")
     if args is None:
@@ -177,10 +225,12 @@ def train_model(args):
 
     if torch.cuda.is_available():
         device_ids = args.device_ids
-        if type(device_ids) == int:
-            device = torch.device(f'cuda:{device_ids}')
+        if len(device_ids) <= 1:
+            print('Use single GPU: {}'.format(device_ids))
+            device = torch.device(f'cuda:{device_ids[0]}')
             model = model.to(device)
         else:
+            print('Use multi GPU: {}'.format(device_ids))
             device = torch.device(f'cuda:{device_ids[0]}')
             model = nn.DataParallel(model, device_ids=device_ids).to(device)
     else:
@@ -275,7 +325,7 @@ def train_model(args):
         if sdr_avg > best_sdr:
             store_path = args.results_path + '/model_{}_ep_{}_sdr_{:.4f}.ckpt'.format(args.model_type, epoch, sdr_avg)
             print('Store weights: {}'.format(store_path))
-            state_dict = model.state_dict() if type(device_ids) == int else model.module.state_dict()
+            state_dict = model.state_dict() if len(device_ids) <= 1 else model.module.state_dict()
             torch.save(
                 state_dict,
                 store_path
@@ -285,55 +335,11 @@ def train_model(args):
 
         # Save last
         store_path = args.results_path + '/last_{}.ckpt'.format(args.model_type)
-        state_dict = model.state_dict() if type(device_ids) == int else model.module.state_dict()
+        state_dict = model.state_dict() if len(device_ids) <= 1 else model.module.state_dict()
         torch.save(
             state_dict,
             store_path
         )
-
-
-def load_not_compatible_weights(model, weights, verbose=False):
-    new_model = model.state_dict()
-    old_model = torch.load(weights)
-
-    for el in new_model:
-        if el in old_model:
-            if verbose:
-                print('Match found for {}!'.format(el))
-            if new_model[el].shape == old_model[el].shape:
-                if verbose:
-                    print('Action: Just copy weights!')
-                new_model[el] = old_model[el]
-            else:
-                if len(new_model[el].shape) != len(old_model[el].shape):
-                    if verbose:
-                        print('Action: Different dimension! Too lazy to write the code... Skip it')
-                else:
-                    if verbose:
-                        print('Shape is different: {} != {}'.format(tuple(new_model[el].shape), tuple(old_model[el].shape)))
-                    ln = len(new_model[el].shape)
-                    max_shape = []
-                    slices_old = []
-                    slices_new = []
-                    for i in range(ln):
-                        max_shape.append(max(new_model[el].shape[i], old_model[el].shape[i]))
-                        slices_old.append(slice(0, old_model[el].shape[i]))
-                        slices_new.append(slice(0, new_model[el].shape[i]))
-                    # print(max_shape)
-                    # print(slices_old, slices_new)
-                    slices_old = tuple(slices_old)
-                    slices_new = tuple(slices_new)
-                    max_matrix = np.zeros(max_shape, dtype=np.float32)
-                    for i in range(ln):
-                        max_matrix[slices_old] = old_model[el].cpu().numpy()
-                    max_matrix = torch.from_numpy(max_matrix)
-                    new_model[el] = max_matrix[slices_new]
-        else:
-            if verbose:
-                print('Match not found for {}!'.format(el))
-    model.load_state_dict(
-        new_model
-    )
 
 
 if __name__ == "__main__":
