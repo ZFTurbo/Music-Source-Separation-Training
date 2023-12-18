@@ -94,6 +94,7 @@ If you trained some good models, please, share them. You can post config and mod
 | Model Type | Instruments | Metrics (SDR) | Config | Checkpoint |
 |:-------------:|:-------------:|:-----:|:-----:|:-----:|
 | MDX23C | bass / drums / vocals / other | MUSDB test avg: 7.15 (bass: 5.77, drums: 7.93 vocals: 9.23 other: 5.68) Multisong avg: 7.02 (bass: 8.40, drums: 7.73 vocals: 7.36 other: 4.57) | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.1/config_musdb18_mdx23c.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.1/model_mdx23c_ep_168_sdr_7.0207.ckpt) |
+| BandIt Plus | speech / music / effects | DnR test avg: 11.50 (speech: 15.64, music: 9.18 effects: 9.69) | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.1/config_dnr_bandit_bsrnn_multi_mus64.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.3/model_bandit_plus_dnr_sdr_11.47.chpt) |
 
 **Note**: Models were trained only on MUSDB18HQ dataset (100 songs train data)
 
