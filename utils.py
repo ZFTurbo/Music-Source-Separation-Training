@@ -73,11 +73,10 @@ def demix_track(config, model, mix, device):
                 part = mix[:, i:i + C]
                 length = part.shape[-1]
                 if length < C:
-                    while part.shape[-1] < C:
-                        if C - part.shape[-1] > part.shape[-1] - 1:
-                            part = nn.functional.pad(input=part, pad=(0, part.shape[-1]-1), mode='reflect')
-                        else:
-                            part = nn.functional.pad(input=part, pad=(0, C - part.shape[-1]), mode='reflect')
+                    if length > C // 2 + 1:
+                        part = nn.functional.pad(input=part, pad=(0, C - length), mode='reflect')
+                    else:
+                        part = nn.functional.pad(input=part, pad=(0, C - length, 0, 0), mode='constant', value=0)
                 batch_data.append(part)
                 batch_locations.append((i, length))
                 i += step
