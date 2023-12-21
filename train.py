@@ -15,6 +15,7 @@ import glob
 import torch
 import soundfile as sf
 import numpy as np
+import auraloss
 import torch.nn as nn
 from torch.optim import Adam, AdamW, SGD
 from torch.utils.data import DataLoader
@@ -170,6 +171,7 @@ def train_model(args):
     parser.add_argument("--pin_memory", type=bool, default=False, help="dataloader pin_memory")
     parser.add_argument("--seed", type=int, default=0, help="random seed")
     parser.add_argument("--device_ids", nargs='+', type=int, default=[0], help='list of gpu ids')
+    parser.add_argument("--use_multistft_loss", action='store_true', help="Use MultiSTFT Loss (from auraloss package)")
     parser.add_argument("--use_mse_loss", action='store_true', help="Use default MSE loss")
     parser.add_argument("--use_l1_loss", action='store_true', help="Use L1 loss")
     if args is None:
@@ -268,6 +270,17 @@ def train_model(args):
     # Reduce LR if no SDR improvements for several epochs
     scheduler = ReduceLROnPlateau(optimizer, 'max', patience=config.training.patience, factor=config.training.reduce_factor)
 
+    if args.use_multistft_loss:
+        loss_multistft = auraloss.freq.MultiResolutionSTFTLoss(
+            fft_sizes=[1024, 2048, 4096],
+            hop_sizes=[512, 1024, 2048],
+            win_lengths=[1024, 2048, 4096],
+            scale="mel",
+            n_bins=128,
+            sample_rate=44100,
+            perceptual_weighting=True,
+        )
+
     scaler = GradScaler()
     print('Train for: {}'.format(config.training.num_epochs))
     best_sdr = -100
@@ -292,7 +305,16 @@ def train_model(args):
                         loss = loss.mean()
                 else:
                     y_ = model(x)
-                    if args.use_mse_loss:
+                    if args.use_multistft_loss:
+                        y1_ = torch.reshape(y_, (y_.shape[0], y_.shape[1] * y_.shape[2], y_.shape[3]))
+                        y1 = torch.reshape(y, (y.shape[0], y.shape[1] * y.shape[2], y.shape[3]))
+                        loss = loss_multistft(y1_, y1)
+                        # We can use many losses at the same time
+                        if args.use_mse_loss:
+                            loss += 1000 * nn.MSELoss()(y1_, y1)
+                        if args.use_l1_loss:
+                            loss += 1000 * F.l1_loss(y1_, y1)
+                    elif args.use_mse_loss:
                         loss = nn.MSELoss()(y_, y)
                     elif args.use_l1_loss:
                         loss = F.l1_loss(y_, y)
