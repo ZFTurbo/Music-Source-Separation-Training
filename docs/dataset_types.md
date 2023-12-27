@@ -39,7 +39,7 @@ Example:
 
 You can provide CSV-file (or list of CSV-files) with following structure:
 ```
-type,path
+instrum,path
 vocals,/path/to/dataset/vocals_1.wav
 vocals,/path/to/dataset2/vocals_v2.wav
 vocals,/path/to/dataset3/vocals_some.wav
