@@ -56,6 +56,9 @@ def manual_seed(seed):
 def load_not_compatible_weights(model, weights, verbose=False):
     new_model = model.state_dict()
     old_model = torch.load(weights)
+    if 'state' in old_model:
+        # Fix for htdemucs weights loading
+        old_model = old_model['state']
 
     for el in new_model:
         if el in old_model:
@@ -271,14 +274,13 @@ def train_model(args):
     scheduler = ReduceLROnPlateau(optimizer, 'max', patience=config.training.patience, factor=config.training.reduce_factor)
 
     if args.use_multistft_loss:
+        try:
+            loss_options = dict(config.loss_multistft)
+        except:
+            loss_options = dict()
+        print('Loss options: {}'.format(loss_options))
         loss_multistft = auraloss.freq.MultiResolutionSTFTLoss(
-            fft_sizes=[1024, 2048, 4096],
-            hop_sizes=[512, 1024, 2048],
-            win_lengths=[1024, 2048, 4096],
-            scale="mel",
-            n_bins=128,
-            sample_rate=44100,
-            perceptual_weighting=True,
+            **loss_options
         )
 
     scaler = GradScaler()

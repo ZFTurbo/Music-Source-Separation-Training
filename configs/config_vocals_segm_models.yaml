@@ -15,6 +15,31 @@ model:
   num_channels: 128
   num_subbands: 8
 
+loss_multistft:
+  fft_sizes:
+  - 1024
+  - 2048
+  - 4096
+  hop_sizes:
+  - 512
+  - 1024
+  - 2048
+  win_lengths:
+  - 1024
+  - 2048
+  - 4096
+  window: "hann_window"
+  scale: "mel"
+  n_bins: 128
+  sample_rate: 44100
+  perceptual_weighting: true
+  w_sc: 1.0
+  w_log_mag: 1.0
+  w_lin_mag_mag: 0.0
+  w_phs: 0.0
+  mag_distance: "L1"
+
+
 training:
   batch_size: 8
   gradient_accumulation_steps: 1
