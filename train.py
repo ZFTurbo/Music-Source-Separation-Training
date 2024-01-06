@@ -184,6 +184,7 @@ def train_model(args):
 
     manual_seed(args.seed + int(time.time()))
     torch.backends.cudnn.benchmark = True
+    torch.backends.cudnn.deterministic = False # Fix possible slow down with dilation convolutions
 
     with open(args.config_path) as f:
         if args.model_type == 'htdemucs':
