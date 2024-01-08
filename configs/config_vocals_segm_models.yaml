@@ -35,7 +35,7 @@ loss_multistft:
   perceptual_weighting: true
   w_sc: 1.0
   w_log_mag: 1.0
-  w_lin_mag_mag: 0.0
+  w_lin_mag: 0.0
   w_phs: 0.0
   mag_distance: "L1"
 
