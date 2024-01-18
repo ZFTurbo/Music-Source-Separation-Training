@@ -11,6 +11,7 @@ import sys
 import os
 import glob
 import torch
+import numpy as np
 import soundfile as sf
 import torch.nn as nn
 from utils import demix_track, demix_track_demucs, get_model_from_config
@@ -37,6 +38,11 @@ def run_folder(model, args, config, device, verbose=False):
 
     for path in all_mixtures_path:
         mix, sr = sf.read(path)
+
+        # Convert mono to stereo if needed
+        if len(mix.shape) == 1:
+            mix = np.stack([mix, mix], axis=-1)
+
         mixture = torch.tensor(mix.T, dtype=torch.float32)
         if args.model_type == 'htdemucs':
             res = demix_track_demucs(config, model, mixture, device)

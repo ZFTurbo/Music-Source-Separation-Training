@@ -212,7 +212,7 @@ class MSSDataset(torch.utils.data.Dataset):
         return torch.tensor(res, dtype=torch.float32)
 
     def augm_data(self, source, instr):
-        # source.shape = (2, 261120)
+        # source.shape = (2, 261120) - first channels, second length
 
         # Channel shuffle
         if random.uniform(0, 1) < 0.5:
