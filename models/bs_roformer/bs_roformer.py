@@ -13,7 +13,7 @@ from beartype import beartype
 from rotary_embedding_torch import RotaryEmbedding
 
 from einops import rearrange, pack, unpack
-
+from einops.layers.torch import Rearrange
 
 # helper functions
 
@@ -34,6 +34,10 @@ def unpack_one(t, ps, pattern):
 
 
 # norm
+
+def l2norm(t):
+    return F.normalize(t, dim = -1, p = 2)
+
 
 class RMSNorm(Module):
     def __init__(self, dim):
@@ -116,6 +120,60 @@ class Attention(Module):
         return self.to_out(out)
 
 
+class LinearAttention(Module):
+    """
+    this flavor of linear attention proposed in https://arxiv.org/abs/2106.09681 by El-Nouby et al.
+    """
+
+    @beartype
+    def __init__(
+            self,
+            *,
+            dim,
+            dim_head=32,
+            heads=8,
+            scale=8,
+            flash=False,
+            dropout=0.
+    ):
+        super().__init__()
+        dim_inner = dim_head * heads
+        self.norm = RMSNorm(dim)
+
+        self.to_qkv = nn.Sequential(
+            nn.Linear(dim, dim_inner * 3, bias=False),
+            Rearrange('b n (qkv h d) -> qkv b h d n', qkv=3, h=heads)
+        )
+
+        self.temperature = nn.Parameter(torch.ones(heads, 1, 1))
+
+        self.attend = Attend(
+            scale=scale,
+            dropout=dropout,
+            flash=flash
+        )
+
+        self.to_out = nn.Sequential(
+            Rearrange('b h d n -> b n (h d)'),
+            nn.Linear(dim_inner, dim, bias=False)
+        )
+
+    def forward(
+            self,
+            x
+    ):
+        x = self.norm(x)
+
+        q, k, v = self.to_qkv(x)
+
+        q, k = map(l2norm, (q, k))
+        q = q * self.temperature.exp()
+
+        out = self.attend(q, k, v)
+
+        return self.to_out(out)
+
+
 class Transformer(Module):
     def __init__(
             self,
@@ -129,15 +187,21 @@ class Transformer(Module):
             ff_mult=4,
             norm_output=True,
             rotary_embed=None,
-            flash_attn=True
+            flash_attn=True,
+            linear_attn=False
     ):
         super().__init__()
         self.layers = ModuleList([])
 
         for _ in range(depth):
+            if linear_attn:
+                attn = LinearAttention(dim=dim, dim_head=dim_head, heads=heads, dropout=attn_dropout, flash=flash_attn)
+            else:
+                attn = Attention(dim=dim, dim_head=dim_head, heads=heads, dropout=attn_dropout,
+                                 rotary_embed=rotary_embed, flash=flash_attn)
+
             self.layers.append(ModuleList([
-                Attention(dim=dim, dim_head=dim_head, heads=heads, dropout=attn_dropout, rotary_embed=rotary_embed,
-                          flash=flash_attn),
+                attn,
                 FeedForward(dim=dim, mult=ff_mult, dropout=ff_dropout)
             ]))
 
@@ -271,6 +335,7 @@ class BSRoformer(Module):
             num_stems=1,
             time_transformer_depth=2,
             freq_transformer_depth=2,
+            linear_transformer_depth=1,
             freqs_per_bands: Tuple[int, ...] = DEFAULT_FREQS_PER_BANDS,
             # in the paper, they divide into ~60 bands, test with 1 for starters
             dim_head=64,
@@ -315,6 +380,8 @@ class BSRoformer(Module):
 
         for _ in range(depth):
             self.layers.append(nn.ModuleList([
+                Transformer(depth=linear_transformer_depth, linear_attn=True,
+                            **transformer_kwargs) if linear_transformer_depth > 0 else None,
                 Transformer(depth=time_transformer_depth, rotary_embed=time_rotary_embed, **transformer_kwargs),
                 Transformer(depth=freq_transformer_depth, rotary_embed=freq_rotary_embed, **transformer_kwargs)
             ]))
@@ -412,7 +479,13 @@ class BSRoformer(Module):
 
         # axial / hierarchical attention
 
-        for time_transformer, freq_transformer in self.layers:
+        for linear_transformer, time_transformer, freq_transformer in self.layers:
+
+            if exists(linear_transformer):
+                x, ft_ps = pack([x], 'b * d')
+                x = linear_transformer(x)
+                x, = unpack(x, ft_ps, 'b * d')
+
             x = rearrange(x, 'b t f d -> b f t d')
             x, ps = pack([x], '* t d')
 
