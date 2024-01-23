@@ -335,7 +335,7 @@ class BSRoformer(Module):
             num_stems=1,
             time_transformer_depth=2,
             freq_transformer_depth=2,
-            linear_transformer_depth=1,
+            linear_transformer_depth=0,
             freqs_per_bands: Tuple[int, ...] = DEFAULT_FREQS_PER_BANDS,
             # in the paper, they divide into ~60 bands, test with 1 for starters
             dim_head=64,

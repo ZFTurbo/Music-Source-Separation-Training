@@ -332,7 +332,7 @@ class MelBandRoformer(Module):
             num_stems=1,
             time_transformer_depth=2,
             freq_transformer_depth=2,
-            linear_transformer_depth=1,
+            linear_transformer_depth=0,
             num_bands=60,
             dim_head=64,
             heads=8,
