@@ -376,12 +376,16 @@ class MelBandRoformer(Module):
         freq_rotary_embed = RotaryEmbedding(dim=dim_head)
 
         for _ in range(depth):
-            self.layers.append(nn.ModuleList([
-                Transformer(depth=linear_transformer_depth, linear_attn=True,
-                            **transformer_kwargs) if linear_transformer_depth > 0 else None,
-                Transformer(depth=time_transformer_depth, rotary_embed=time_rotary_embed, **transformer_kwargs),
+            tran_modules = []
+            if linear_transformer_depth > 0:
+                tran_modules.append(Transformer(depth=linear_transformer_depth, linear_attn=True, **transformer_kwargs))
+            tran_modules.append(
+                Transformer(depth=time_transformer_depth, rotary_embed=time_rotary_embed, **transformer_kwargs)
+            )
+            tran_modules.append(
                 Transformer(depth=freq_transformer_depth, rotary_embed=freq_rotary_embed, **transformer_kwargs)
-            ]))
+            )
+            self.layers.append(nn.ModuleList(tran_modules))
 
         self.stft_window_fn = partial(default(stft_window_fn, torch.hann_window), stft_win_length)
 
@@ -525,12 +529,16 @@ class MelBandRoformer(Module):
 
         # axial / hierarchical attention
 
-        for linear_transformer, time_transformer, freq_transformer in self.layers:
+        for transformer_block in self.layers:
 
-            if exists(linear_transformer):
+            if len(transformer_block) == 3:
+                linear_transformer, time_transformer, freq_transformer = transformer_block
+
                 x, ft_ps = pack([x], 'b * d')
                 x = linear_transformer(x)
                 x, = unpack(x, ft_ps, 'b * d')
+            else:
+                time_transformer, freq_transformer = transformer_block
 
             x = rearrange(x, 'b t f d -> b f t d')
             x, ps = pack([x], '* t d')
