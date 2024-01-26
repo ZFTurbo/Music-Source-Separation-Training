@@ -81,9 +81,12 @@ def proc_folder(args):
     model = get_model_from_config(args.model_type, config)
     if args.start_check_point != '':
         print('Start from checkpoint: {}'.format(args.start_check_point))
-        model.load_state_dict(
-            torch.load(args.start_check_point, map_location=torch.device('cpu'))
-        )
+        state_dict = torch.load(args.start_check_point)
+        if args.model_type == 'htdemucs':
+            # Fix for htdemucs pround etrained models
+            if 'state' in state_dict:
+                state_dict = state_dict['state']
+        model.load_state_dict(state_dict)
 
     if torch.cuda.is_available():
         device_ids = args.device_ids
