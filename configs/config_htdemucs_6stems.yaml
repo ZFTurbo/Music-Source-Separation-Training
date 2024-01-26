@@ -12,7 +12,7 @@ training:
   samplerate: 44100
   channels: 2
   normalize: true
-  instruments: ['drums', 'bass', 'other', 'vocals']
+  instruments: ['drums', 'bass', 'other', 'vocals', 'guitar', 'piano']
   target_instrument: null
   augmentation: false # enable augmentations by audiomentations and pedalboard
   augmentation_type: simple1
@@ -75,7 +75,7 @@ htdemucs:  # see demucs/htdemucs.py for a detailed description
   dconv_comp: 8
   dconv_init: 1e-3
   # Before the Transformer
-  bottom_channels: 512
+  bottom_channels: 0
   # CrossTransformer
   # ------ Common to all
   # Regular parameters
