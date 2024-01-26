@@ -57,7 +57,11 @@ def valid(model, args, config, device, verbose=False):
             pbar_dict = {}
             for instr in instruments:
                 if instr != 'other' or config.training.other_fix is False:
-                    track, sr1 = sf.read(folder + '/{}.wav'.format(instr))
+                    try:
+                        track, sr1 = sf.read(folder + '/{}.wav'.format(instr))
+                    except Exception as e:
+                        print('No data for stem: {}. Skip!'.format(instr))
+                        continue
                 else:
                     # other is actually instrumental
                     track, sr1 = sf.read(folder + '/{}.wav'.format('vocals'))
@@ -130,9 +134,12 @@ def check_validation(args):
     model = get_model_from_config(args.model_type, config)
     if args.start_check_point != '':
         print('Start from checkpoint: {}'.format(args.start_check_point))
-        model.load_state_dict(
-            torch.load(args.start_check_point)
-        )
+        state_dict = torch.load(args.start_check_point)
+        if args.model_type == 'htdemucs':
+            # Fix for htdemucs pretrained models
+            if 'state' in state_dict:
+                state_dict = state_dict['state']
+        model.load_state_dict(state_dict)
 
     device_ids = args.device_ids
     if type(device_ids)==int:
