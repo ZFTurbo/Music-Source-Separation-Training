@@ -82,21 +82,33 @@ If you trained some good models, please, share them. You can post config and mod
 | Model Type | Instruments | Metrics (SDR) | Config | Checkpoint |
 |:-------------:|:-------------:|:-----:|:-----:|:-----:|
 | MDX23C | vocals / other | SDR vocals: 10.17 | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/config_vocals_mdx23c.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/model_vocals_mdx23c_sdr_10.17.ckpt) |
-| HT Demucs | vocals / other | SDR vocals: 8.78 | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/config_vocals_htdemucs.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/model_vocals_htdemucs_sdr_8.78.ckpt) |
+| HTDemucs4 (MVSep finetuned) | vocals / other | SDR vocals: 8.78 | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/config_vocals_htdemucs.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/model_vocals_htdemucs_sdr_8.78.ckpt) |
 | Segm Models (VitLarge23) | vocals / other | SDR vocals: 9.77 | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/config_vocals_segm_models.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/model_vocals_segm_models_sdr_9.77.ckpt) |
 | Mel Band RoFormer | vocals (*) / other | SDR vocals: 8.42 | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/config_vocals_mel_band_roformer.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/model_vocals_mel_band_roformer_sdr_8.42.ckpt) |
 | Swin Upernet | vocals / other | SDR vocals: 7.57 | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.2/config_vocals_swin_upernet.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.2/model_swin_upernet_ep_56_sdr_10.6703.ckpt) |
 
 **Note**: Metrics measured on [Multisong Dataset](https://mvsep.com/en/quality_checker).
 
+### Single stem models
+| Model Type | Instruments | Metrics (SDR) | Config | Checkpoint |
+|:-------------:|:-------------:|:-----:|:-----:|:-----:|
+| HTDemucs4 FT Drums | drums | SDR drums: 11.13 | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/configs/config_musdb18_htdemucs.yaml) | [Weights](https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/f7e0c4bc-ba3fe64a.th) |
+| HTDemucs4 FT Bass | bass | SDR bass: 11.96 | [Config](https://gihub.com/ZFTurbo/Music-Source-Separation-Training/blob/main/configs/config_musdb18_htdemucs.yaml) | [Weights](https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/d12395a8-e57c48e6.th) |
+| HTDemucs4 FT Other | other | SDR other: 5.85 | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/configs/config_musdb18_htdemucs.yaml) | [Weights](https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/92cfc3b6-ef3bcb9c.th) |
+| HTDemucs4 FT Vocals (Official repository) | vocals | SDR vocals: 8.38 | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/configs/config_musdb18_htdemucs.yaml) | [Weights](https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/04573f0d-f3cf25b2.th) |
+
+**Note**: All models output 4 stems, but quality is best only on target stem (all other stems are dummy).
+
 ### Multi-stem models
 
 | Model Type | Instruments | Metrics (SDR) | Config | Checkpoint |
 |:-------------:|:-------------:|:-----:|:-----:|:-----:|
-| MDX23C | bass / drums / vocals / other | MUSDB test avg: 7.15 (bass: 5.77, drums: 7.93 vocals: 9.23 other: 5.68) Multisong avg: 7.02 (bass: 8.40, drums: 7.73 vocals: 7.36 other: 4.57) | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.1/config_musdb18_mdx23c.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.1/model_mdx23c_ep_168_sdr_7.0207.ckpt) |
+| MDX23C~~*~~ | bass / drums / vocals / other | MUSDB test avg: 7.15 (bass: 5.77, drums: 7.93 vocals: 9.23 other: 5.68) Multisong avg: 7.02 (bass: 8.40, drums: 7.73 vocals: 7.36 other: 4.57) | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.1/config_musdb18_mdx23c.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.1/model_mdx23c_ep_168_sdr_7.0207.ckpt) |
 | BandIt Plus | speech / music / effects | DnR test avg: 11.50 (speech: 15.64, music: 9.18 effects: 9.69) | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.3/config_dnr_bandit_bsrnn_multi_mus64.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.3/model_bandit_plus_dnr_sdr_11.47.chpt) |
+| HTDemucs4 | bass / drums / vocals / other | Multisong avg: 9.16 (bass: 11.76, drums: 10.88 vocals: 8.24 other: 5.74) | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/configs/config_musdb18_htdemucs.yaml) | [Weights](https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th) |
+| HTDemucs4 (6 stems) | bass / drums / vocals / other / piano / guitar | Multisong (bass: 11.22, drums: 10.22 vocals: 8.05 other: --- piano: --- guitar: ---) | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/configs/config_htdemucs_6stems.yaml) | [Weights](https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/5c90dfd2-34c22ccb.th) |
 
-**Note**: Models were trained only on MUSDB18HQ dataset (100 songs train data)
+~~*~~ **Note**: Model was trained only on MUSDB18HQ dataset (100 songs train data)
 
 ## Dataset types
 
