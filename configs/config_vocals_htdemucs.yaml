@@ -14,14 +14,6 @@ training:
   normalize: true
   instruments: ['vocals', 'other']
   target_instrument: null
-  augmentation: false # enable augmentations by audiomentations and pedalboard
-  augmentation_type: simple1
-  use_mp3_compress: false # Deprecated
-  augmentation_mix: true # Mix several stems of the same type with some probability
-  augmentation_loudness: true # randomly change loudness of each stem
-  augmentation_loudness_type: 1 # Type 1 or 2
-  augmentation_loudness_min: 0.5
-  augmentation_loudness_max: 1.5
   num_epochs: 1000
   num_steps: 1000
   optimizer: adam
@@ -33,6 +25,18 @@ training:
   ema_momentum: 0.999
   other_fix: true # it's needed for checking on multisong dataset if other is actually instrumental
   use_amp: true # enable or disable usage of mixed precision (float16) - usually it must be true
+
+augmentations:
+  enable: true # enable or disable all augmentations (to fast disable if needed)
+  loudness: true # randomly change loudness of each stem on the range (loudness_min; loudness_max)
+  loudness_min: 0.5
+  loudness_max: 1.5
+  mixup: true # mix several stems of same type with some probability (only works for dataset types: 1, 2, 3)
+  mixup_probs: !!python/tuple # 2 additional stems of the same type (1st with prob 0.2, 2nd with prob 0.02)
+    - 0.2
+    - 0.02
+  mixup_loudness_min: 0.5
+  mixup_loudness_max: 1.5
 
 inference:
   num_overlap: 2

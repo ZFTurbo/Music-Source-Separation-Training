@@ -114,6 +114,10 @@ If you trained some good models, please, share them. You can post config and mod
 
 Look here: [Dataset types](docs/dataset_types.md)
 
+## Augmentations
+
+Look here: [Augmentations](docs/augmentations.md)
+
 ## Citation
 
 * [arxiv paper](https://arxiv.org/abs/2305.07489)

@@ -27,17 +27,32 @@ def load_chunk(path, length, chunk_size, offset=None):
     return x.T
 
 
-def get_transforms_simple(instr):
+def get_transforms_simple(instr, config):
     if instr == 'vocals':
         augment = AU.Compose([
-            AU.TimeStretch(min_rate=0.8, max_rate=1.25, leave_length_unchanged=True, p=0.1),
-            AU.PitchShift(min_semitones=-4, max_semitones=4, p=0.1),
-            AU.Mp3Compression(min_bitrate=32, max_bitrate=320, backend="lameenc", p=0.1), # reduce bitrate (max kbps range: [8, 320]) with probability 0.5
+            AU.PitchShift(min_semitones=-5, max_semitones=5, p=0.1),
+            AU.SevenBandParametricEQ(min_gain_db=-9, max_gain_db=9, p=0.25),
+            AU.TanhDistortion(min_distortion=0.1, max_distortion=0.7, p=0.1),
+            AU.Mp3Compression(min_bitrate=32, max_bitrate=320, backend="lameenc", p=0.01), # reduce bitrate (max kbps range: [8, 320]) with probability 0.5
+        ], p=1.0)
+    elif instr == 'bass':
+        augment = AU.Compose([
+            AU.PitchShift(min_semitones=-2, max_semitones=2, p=0.1),
+            AU.SevenBandParametricEQ(min_gain_db=-3, max_gain_db=6, p=0.25),
+            AU.TanhDistortion(min_distortion=0.1, max_distortion=0.5, p=0.2),
+            AU.Mp3Compression(min_bitrate=32, max_bitrate=320, backend="lameenc", p=0.01), # reduce bitrate (max kbps range: [8, 320]) with probability 0.5
+        ], p=1.0)
+    elif instr == 'drums':
+        augment = AU.Compose([
+            AU.PitchShift(min_semitones=-5, max_semitones=5, p=0.33),
+            AU.SevenBandParametricEQ(min_gain_db=-9, max_gain_db=9, p=0.25),
+            AU.TanhDistortion(min_distortion=0.1, max_distortion=0.6, p=0.33),
+            AU.Mp3Compression(min_bitrate=32, max_bitrate=320, backend="lameenc", p=0.01), # reduce bitrate (max kbps range: [8, 320]) with probability 0.5
         ], p=1.0)
     elif instr == 'other':
         augment = AU.Compose([
             AU.AddGaussianNoise(min_amplitude=0.001, max_amplitude=0.015, p=0.1),
-            AU.TimeStretch(min_rate=0.8, max_rate=1.25, leave_length_unchanged=True, p=0.1),
+            AU.TimeStretch(min_rate=0.8, max_rate=1.25, leave_length_unchanged=True, p=0.01),
             AU.PitchShift(min_semitones=-4, max_semitones=4, p=0.1),
             AU.Mp3Compression(min_bitrate=32, max_bitrate=320, backend="lameenc", p=0.1), # reduce bitrate (max kbps range: [8, 320]) with probability 0.5
         ], p=1.0)
@@ -55,23 +70,12 @@ class MSSDataset(torch.utils.data.Dataset):
 
         # Augmentation block
         self.aug = False
-        if config.training.augmentation == 1:
-            print('Use augmentation for training')
-            self.aug = True
-
-        self.mp3_aug = None
-        if config.training.use_mp3_compress:
-            self.mp3_aug = AU.Compose([
-                AU.Mp3Compression(min_bitrate=32, max_bitrate=320, backend="lameenc", p=0.1),
-            ], p=1.0)
-
-        self.augment_func = dict()
-        for instr in self.instruments:
-            self.augment_func[instr] = None
-        if self.config.training.augmentation_type == "simple1":
-            print('Use simple1 set of augmentations')
-            for instr in self.instruments:
-                self.augment_func[instr] = get_transforms_simple(instr)
+        if 'augmentations' in config:
+            if config['augmentations'].enable is True:
+                print('Use augmentation for training')
+                self.aug = True
+        else:
+            print('There is no augmentations block in config. Augmentations disabled for training...')
 
         # metadata_path = data_path + '/metadata'
         try:
@@ -174,20 +178,23 @@ class MSSDataset(torch.utils.data.Dataset):
     def load_random_mix(self):
         res = []
         for instr in self.instruments:
-            # Multiple mix of sources
             s1 = self.load_source(self.metadata, instr)
-            if self.config.training.augmentation_mix:
-                if random.uniform(0, 1) < 0.2:
-                    s2 = self.load_source(self.metadata, instr)
-                    w1 = random.uniform(0.5, 1.5)
-                    w2 = random.uniform(0.5, 1.5)
-                    s1 = (w1 * s1 + w2 * s2) / (w1 + w2)
-                    if random.uniform(0, 1) < 0.1:
-                        s2 = self.load_source(self.metadata, instr)
-                        w1 = random.uniform(0.5, 1.5)
-                        w2 = random.uniform(0.5, 1.5)
-                        s1 = (w1 * s1 + w2 * s2) / (w1 + w2)
-
+            # Mixup augmentation. Multiple mix of same type of stems
+            if self.aug:
+                if self.config.augmentations.mixup:
+                    mixup = [s1]
+                    for prob in self.config.augmentations.mixup_probs:
+                        if random.uniform(0, 1) < prob:
+                            s2 = self.load_source(self.metadata, instr)
+                            mixup.append(s2)
+                    mixup = np.array(mixup)
+                    loud_values = np.random.uniform(
+                        low=self.config.augmentations.loudness_min,
+                        high=self.config.augmentations.loudness_max,
+                        size=(len(mixup),)
+                    )
+                    mixup *= loud_values[:, None, None]
+                    s1 = mixup.mean(axis=0)
             res.append(s1)
         res = torch.stack(res)
         return res
@@ -213,112 +220,283 @@ class MSSDataset(torch.utils.data.Dataset):
 
     def augm_data(self, source, instr):
         # source.shape = (2, 261120) - first channels, second length
+        source_shape = source.shape
+        applied_augs = []
+        if 'all' in self.config['augmentations']:
+            augs = self.config['augmentations']['all']
+        else:
+            augs = dict()
+
+        # We need to add to all augmentations specific augs for stem. And rewrite values if needed
+        if instr in self.config['augmentations']:
+            for el in self.config['augmentations'][instr]:
+                augs[el] = self.config['augmentations'][instr][el]
 
         # Channel shuffle
-        if random.uniform(0, 1) < 0.5:
-            source = source[::-1].copy()
-        # Random inverse (do with low probability)
-        if random.uniform(0, 1) < 0.1:
-            source = source[:, ::-1].copy()
+        if 'channel_shuffle' in augs:
+            if augs['channel_shuffle'] > 0:
+                if random.uniform(0, 1) < augs['channel_shuffle']:
+                    source = source[::-1].copy()
+                    applied_augs.append('channel_shuffle')
+        # Random inverse
+        if 'random_inverse' in augs:
+            if augs['random_inverse'] > 0:
+                if random.uniform(0, 1) < augs['random_inverse']:
+                    source = source[:, ::-1].copy()
+                    applied_augs.append('random_inverse')
         # Random polarity (multiply -1)
-        if random.uniform(0, 1) < 0.5:
-            source = -source.copy()
+        if 'random_polarity' in augs:
+            if augs['random_polarity'] > 0:
+                if random.uniform(0, 1) < augs['random_polarity']:
+                    source = -source.copy()
+                    applied_augs.append('random_polarity')
+        # Random pitch shift
+        if 'pitch_shift' in augs:
+            if augs['pitch_shift'] > 0:
+                if random.uniform(0, 1) < augs['pitch_shift']:
+                    apply_aug = AU.PitchShift(
+                        min_semitones=augs['pitch_shift_min_semitones'],
+                        max_semitones=augs['pitch_shift_max_semitones'],
+                        p=1.0
+                    )
+                    source = apply_aug(samples=source, sample_rate=44100)
+                    applied_augs.append('pitch_shift')
+        # Random seven band parametric eq
+        if 'seven_band_parametric_eq' in augs:
+            if augs['seven_band_parametric_eq'] > 0:
+                if random.uniform(0, 1) < augs['seven_band_parametric_eq']:
+                    apply_aug = AU.SevenBandParametricEQ(
+                        min_gain_db=augs['seven_band_parametric_eq_min_gain_db'],
+                        max_gain_db=augs['seven_band_parametric_eq_max_gain_db'],
+                        p=1.0
+                    )
+                    source = apply_aug(samples=source, sample_rate=44100)
+                    applied_augs.append('seven_band_parametric_eq')
+        # Random tanh distortion
+        if 'tanh_distortion' in augs:
+            if augs['tanh_distortion'] > 0:
+                if random.uniform(0, 1) < augs['tanh_distortion']:
+                    apply_aug = AU.TanhDistortion(
+                        min_distortion=augs['tanh_distortion_min'],
+                        max_distortion=augs['tanh_distortion_max'],
+                        p=1.0
+                    )
+                    source = apply_aug(samples=source, sample_rate=44100)
+                    applied_augs.append('tanh_distortion')
+        # Random MP3 Compression
+        if 'mp3_compression' in augs:
+            if augs['mp3_compression'] > 0:
+                if random.uniform(0, 1) < augs['mp3_compression']:
+                    apply_aug = AU.Mp3Compression(
+                        min_bitrate=augs['mp3_compression_min_bitrate'],
+                        max_bitrate=augs['mp3_compression_max_bitrate'],
+                        backend=augs['mp3_compression_backend'],
+                        p=1.0
+                    )
+                    source = apply_aug(samples=source, sample_rate=44100)
+                    applied_augs.append('mp3_compression')
+        # Random AddGaussianNoise
+        if 'gaussian_noise' in augs:
+            if augs['gaussian_noise'] > 0:
+                if random.uniform(0, 1) < augs['gaussian_noise']:
+                    apply_aug = AU.AddGaussianNoise(
+                        min_amplitude=augs['gaussian_noise_min_amplitude'],
+                        max_amplitude=augs['gaussian_noise_max_amplitude'],
+                        p=1.0
+                    )
+                    source = apply_aug(samples=source, sample_rate=44100)
+                    applied_augs.append('gaussian_noise')
+        # Random TimeStretch
+        if 'time_stretch' in augs:
+            if augs['time_stretch'] > 0:
+                if random.uniform(0, 1) < augs['time_stretch']:
+                    apply_aug = AU.TimeStretch(
+                        min_rate=augs['time_stretch_min_rate'],
+                        max_rate=augs['time_stretch_max_rate'],
+                        leave_length_unchanged=True,
+                        p=1.0
+                    )
+                    source = apply_aug(samples=source, sample_rate=44100)
+                    applied_augs.append('time_stretch')
 
-        if self.augment_func[instr]:
-            source_init = source.copy()
-            source = self.augment_func[instr](samples=source, sample_rate=44100)
-            if source_init.shape != source.shape:
-                source = source[..., :source_init.shape[-1]]
+        # Possible fix of shape
+        if source_shape != source.shape:
+            source = source[..., :source_shape[-1]]
 
         # Random Reverb
-        if random.uniform(0, 1) < 0.05:
-            room_size = random.uniform(0.1, 0.9)
-            damping = random.uniform(0.1, 0.9)
-            wet_level = random.uniform(0.1, 0.9)
-            dry_level = random.uniform(0.1, 0.9)
-            width = random.uniform(0.9, 1.0)
-            board = PB.Pedalboard([PB.Reverb(
-                room_size=room_size,  # 0.1 - 0.9
-                damping=damping,  # 0.1 - 0.9
-                wet_level=wet_level,  # 0.1 - 0.9
-                dry_level=dry_level,  # 0.1 - 0.9
-                width=width,  # 0.9 - 1.0
-                freeze_mode=0.0,
-            )])
-            source = board(source, 44100)
+        if 'pedalboard_reverb' in augs:
+            if augs['pedalboard_reverb'] > 0:
+                if random.uniform(0, 1) < augs['pedalboard_reverb']:
+                    room_size = random.uniform(
+                        augs['pedalboard_reverb_room_size_min'],
+                        augs['pedalboard_reverb_room_size_max'],
+                    )
+                    damping = random.uniform(
+                        augs['pedalboard_reverb_damping_min'],
+                        augs['pedalboard_reverb_damping_max'],
+                    )
+                    wet_level = random.uniform(
+                        augs['pedalboard_reverb_wet_level_min'],
+                        augs['pedalboard_reverb_wet_level_max'],
+                    )
+                    dry_level = random.uniform(
+                        augs['pedalboard_reverb_dry_level_min'],
+                        augs['pedalboard_reverb_dry_level_max'],
+                    )
+                    width = random.uniform(
+                        augs['pedalboard_reverb_width_min'],
+                        augs['pedalboard_reverb_width_max'],
+                    )
+                    board = PB.Pedalboard([PB.Reverb(
+                        room_size=room_size,  # 0.1 - 0.9
+                        damping=damping,  # 0.1 - 0.9
+                        wet_level=wet_level,  # 0.1 - 0.9
+                        dry_level=dry_level,  # 0.1 - 0.9
+                        width=width,  # 0.9 - 1.0
+                        freeze_mode=0.0,
+                    )])
+                    source = board(source, 44100)
+                    applied_augs.append('pedalboard_reverb')
 
         # Random Chorus
-        if random.uniform(0, 1) < 0.05:
-            rate_hz = random.uniform(1.0, 7.0)
-            depth = random.uniform(0.25, 0.95)
-            centre_delay_ms = random.uniform(3, 10)
-            feedback = random.uniform(0.0, 0.5)
-            mix = random.uniform(0.1, 0.9)
-            board = PB.Pedalboard([PB.Chorus(
-                rate_hz=rate_hz,
-                depth=depth,
-                centre_delay_ms=centre_delay_ms,
-                feedback=feedback,
-                mix=mix,
-            )])
-            source = board(source, 44100)
+        if 'pedalboard_chorus' in augs:
+            if augs['pedalboard_chorus'] > 0:
+                if random.uniform(0, 1) < augs['pedalboard_chorus']:
+                    rate_hz = random.uniform(
+                        augs['pedalboard_chorus_rate_hz_min'],
+                        augs['pedalboard_chorus_rate_hz_max'],
+                    )
+                    depth = random.uniform(
+                        augs['pedalboard_chorus_depth_min'],
+                        augs['pedalboard_chorus_depth_max'],
+                    )
+                    centre_delay_ms = random.uniform(
+                        augs['pedalboard_chorus_centre_delay_ms_min'],
+                        augs['pedalboard_chorus_centre_delay_ms_max'],
+                    )
+                    feedback = random.uniform(
+                        augs['pedalboard_chorus_feedback_min'],
+                        augs['pedalboard_chorus_feedback_max'],
+                    )
+                    mix = random.uniform(
+                        augs['pedalboard_chorus_mix_min'],
+                        augs['pedalboard_chorus_mix_max'],
+                    )
+                    board = PB.Pedalboard([PB.Chorus(
+                        rate_hz=rate_hz,
+                        depth=depth,
+                        centre_delay_ms=centre_delay_ms,
+                        feedback=feedback,
+                        mix=mix,
+                    )])
+                    source = board(source, 44100)
+                    applied_augs.append('pedalboard_chorus')
 
         # Random Phazer
-        if random.uniform(0, 1) < 0.05:
-            rate_hz = random.uniform(1.0, 10.0)
-            depth = random.uniform(0.25, 0.95)
-            centre_frequency_hz = random.uniform(200, 12000)
-            feedback = random.uniform(0.0, 0.5)
-            mix = random.uniform(0.1, 0.9)
-            board = PB.Pedalboard([PB.Phaser(
-                rate_hz=rate_hz,
-                depth=depth,
-                centre_frequency_hz=centre_frequency_hz,
-                feedback=feedback,
-                mix=mix,
-            )])
-            source = board(source, 44100)
+        if 'pedalboard_phazer' in augs:
+            if augs['pedalboard_phazer'] > 0:
+                if random.uniform(0, 1) < augs['pedalboard_phazer']:
+                    rate_hz = random.uniform(
+                        augs['pedalboard_phazer_rate_hz_min'],
+                        augs['pedalboard_phazer_rate_hz_max'],
+                    )
+                    depth = random.uniform(
+                        augs['pedalboard_phazer_depth_min'],
+                        augs['pedalboard_phazer_depth_max'],
+                    )
+                    centre_frequency_hz = random.uniform(
+                        augs['pedalboard_phazer_centre_frequency_hz_min'],
+                        augs['pedalboard_phazer_centre_frequency_hz_max'],
+                    )
+                    feedback = random.uniform(
+                        augs['pedalboard_phazer_feedback_min'],
+                        augs['pedalboard_phazer_feedback_max'],
+                    )
+                    mix = random.uniform(
+                        augs['pedalboard_phazer_mix_min'],
+                        augs['pedalboard_phazer_mix_max'],
+                    )
+                    board = PB.Pedalboard([PB.Phaser(
+                        rate_hz=rate_hz,
+                        depth=depth,
+                        centre_frequency_hz=centre_frequency_hz,
+                        feedback=feedback,
+                        mix=mix,
+                    )])
+                    source = board(source, 44100)
+                    applied_augs.append('pedalboard_phazer')
 
         # Random Distortion
-        if random.uniform(0, 1) < 0.05:
-            drive_db = random.uniform(1.0, 25.0)
-            board = PB.Pedalboard([PB.Distortion(
-                drive_db=drive_db,
-            )])
-            source = board(source, 44100)
+        if 'pedalboard_distortion' in augs:
+            if augs['pedalboard_distortion'] > 0:
+                if random.uniform(0, 1) < augs['pedalboard_distortion']:
+                    drive_db = random.uniform(
+                        augs['pedalboard_distortion_drive_db_min'],
+                        augs['pedalboard_distortion_drive_db_max'],
+                    )
+                    board = PB.Pedalboard([PB.Distortion(
+                        drive_db=drive_db,
+                    )])
+                    source = board(source, 44100)
+                    applied_augs.append('pedalboard_distortion')
 
         # Random PitchShift
-        if random.uniform(0, 1) < 0.05:
-            semitones = random.uniform(-7, 7)
-            board = PB.Pedalboard([PB.PitchShift(
-                semitones=semitones
-            )])
-            source = board(source, 44100)
+        if 'pedalboard_pitch_shift' in augs:
+            if augs['pedalboard_pitch_shift'] > 0:
+                if random.uniform(0, 1) < augs['pedalboard_pitch_shift']:
+                    semitones = random.uniform(
+                        augs['pedalboard_pitch_shift_semitones_min'],
+                        augs['pedalboard_pitch_shift_semitones_max'],
+                    )
+                    board = PB.Pedalboard([PB.PitchShift(
+                        semitones=semitones
+                    )])
+                    source = board(source, 44100)
+                    applied_augs.append('pedalboard_pitch_shift')
 
         # Random Resample
-        if random.uniform(0, 1) < 0.05:
-            target_sample_rate = random.uniform(4000, 44100)
-            board = PB.Pedalboard([PB.Resample(
-                target_sample_rate=target_sample_rate
-            )])
-            source = board(source, 44100)
+        if 'pedalboard_resample' in augs:
+            if augs['pedalboard_resample'] > 0:
+                if random.uniform(0, 1) < augs['pedalboard_resample']:
+                    target_sample_rate = random.uniform(
+                        augs['pedalboard_resample_target_sample_rate_min'],
+                        augs['pedalboard_resample_target_sample_rate_max'],
+                    )
+                    board = PB.Pedalboard([PB.Resample(
+                        target_sample_rate=target_sample_rate
+                    )])
+                    source = board(source, 44100)
+                    applied_augs.append('pedalboard_resample')
 
         # Random Bitcrash
-        if random.uniform(0, 1) < 0.05:
-            bit_depth = random.uniform(4, 16)
-            board = PB.Pedalboard([PB.Bitcrush(
-                bit_depth=bit_depth
-            )])
-            source = board(source, 44100)
+        if 'pedalboard_bitcrash' in augs:
+            if augs['pedalboard_bitcrash'] > 0:
+                if random.uniform(0, 1) < augs['pedalboard_bitcrash']:
+                    bit_depth = random.uniform(
+                        augs['pedalboard_bitcrash_bit_depth_min'],
+                        augs['pedalboard_bitcrash_bit_depth_max'],
+                    )
+                    board = PB.Pedalboard([PB.Bitcrush(
+                        bit_depth=bit_depth
+                    )])
+                    source = board(source, 44100)
+                    applied_augs.append('pedalboard_bitcrash')
 
         # Random MP3Compressor
-        if random.uniform(0, 1) < 0.05:
-            vbr_quality = random.uniform(0, 9.999)
-            board = PB.Pedalboard([PB.MP3Compressor(
-                vbr_quality=vbr_quality
-            )])
-            source = board(source, 44100)
+        if 'pedalboard_mp3_compressor' in augs:
+            if augs['pedalboard_mp3_compressor'] > 0:
+                if random.uniform(0, 1) < augs['pedalboard_mp3_compressor']:
+                    vbr_quality = random.uniform(
+                        augs['pedalboard_mp3_compressor_pedalboard_mp3_compressor_min'],
+                        augs['pedalboard_mp3_compressor_pedalboard_mp3_compressor_max'],
+                    )
+                    board = PB.Pedalboard([PB.MP3Compressor(
+                        vbr_quality=vbr_quality
+                    )])
+                    source = board(source, 44100)
+                    applied_augs.append('pedalboard_mp3_compressor')
 
+        # print(applied_augs)
         return source
 
     def __getitem__(self, index):
@@ -328,28 +506,30 @@ class MSSDataset(torch.utils.data.Dataset):
             res = self.load_aligned_data()
 
         # Randomly change loudness of each stem
-        if self.config.training.augmentation_loudness:
-            if self.config.training.augmentation_loudness_type == 1:
-                split = random.uniform(
-                    self.config.training.augmentation_loudness_min,
-                    self.config.training.augmentation_loudness_max
-                )
-                res[0] *= split
-                res[1] *= (2 - split)
-            else:
-                for i in range(len(res)):
-                    loud = random.uniform(
-                        self.config.training.augmentation_loudness_min,
-                        self.config.training.augmentation_loudness_max
+        if self.aug:
+            if 'loudness' in self.config['augmentations']:
+                if self.config['augmentations']['loudness']:
+                    loud_values = np.random.uniform(
+                        low=self.config['augmentations']['loudness_min'],
+                        high=self.config['augmentations']['loudness_max'],
+                        size=(len(res),)
                     )
-                    res[i] *= loud
+                    res *= loud_values[:, None, None]
 
         mix = res.sum(0)
 
-        if self.mp3_aug is not None:
-            mix = self.mp3_aug(samples=mix, sample_rate=44100)
+        if self.aug:
+            if 'mp3_compression_on_mixture' in self.config['augmentations']:
+                apply_aug = AU.Mp3Compression(
+                    min_bitrate=self.config['augmentations']['mp3_compression_on_mixture_bitrate_min'],
+                    max_bitrate=self.config['augmentations']['mp3_compression_on_mixture_bitrate_max'],
+                    backend=self.config['augmentations']['mp3_compression_on_mixture_backend'],
+                    p=self.config['augmentations']['mp3_compression_on_mixture']
+                )
+                mix = apply_aug(samples=mix.cpu().numpy().astype(np.float32), sample_rate=44100)
+                mix = torch.tensor(mix, dtype=torch.float32)
 
-        # If we need given stem (for roformers)
+        # If we need only given stem (for roformers)
         if self.config.training.target_instrument is not None:
             index = self.config.training.instruments.index(self.config.training.target_instrument)
             return res[index], mix

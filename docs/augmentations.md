@@ -1,48 +1,10 @@
-audio:
-  chunk_size: 261120
-  dim_f: 4096
-  dim_t: 256
-  hop_length: 1024
-  n_fft: 8192
-  num_channels: 2
-  sample_rate: 44100
-  min_mean_abs: 0.001
+### Augmentations 
 
-model:
-  act: gelu
-  bottleneck_factor: 4
-  growth: 128
-  norm: InstanceNorm
-  num_blocks_per_scale: 2
-  num_channels: 128
-  num_scales: 5
-  num_subbands: 4
-  scale:
-  - 2
-  - 2
+Augmentations allows to change stems on the fly increasing the size of dataset by creating new samples from old samples. 
+Now control for augmentations is done from config file. Below you can find the example of full config, 
+which includes all available augmentations:
 
-training:
-  batch_size: 6
-  gradient_accumulation_steps: 1
-  grad_clip: 0
-  instruments:
-  - vocals
-  - bass
-  - drums
-  - other
-  lr: 9.0e-05
-  patience: 2
-  reduce_factor: 0.95
-  target_instrument: null
-  num_epochs: 1000
-  num_steps: 1000
-  q: 0.95
-  coarse_loss_clip: true
-  ema_momentum: 0.999
-  optimizer: adam
-  other_fix: false # it's needed for checking on multisong dataset if other is actually instrumental
-  use_amp: true # enable or disable usage of mixed precision (float16) - usually it must be true
-
+```config
 augmentations:
   enable: true # enable or disable all augmentations (to fast disable if needed)
   loudness: true # randomly change loudness of each stem on the range (loudness_min; loudness_max)
@@ -174,9 +136,11 @@ augmentations:
     time_stretch: 0.01
     time_stretch_min_rate: 0.8
     time_stretch_max_rate: 1.25
+```   
 
-
-inference:
-  batch_size: 1
-  dim_t: 256
-  num_overlap: 4
+You can copypaste it into your config to use augmentations.
+Notes: 
+* To completely disable all augmentations you can either remove `augmentations` section from config or set `enable` to `false`.
+* If you want to disable some augmentation, just set it to zero.
+* Augmentations in `all` subsections applied to all stems
+* Augmentations in `vocals`, `bass` etc subsections applied only to corresponding stems. You can create such subsections for all stems which are given in `training.instruments`.
