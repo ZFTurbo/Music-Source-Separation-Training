@@ -491,7 +491,12 @@ class MSSDataset(torch.utils.data.Dataset):
                     backend=self.config['augmentations']['mp3_compression_on_mixture_backend'],
                     p=self.config['augmentations']['mp3_compression_on_mixture']
                 )
-                mix = apply_aug(samples=mix.cpu().numpy().astype(np.float32), sample_rate=44100)
+                mix_conv = mix.cpu().numpy().astype(np.float32)
+                required_shape = mix_conv.shape
+                mix = apply_aug(samples=mix_conv, sample_rate=44100)
+                # Sometimes it gives longer audio (so we cut)
+                if mix.shape != required_shape:
+                    mix = mix[..., :required_shape[-1]]
                 mix = torch.tensor(mix, dtype=torch.float32)
 
         # If we need only given stem (for roformers)
