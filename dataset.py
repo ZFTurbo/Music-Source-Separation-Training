@@ -27,41 +27,6 @@ def load_chunk(path, length, chunk_size, offset=None):
     return x.T
 
 
-def get_transforms_simple(instr, config):
-    if instr == 'vocals':
-        augment = AU.Compose([
-            AU.PitchShift(min_semitones=-5, max_semitones=5, p=0.1),
-            AU.SevenBandParametricEQ(min_gain_db=-9, max_gain_db=9, p=0.25),
-            AU.TanhDistortion(min_distortion=0.1, max_distortion=0.7, p=0.1),
-            AU.Mp3Compression(min_bitrate=32, max_bitrate=320, backend="lameenc", p=0.01), # reduce bitrate (max kbps range: [8, 320]) with probability 0.5
-        ], p=1.0)
-    elif instr == 'bass':
-        augment = AU.Compose([
-            AU.PitchShift(min_semitones=-2, max_semitones=2, p=0.1),
-            AU.SevenBandParametricEQ(min_gain_db=-3, max_gain_db=6, p=0.25),
-            AU.TanhDistortion(min_distortion=0.1, max_distortion=0.5, p=0.2),
-            AU.Mp3Compression(min_bitrate=32, max_bitrate=320, backend="lameenc", p=0.01), # reduce bitrate (max kbps range: [8, 320]) with probability 0.5
-        ], p=1.0)
-    elif instr == 'drums':
-        augment = AU.Compose([
-            AU.PitchShift(min_semitones=-5, max_semitones=5, p=0.33),
-            AU.SevenBandParametricEQ(min_gain_db=-9, max_gain_db=9, p=0.25),
-            AU.TanhDistortion(min_distortion=0.1, max_distortion=0.6, p=0.33),
-            AU.Mp3Compression(min_bitrate=32, max_bitrate=320, backend="lameenc", p=0.01), # reduce bitrate (max kbps range: [8, 320]) with probability 0.5
-        ], p=1.0)
-    elif instr == 'other':
-        augment = AU.Compose([
-            AU.AddGaussianNoise(min_amplitude=0.001, max_amplitude=0.015, p=0.1),
-            AU.TimeStretch(min_rate=0.8, max_rate=1.25, leave_length_unchanged=True, p=0.01),
-            AU.PitchShift(min_semitones=-4, max_semitones=4, p=0.1),
-            AU.Mp3Compression(min_bitrate=32, max_bitrate=320, backend="lameenc", p=0.1), # reduce bitrate (max kbps range: [8, 320]) with probability 0.5
-        ], p=1.0)
-    else:
-        print('Error no augms for: {}'.format(instr))
-        augment = AU.Compose([], p=0.0)
-    return augment
-
-
 class MSSDataset(torch.utils.data.Dataset):
     def __init__(self, config, data_path, metadata_path="metadata.pkl", dataset_type=1):
         self.config = config
