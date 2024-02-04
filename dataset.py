@@ -13,6 +13,8 @@ from tqdm import tqdm
 from glob import glob
 import audiomentations as AU
 import pedalboard as PB
+import warnings
+warnings.filterwarnings("ignore")
 
 
 def load_chunk(path, length, chunk_size, offset=None):
