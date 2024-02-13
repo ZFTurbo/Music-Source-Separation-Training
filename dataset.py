@@ -154,14 +154,15 @@ class MSSDataset(torch.utils.data.Dataset):
                         if random.uniform(0, 1) < prob:
                             s2 = self.load_source(self.metadata, instr)
                             mixup.append(s2)
-                    mixup = np.array(mixup)
+                    mixup = torch.stack(mixup, dim=0)
                     loud_values = np.random.uniform(
                         low=self.config.augmentations.loudness_min,
                         high=self.config.augmentations.loudness_max,
                         size=(len(mixup),)
                     )
+                    loud_values = torch.tensor(loud_values, dtype=torch.float32)
                     mixup *= loud_values[:, None, None]
-                    s1 = mixup.mean(axis=0)
+                    s1 = mixup.mean(dim=0, dtype=torch.float32)
             res.append(s1)
         res = torch.stack(res)
         return res
@@ -481,6 +482,7 @@ class MSSDataset(torch.utils.data.Dataset):
                         high=self.config['augmentations']['loudness_max'],
                         size=(len(res),)
                     )
+                    loud_values = torch.tensor(loud_values, dtype=torch.float32)
                     res *= loud_values[:, None, None]
 
         mix = res.sum(0)
