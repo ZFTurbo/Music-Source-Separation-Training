@@ -106,7 +106,7 @@ def valid(model, args, config, device, verbose=False):
         model = model.module
 
     model.eval()
-    all_mixtures_path = glob.glob(args.valid_path + '/*/mixture.wav')
+    all_mixtures_path = sorted(glob.glob(args.valid_path + '/*/mixture.wav'))
     if verbose:
         print('Total mixtures: {}'.format(len(all_mixtures_path)))
 
