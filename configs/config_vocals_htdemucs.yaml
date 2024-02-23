@@ -40,6 +40,7 @@ augmentations:
 
 inference:
   num_overlap: 2
+  batch_size: 8
 
 model: htdemucs
 
