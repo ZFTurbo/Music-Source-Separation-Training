@@ -88,7 +88,10 @@ class RFFTModule(nn.Module):
         Returns:
         - torch.Tensor: Output tensor after FFT or its inverse operation.
         """
+        dtype = x.dtype
         B, F, T, D = x.shape
+
+        x = x.float() # RuntimeError: cuFFT only supports dimensions whose sizes are powers of two when computing in half precision - cheers @becruily
         if not self.inverse:
             x = torch.fft.rfft(x, dim=2)
             x = torch.view_as_real(x)
@@ -97,6 +100,7 @@ class RFFTModule(nn.Module):
             x = x.reshape(B, F, T, D // 2, 2)
             x = torch.view_as_complex(x)
             x = torch.fft.irfft(x, n=time_dim, dim=2)
+        x = x.to(dtype)
         return x
 
     def extra_repr(self) -> str:
