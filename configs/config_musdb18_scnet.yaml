@@ -30,7 +30,7 @@ training:
   lr: 5.0e-04
   patience: 2
   reduce_factor: 0.95
-  target_instrument: vocals
+  target_instrument: null
   num_epochs: 1000
   num_steps: 1000
   q: 0.95

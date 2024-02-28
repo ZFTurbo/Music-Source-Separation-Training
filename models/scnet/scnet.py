@@ -208,6 +208,7 @@ class SCNet(nn.Module):
             x = rearrange(x, 'b t -> b 1 t')
 
         c = x.shape[1]
+        t = x.shape[-1]
 
         # stft
         x, ps = pack_one(x, '* t')
@@ -238,5 +239,8 @@ class SCNet(nn.Module):
         x = torch.istft(x, **self.stft_kwargs, window=stft_window, return_complex=False)
         x = rearrange(x, '(b n c) t -> b n c t', c=c, n=self.n_sources)
 
-        return x
+        if x.shape[-1] >= t:
+            return x[...,:t]
+        else:
+            return F.pad(x, (0, (t - x.shape[-1])), "constant", 0)
 
