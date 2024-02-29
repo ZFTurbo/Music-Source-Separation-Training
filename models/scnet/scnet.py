@@ -177,6 +177,7 @@ class SCNet(nn.Module):
 
         self.stft_window_fn = partial(default(stft_window_fn, torch.hann_window), win_length)
         self.n_sources = n_sources
+        self.hop_length = hop_length
 
     @staticmethod
     def assert_input_data(*args):
@@ -208,7 +209,9 @@ class SCNet(nn.Module):
             x = rearrange(x, 'b t -> b 1 t')
 
         c = x.shape[1]
-        t = x.shape[-1]
+        
+        stft_pad = self.hop_length - x.shape[-1] % self.hop_length
+        x = F.pad(x, (0, stft_pad))
 
         # stft
         x, ps = pack_one(x, '* t')
@@ -239,8 +242,6 @@ class SCNet(nn.Module):
         x = torch.istft(x, **self.stft_kwargs, window=stft_window, return_complex=False)
         x = rearrange(x, '(b n c) t -> b n c t', c=c, n=self.n_sources)
 
-        if x.shape[-1] >= t:
-            return x[...,:t]
-        else:
-            return F.pad(x, (0, (t - x.shape[-1])), "constant", 0)
+        x = x[..., :-stft_pad] 
 
+        return x
