@@ -176,6 +176,10 @@ class MSSDataset(torch.utils.data.Dataset):
                 source = load_chunk(track_path + f'/{i}.wav', track_length, self.chunk_size)
                 if np.abs(source).mean() >= self.min_mean_abs:  # remove quiet chunks
                     break
+                # sometimes shape incorrect (very rare, need to investigate)
+                if source.shape[1] != self.chunk_size:
+                    print('Chunk size problem...')
+                    continue
                 attempts -= 1
                 if attempts <= 0:
                     print('Attempts max!', track_path)
