@@ -91,7 +91,9 @@ class RFFTModule(nn.Module):
         dtype = x.dtype
         B, F, T, D = x.shape
 
-        x = x.float() # RuntimeError: cuFFT only supports dimensions whose sizes are powers of two when computing in half precision - cheers @becruily
+        # RuntimeError: cuFFT only supports dimensions whose sizes are powers of two when computing in half precision - cheers @becruily
+        # - TODO - Requires some sort of padding fix
+        x = x.float() 
         if not self.inverse:
             x = torch.fft.rfft(x, dim=2)
             x = torch.view_as_real(x)
@@ -142,6 +144,7 @@ class DualPathRNN(nn.Module):
         Initializes DualPathRNN with the specified number of layers, input dimension, and hidden dimension.
         """
         super().__init__()
+        # TODO support + test mamba replacement for RNNModule
 
         self.layers = nn.ModuleList()
         for i in range(1, n_layers + 1):
