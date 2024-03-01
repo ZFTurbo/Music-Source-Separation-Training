@@ -18,6 +18,11 @@ model:
   win_length: 4096
   stft_normalized: false
 
+  use_mamba: true
+  d_state: 16
+  d_conv: 4
+  d_expand: 2
+
 training:
   batch_size: 10
   gradient_accumulation_steps: 1

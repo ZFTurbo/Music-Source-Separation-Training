@@ -1,5 +1,31 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as Func
+
+class RMSNorm(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.scale = dim ** 0.5
+        self.gamma = nn.Parameter(torch.ones(dim))
+
+    def forward(self, x):
+        return Func.normalize(x, dim=-1) * self.scale * self.gamma
+
+
+class MambaModule(nn.Module):
+    def __init__(self, d_model, d_state, d_conv, d_expand):
+        super().__init__()
+        self.norm = RMSNorm(dim=d_model)
+        self.mamba = Mamba(
+                d_model=d_model, 
+                d_state=d_state, 
+                d_conv=d_conv, 
+                d_expand=d_expand
+            )
+
+    def forward(self, x):
+        x = x + self.mamba(self.norm(x))
+        return x
 
 
 class RNNModule(nn.Module):
@@ -91,9 +117,9 @@ class RFFTModule(nn.Module):
         dtype = x.dtype
         B, F, T, D = x.shape
 
-        # RuntimeError: cuFFT only supports dimensions whose sizes are powers of two when computing in half precision - cheers @becruily
-        # - TODO - Requires some sort of padding fix
-        x = x.float() 
+        # RuntimeError: cuFFT only supports dimensions whose sizes are powers of two when computing in half precision
+        x = x.float()
+
         if not self.inverse:
             x = torch.fft.rfft(x, dim=2)
             x = torch.view_as_real(x)
@@ -102,6 +128,7 @@ class RFFTModule(nn.Module):
             x = x.reshape(B, F, T, D // 2, 2)
             x = torch.view_as_complex(x)
             x = torch.fft.irfft(x, n=time_dim, dim=2)
+        
         x = x.to(dtype)
         return x
 
@@ -139,33 +166,37 @@ class DualPathRNN(nn.Module):
         n_layers: int,
         input_dim: int,
         hidden_dim: int,
+
+        use_mamba: bool = False,
+        d_state: int = 16,
+        d_conv: int = 4,
+        d_expand: int = 2
     ):
         """
         Initializes DualPathRNN with the specified number of layers, input dimension, and hidden dimension.
         """
         super().__init__()
-        # TODO support + test mamba replacement for RNNModule
+
+        if use_mamba:
+            from mamba_ssm.modules.mamba_simple import Mamba
+            net = MambaModule
+            dkwargs = {"d_model": input_dim, "d_state": d_state, "d_conv": d_conv, "d_expand": d_expand}
+            ukwargs = {"d_model": input_dim * 2, "d_state": d_state, "d_conv": d_conv, "d_expand": d_expand * 2}
+        else:
+            net = RNNModule
+            dkwargs = {"input_dim": input_dim, "hidden_dim": hidden_dim}
+            ukwargs = {"input_dim": input_dim * 2, "hidden_dim": hidden_dim * 2}
 
         self.layers = nn.ModuleList()
         for i in range(1, n_layers + 1):
-            if i % 2 == 1:
-                layer = nn.ModuleList(
-                    [
-                        RNNModule(input_dim=input_dim, hidden_dim=hidden_dim),
-                        RNNModule(input_dim=input_dim, hidden_dim=hidden_dim),
-                        RFFTModule(inverse=False),
-                    ]
-                )
-            else:
-                layer = nn.ModuleList(
-                    [
-                        RNNModule(input_dim=input_dim * 2, hidden_dim=hidden_dim * 2),
-                        RNNModule(input_dim=input_dim * 2, hidden_dim=hidden_dim * 2),
-                        RFFTModule(inverse=True),
-                    ]
-                )
+            kwargs = dkwargs if i % 2 == 1 else ukwargs
+            layer = nn.ModuleList([
+                net(**kwargs),
+                net(**kwargs),
+                RFFTModule(inverse=(i % 2 == 0)),
+            ])
             self.layers.append(layer)
-
+        
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Performs forward pass through the DualPathRNN.
@@ -176,6 +207,7 @@ class DualPathRNN(nn.Module):
         Returns:
         - torch.Tensor: Output tensor of shape (B, F, T, D).
         """
+
         time_dim = x.shape[2]
 
         for time_layer, freq_layer, rfft_layer in self.layers:
@@ -192,4 +224,5 @@ class DualPathRNN(nn.Module):
             x = x.permute(0, 2, 1, 3)
 
             x = rfft_layer(x, time_dim)
+        
         return x

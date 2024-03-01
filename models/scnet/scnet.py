@@ -88,7 +88,7 @@ class SCNet(nn.Module):
 
     Args:
     - n_fft (int): Number of FFTs to determine the frequency dimension of the input.
-    - dimes (List[int]): List of channel dimensions for each block.
+    - dims (List[int]): List of channel dimensions for each block.
     - bandsplit_ratios (List[float]): List of ratios for splitting the frequency bands.
     - downsample_strides (List[int]): List of stride values for downsampling in each block.
     - n_conv_modules (List[int]): List specifying the number of convolutional modules in each block.
@@ -121,7 +121,8 @@ class SCNet(nn.Module):
         hop_length: int = 1024,
         win_length: int = 4096,
         stft_window_fn: Optional[Callable] = None,
-        stft_normalized: bool = False
+        stft_normalized: bool = False,
+        **kwargs
     ):
         """
         Initializes SCNet with input parameters.
@@ -155,6 +156,7 @@ class SCNet(nn.Module):
             n_layers=n_rnn_layers,
             input_dim=dims[-1],
             hidden_dim=rnn_hidden_dim,
+            **kwargs
         )
         self.su_blocks = nn.ModuleList(
             SUBlock(
