@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore")
 def run_folder(model, args, config, device, verbose=False):
     start_time = time.time()
     model.eval()
-    all_mixtures_path = glob.glob(f'{args.input_folder}/*.{args.input_format}')
+    all_mixtures_path = glob.glob(f'{args.input_folder}/*.{args.audio_format}')
     print('Total tracks found: {}'.format(len(all_mixtures_path)))
 
     instruments = config.training.instruments
@@ -82,7 +82,10 @@ def proc_folder(args):
     model = get_model_from_config(args.model_type, config)
     if args.start_check_point != '':
         print('Start from checkpoint: {}'.format(args.start_check_point))
-        state_dict = torch.load(args.start_check_point)
+        if torch.cuda.is_available():
+            state_dict = torch.load(args.start_check_point)
+        else:
+            state_dict = torch.load(args.start_check_point, map_location=torch.device('cpu'))
         if args.model_type == 'htdemucs':
             # Fix for htdemucs pround etrained models
             if 'state' in state_dict:
