@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore")
 def run_folder(model, args, config, device, verbose=False):
     start_time = time.time()
     model.eval()
-    all_mixtures_path = glob.glob(args.input_folder + '/*.wav')
+    all_mixtures_path = glob.glob(f'{args.input_folder}/*.{args.input_format}')
     print('Total tracks found: {}'.format(len(all_mixtures_path)))
 
     instruments = config.training.instruments
@@ -61,6 +61,7 @@ def proc_folder(args):
     parser.add_argument("--config_path", type=str, help="path to config file")
     parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint to valid weights")
     parser.add_argument("--input_folder", type=str, help="folder with mixtures to process")
+    parser.add_argument("--input_format", choices=["mp3", "wav", "flac"], default="wav", type=str, help="input audio format")
     parser.add_argument("--store_dir", default="", type=str, help="path to store results as wav file")
     parser.add_argument("--device_ids", nargs='+', type=int, default=0, help='list of gpu ids')
     if args is None:
