@@ -61,8 +61,20 @@ class MSSDataset(torch.utils.data.Dataset):
 
                 track_paths = [path for path in track_paths if os.path.basename(path)[0] != '.' and os.path.isdir(path)]
                 for path in tqdm(track_paths):
-                    length = len(sf.read(path + f'/{instruments[0]}.wav')[0])
-                    metadata.append((path, length))
+                    # Check lengths of all instruments (it can be different in some cases)
+                    lengths_arr = []
+                    for instr in instruments:
+                        length = len(sf.read(path + f'/{instr}.wav')[0])
+                        lengths_arr.append(length)
+                    lengths_arr = np.array(lengths_arr)
+                    if lengths_arr.min() != lengths_arr.max():
+                        print('Warning: lengths of stems are different for path: {}. ({} != {})'.format(
+                            path,
+                            lengths_arr.min(),
+                            lengths_arr.max())
+                        )
+                    # We use minimum to allow overflow for soundfile read in non-equal length cases
+                    metadata.append((path, lengths_arr.min()))
             elif self.dataset_type == 2:
                 metadata = dict()
                 for instr in self.instruments:
@@ -176,10 +188,6 @@ class MSSDataset(torch.utils.data.Dataset):
                 source = load_chunk(track_path + f'/{i}.wav', track_length, self.chunk_size)
                 if np.abs(source).mean() >= self.min_mean_abs:  # remove quiet chunks
                     break
-                # sometimes shape incorrect (very rare, need to investigate)
-                if source.shape[1] != self.chunk_size:
-                    print('Chunk size problem...')
-                    continue
                 attempts -= 1
                 if attempts <= 0:
                     print('Attempts max!', track_path)
