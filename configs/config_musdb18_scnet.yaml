@@ -1,46 +1,30 @@
 audio:
-  chunk_size: 131584
-  dim_f: 1024
-  dim_t: 256
-  hop_length: 512
-  n_fft: 2048
+  chunk_size: 264600
   num_channels: 2
   sample_rate: 44100
   min_mean_abs: 0.001
 
 model:
-  dim: 192
-  depth: 8
-  stereo: true
-  num_stems: 1
-  time_transformer_depth: 1
-  freq_transformer_depth: 1
-  linear_transformer_depth: 0
-  num_bands: 60
-  dim_head: 64
-  heads: 8
-  attn_dropout: 0.1
-  ff_dropout: 0.1
-  flash_attn: True
-  dim_freqs_in: 1025
-  sample_rate: 44100 # needed for mel filter bank from librosa
-  stft_n_fft: 2048
-  stft_hop_length: 512
-  stft_win_length: 2048
-  stft_normalized: False
-  mask_estimator_depth: 2
-  multi_stft_resolution_loss_weight: 1.0
-  multi_stft_resolutions_window_sizes: !!python/tuple
-    - 4096
-    - 2048
-    - 1024
-    - 512
-    - 256
-  multi_stft_hop_size: 147
-  multi_stft_normalized: False
+  dims: [4, 32, 64, 128]
+  bandsplit_ratios: [.175, .392, .433]
+  downsample_strides: [1, 4, 16]
+  n_conv_modules: [3, 2, 1]
+  n_rnn_layers: 6
+  rnn_hidden_dim: 128
+  n_sources: 4
+
+  n_fft: 4096
+  hop_length: 1024
+  win_length: 4096
+  stft_normalized: false
+
+  use_mamba: true
+  d_state: 16
+  d_conv: 4
+  d_expand: 2
 
 training:
-  batch_size: 7
+  batch_size: 10
   gradient_accumulation_steps: 1
   grad_clip: 0
   instruments:
@@ -48,10 +32,10 @@ training:
     - bass
     - drums
     - other
-  lr: 5.0e-05
+  lr: 5.0e-04
   patience: 2
   reduce_factor: 0.95
-  target_instrument: vocals
+  target_instrument: null
   num_epochs: 1000
   num_steps: 1000
   q: 0.95
@@ -66,6 +50,13 @@ augmentations:
   loudness: true # randomly change loudness of each stem on the range (loudness_min; loudness_max)
   loudness_min: 0.5
   loudness_max: 1.5
+  mixup: true # mix several stems of same type with some probability (only works for dataset types: 1, 2, 3)
+  mixup_probs:
+    !!python/tuple # 2 additional stems of the same type (1st with prob 0.2, 2nd with prob 0.02)
+    - 0.2
+    - 0.02
+  mixup_loudness_min: 0.5
+  mixup_loudness_max: 1.5
 
 inference:
   batch_size: 1
