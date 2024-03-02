@@ -14,6 +14,7 @@ Available models for training:
 * Mel-Band RoFormer [[Paper](https://arxiv.org/abs/2310.01809), [Repository](https://github.com/lucidrains/BS-RoFormer)]. Key: `mel_band_roformer`.
 * Swin Upernet [[Paper](https://arxiv.org/abs/2103.14030)] Key: `swin_upernet`.
 * BandIt Plus [[Paper](https://arxiv.org/abs/2309.02539), [Repository](https://github.com/karnwatcharasupat/bandit)] Key: `bandit`.
+* SCNet [[Paper](https://arxiv.org/abs/2401.13276), [Unofficial Repository](https://github.com/amanteur/SCNet-PyTorch)] Key: `scnet`.
 
  **Note 1**: For `segm_models` there are many different encoders is possible. [Look here](https://github.com/qubvel/segmentation_models.pytorch#encoders-).
  
