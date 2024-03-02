@@ -160,21 +160,22 @@ class MSSDataset(torch.utils.data.Dataset):
             s1 = self.load_source(self.metadata, instr)
             # Mixup augmentation. Multiple mix of same type of stems
             if self.aug:
-                if self.config.augmentations.mixup:
-                    mixup = [s1]
-                    for prob in self.config.augmentations.mixup_probs:
-                        if random.uniform(0, 1) < prob:
-                            s2 = self.load_source(self.metadata, instr)
-                            mixup.append(s2)
-                    mixup = torch.stack(mixup, dim=0)
-                    loud_values = np.random.uniform(
-                        low=self.config.augmentations.loudness_min,
-                        high=self.config.augmentations.loudness_max,
-                        size=(len(mixup),)
-                    )
-                    loud_values = torch.tensor(loud_values, dtype=torch.float32)
-                    mixup *= loud_values[:, None, None]
-                    s1 = mixup.mean(dim=0, dtype=torch.float32)
+                if 'mixup' in self.config['augmentations']:
+                    if self.config['augmentations'].mixup:
+                        mixup = [s1]
+                        for prob in self.config.augmentations.mixup_probs:
+                            if random.uniform(0, 1) < prob:
+                                s2 = self.load_source(self.metadata, instr)
+                                mixup.append(s2)
+                        mixup = torch.stack(mixup, dim=0)
+                        loud_values = np.random.uniform(
+                            low=self.config.augmentations.loudness_min,
+                            high=self.config.augmentations.loudness_max,
+                            size=(len(mixup),)
+                        )
+                        loud_values = torch.tensor(loud_values, dtype=torch.float32)
+                        mixup *= loud_values[:, None, None]
+                        s1 = mixup.mean(dim=0, dtype=torch.float32)
             res.append(s1)
         res = torch.stack(res)
         return res
