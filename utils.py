@@ -114,6 +114,7 @@ def demix_track_demucs(config, model, mix, device):
     S = len(config.training.instruments)
     C = config.training.samplerate * config.training.segment
     N = config.inference.num_overlap
+    batch_size = config.inference.batch_size
     step = C // N
     # print(S, C, N, step, mix.shape, mix.device)
 
@@ -124,46 +125,34 @@ def demix_track_demucs(config, model, mix, device):
             result = torch.zeros(req_shape, dtype=torch.float32).to(device)
             counter = torch.zeros(req_shape, dtype=torch.float32).to(device)
             i = 0
-            all_parts = []
-            all_lengths = []
-            all_steps = []
+            batch_data = []
+            batch_locations = []
             while i < mix.shape[1]:
                 # print(i, i + C, mix.shape[1])
                 part = mix[:, i:i + C]
                 length = part.shape[-1]
                 if length < C:
                     part = nn.functional.pad(input=part, pad=(0, C - length, 0, 0), mode='constant', value=0)
-                all_parts.append(part)
-                all_lengths.append(length)
-                all_steps.append(i)
+                batch_data.append(part)
+                batch_locations.append((i, length))
                 i += step
-            all_parts = torch.stack(all_parts, dim=0)
-            # print(all_parts.shape)
 
-            start_time = time.time()
-            res = model(all_parts)
-            # print(res.shape)
-            # print("Time:", time.time() - start_time)
-            # print(part.mean(), part.max(), part.min())
-            # print(x.mean(), x.max(), x.min())
+                if len(batch_data) >= batch_size or (i >= mix.shape[1]):
+                    arr = torch.stack(batch_data, dim=0)
+                    x = model(arr)
+                    for j in range(len(batch_locations)):
+                        start, l = batch_locations[j]
+                        result[..., start:start+l] += x[j][..., :l]
+                        counter[..., start:start+l] += 1.
+                    batch_data = []
+                    batch_locations = []
 
-            for j in range(res.shape[0]):
-                x = res[j]
-                length = all_lengths[j]
-                i = all_steps[j]
-                # Sometimes model gives nan...
-                if torch.isnan(x[..., :length]).any():
-                    result[..., i:i+length] += all_parts[j][..., :length].to(device)
-                else:
-                    result[..., i:i + length] += x[..., :length]
-                counter[..., i:i+length] += 1.
-
-            # print(result.mean(), result.max(), result.min())
-            # print(counter.mean(), counter.max(), counter.min())
             estimated_sources = result / counter
+            estimated_sources = estimated_sources.cpu().numpy()
+            np.nan_to_num(estimated_sources, copy=False, nan=0.0)
 
     if S > 1:
-        return {k: v for k, v in zip(config.training.instruments, estimated_sources.cpu().numpy())}
+        return {k: v for k, v in zip(config.training.instruments, estimated_sources)}
     else:
         return estimated_sources
 

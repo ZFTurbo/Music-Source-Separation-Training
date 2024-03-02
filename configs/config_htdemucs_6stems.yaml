@@ -32,9 +32,7 @@ augmentations:
   loudness_min: 0.5
   loudness_max: 1.5
   mixup: true # mix several stems of same type with some probability (only works for dataset types: 1, 2, 3)
-  mixup_probs: !!python/tuple # 2 additional stems of the same type (1st with prob 0.2, 2nd with prob 0.02)
-    - 0.2
-    - 0.02
+  mixup_probs: [0.2, 0.02]
   mixup_loudness_min: 0.5
   mixup_loudness_max: 1.5
   all:
@@ -44,6 +42,7 @@ augmentations:
 
 inference:
   num_overlap: 4
+  batch_size: 8
 
 model: htdemucs
 
