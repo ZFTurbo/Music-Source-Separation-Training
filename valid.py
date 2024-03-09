@@ -228,6 +228,7 @@ def check_validation(args):
         args = parser.parse_args(args)
 
     torch.backends.cudnn.benchmark = True
+    torch.multiprocessing.set_start_method('spawn')
 
     with open(args.config_path) as f:
         if args.model_type == 'htdemucs':
