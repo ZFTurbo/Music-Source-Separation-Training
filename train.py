@@ -6,6 +6,7 @@ import random
 import argparse
 import yaml
 import time
+import copy
 from ml_collections import ConfigDict
 from omegaconf import OmegaConf
 from tqdm import tqdm
@@ -99,6 +100,67 @@ def load_not_compatible_weights(model, weights, verbose=False):
         new_model
     )
 
+def valid(model, args, config, device, verbose=False):
+    # For multiGPU extract single model
+    if len(args.device_ids) > 1:
+        model = model.module
+
+    model.eval()
+    all_mixtures_path = sorted(glob.glob(args.valid_path + '/*/mixture.wav'))
+    if verbose:
+        print('Total mixtures: {}'.format(len(all_mixtures_path)))
+
+    instruments = config.training.instruments
+    if config.training.target_instrument is not None:
+        instruments = [config.training.target_instrument]
+
+    all_sdr = dict()
+    for instr in config.training.instruments:
+        all_sdr[instr] = []
+
+    if not verbose:
+        all_mixtures_path = tqdm(all_mixtures_path)
+
+    pbar_dict = {}
+    for path in all_mixtures_path:
+        mix, sr = sf.read(path)
+        folder = os.path.dirname(path)
+        if verbose:
+            print('Song: {}'.format(os.path.basename(folder)))
+        mixture = torch.tensor(mix.T, dtype=torch.float32)
+        if args.model_type == 'htdemucs':
+            res = demix_track_demucs(config, model, mixture, device)
+        else:
+            res = demix_track(config, model, mixture, device)
+        for instr in instruments:
+            if instr != 'other' or config.training.other_fix is False:
+                track, sr1 = sf.read(folder + '/{}.wav'.format(instr))
+            else:
+                # other is actually instrumental
+                track, sr1 = sf.read(folder + '/{}.wav'.format('vocals'))
+                track = mix - track
+            # sf.write("{}.wav".format(instr), res[instr].T, sr, subtype='FLOAT')
+            references = np.expand_dims(track, axis=0)
+            estimates = np.expand_dims(res[instr].T, axis=0)
+            sdr_val = sdr(references, estimates)[0]
+            if verbose:
+                print(instr, res[instr].shape, sdr_val)
+            all_sdr[instr].append(sdr_val)
+            pbar_dict['sdr_{}'.format(instr)] = sdr_val
+        if not verbose:
+            all_mixtures_path.set_postfix(pbar_dict)
+
+    sdr_avg = 0.0
+    for instr in instruments:
+        sdr_val = np.array(all_sdr[instr]).mean()
+        print("Instr SDR {}: {:.4f}".format(instr, sdr_val))
+        sdr_avg += sdr_val
+    sdr_avg /= len(instruments)
+    if len(instruments) > 1:
+        print('SDR Avg: {:.4f}'.format(sdr_avg))
+    return sdr_avg
+
+
 def proc_list_of_files(
     mixture_paths,
     model,
@@ -157,7 +219,9 @@ def proc_list_of_files(
 
 
 def valid_mp(proc_id, queue, all_mixtures_path, model, args, config, device, return_dict):
-    m1 = model.eval().to(device)
+    m1 = model
+    # m1 = copy.deepcopy(m1)
+    m1 = m1.eval().to(device)
     if proc_id == 0:
         progress_bar = tqdm(total=len(all_mixtures_path))
     all_sdr = dict()
@@ -183,6 +247,8 @@ def valid_mp(proc_id, queue, all_mixtures_path, model, args, config, device, ret
 
 def valid_multi_gpu(model, args, config, verbose=False):
     device_ids = args.device_ids
+    model = model.to('cpu')
+
     # For multiGPU extract single model
     if len(device_ids) > 1:
         model = model.module
@@ -190,6 +256,7 @@ def valid_multi_gpu(model, args, config, verbose=False):
     all_mixtures_path = sorted(glob.glob(args.valid_path + '/*/mixture.wav'))
 
     model = model.to('cpu')
+    torch.cuda.empty_cache()
     queue = torch.multiprocessing.Queue()
     processes = []
     return_dict = torch.multiprocessing.Manager().dict()
@@ -418,7 +485,20 @@ def train_model(args):
             loss.detach()
 
         print('Training loss: {:.6f}'.format(loss_val / total))
-        sdr_avg = valid_multi_gpu(model, args, config, verbose=False)
+
+        # Save last
+        store_path = args.results_path + '/last_{}.ckpt'.format(args.model_type)
+        state_dict = model.state_dict() if len(device_ids) <= 1 else model.module.state_dict()
+        torch.save(
+            state_dict,
+            store_path
+        )
+
+        # if you have problem with multiproc validation change 0 to 1
+        if 0:
+            sdr_avg = valid(model, args, config, device, verbose=False)
+        else:
+            sdr_avg = valid_multi_gpu(model, args, config, verbose=False)
         if sdr_avg > best_sdr:
             store_path = args.results_path + '/model_{}_ep_{}_sdr_{:.4f}.ckpt'.format(args.model_type, epoch, sdr_avg)
             print('Store weights: {}'.format(store_path))
@@ -429,14 +509,6 @@ def train_model(args):
             )
             best_sdr = sdr_avg
         scheduler.step(sdr_avg)
-
-        # Save last
-        store_path = args.results_path + '/last_{}.ckpt'.format(args.model_type)
-        state_dict = model.state_dict() if len(device_ids) <= 1 else model.module.state_dict()
-        torch.save(
-            state_dict,
-            store_path
-        )
 
 
 if __name__ == "__main__":
