@@ -23,7 +23,15 @@ warnings.filterwarnings("ignore")
 from utils import demix_track, demix_track_demucs, sdr, get_model_from_config
 
 
-def proc_list_of_files(all_mixtures_path, model, args, config, device, verbose=False, is_tqdm=True):
+def proc_list_of_files(
+    mixture_paths,
+    model,
+    args,
+    config,
+    device,
+    verbose=False,
+    is_tqdm=True
+):
     instruments = config.training.instruments
     if config.training.target_instrument is not None:
         instruments = [config.training.target_instrument]
@@ -37,9 +45,9 @@ def proc_list_of_files(all_mixtures_path, model, args, config, device, verbose=F
         all_sdr[instr] = []
 
     if is_tqdm:
-        all_mixtures_path = tqdm(all_mixtures_path)
+        mixture_paths = tqdm(mixture_paths)
 
-    for path in all_mixtures_path:
+    for path in mixture_paths:
         mix, sr = sf.read(path)
         folder = os.path.dirname(path)
         folder_name = os.path.abspath(folder)
@@ -76,7 +84,7 @@ def proc_list_of_files(all_mixtures_path, model, args, config, device, verbose=F
                 pbar_dict['sdr_{}'.format(instr)] = sdr_val
 
             try:
-                all_mixtures_path.set_postfix(pbar_dict)
+                mixture_paths.set_postfix(pbar_dict)
             except Exception as e:
                 pass
 
@@ -120,13 +128,30 @@ def valid(model, args, config, device, verbose=False):
     return sdr_avg
 
 
-def valid_mp(proc_id, all_mixtures_path, model, args, config, device, return_dict):
-    m1 = model
-    m1.eval()
-    m1.to(device)
-    all_sdr = proc_list_of_files(all_mixtures_path, m1, args, config, device, False, False)
+def valid_mp(proc_id, queue, all_mixtures_path, model, args, config, device, return_dict):
+    m1 = model.eval().to(device)
+    if proc_id == 0:
+        progress_bar = tqdm(total=len(all_mixtures_path))
+    all_sdr = dict()
+    for instr in config.training.instruments:
+        all_sdr[instr] = []
+    while True:
+        current_step, path = queue.get()
+        if path is None:  # check for sentinel value
+            break
+        sdr_single = proc_list_of_files([path], m1, args, config, device, False, False)
+        pbar_dict = {}
+        for instr in config.training.instruments:
+            all_sdr[instr] += sdr_single[instr]
+            if len(sdr_single[instr]) > 0:
+                pbar_dict['sdr_{}'.format(instr)] = "{:.4f}".format(sdr_single[instr][0])
+        if proc_id == 0:
+            progress_bar.update(current_step - progress_bar.n)
+            progress_bar.set_postfix(pbar_dict)
+        # print(f"Inference on process {proc_id}", all_sdr)
     return_dict[proc_id] = all_sdr
     return
+
 
 def valid_multi_gpu(model, args, config, device_ids, verbose=False):
     start_time = time.time()
@@ -135,19 +160,20 @@ def valid_multi_gpu(model, args, config, device_ids, verbose=False):
     print('Overlap: {} Batch size: {}'.format(config.inference.num_overlap, config.inference.batch_size))
 
     model = model.to('cpu')
-    proc_mixtures = np.array_split(all_mixtures_path, len(device_ids))
+    queue = torch.multiprocessing.Queue()
     processes = []
     return_dict = torch.multiprocessing.Manager().dict()
     for i, device in enumerate(device_ids):
         device = 'cuda:{}'.format(device)
-        print('Device: {}. Proc: {}'.format(device, len(proc_mixtures[i])))
-        p = torch.multiprocessing.Process(target=valid_mp, args=(i, proc_mixtures[i], model, args, config, device, return_dict))
+        p = torch.multiprocessing.Process(target=valid_mp, args=(i, queue, all_mixtures_path, model, args, config, device, return_dict))
         p.start()
         processes.append(p)
+    for i, path in enumerate(all_mixtures_path):
+        queue.put((i, path))
+    for _ in range(len(device_ids)):
+        queue.put((None, None))  # sentinel value to signal subprocesses to exit
     for p in processes:
         p.join()  # wait for all subprocesses to finish
-
-    # print(return_dict)
 
     all_sdr = dict()
     for instr in config.training.instruments:
