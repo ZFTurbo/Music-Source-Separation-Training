@@ -93,7 +93,7 @@ def proc_list_of_files(
 
 def valid(model, args, config, device, verbose=False):
     start_time = time.time()
-    model.eval()
+    model.eval().to(device)
     all_mixtures_path = glob.glob(args.valid_path + '/*/mixture.wav')
     print('Total mixtures: {}'.format(len(all_mixtures_path)))
     print('Overlap: {} Batch size: {}'.format(config.inference.num_overlap, config.inference.batch_size))
@@ -164,7 +164,10 @@ def valid_multi_gpu(model, args, config, device_ids, verbose=False):
     processes = []
     return_dict = torch.multiprocessing.Manager().dict()
     for i, device in enumerate(device_ids):
-        device = 'cuda:{}'.format(device)
+        if torch.cuda.is_available():
+            device = 'cuda:{}'.format(device)
+        else:
+            device = 'cpu'
         p = torch.multiprocessing.Process(target=valid_mp, args=(i, queue, all_mixtures_path, model, args, config, device, return_dict))
         p.start()
         processes.append(p)
@@ -247,11 +250,9 @@ def check_validation(args):
     device_ids = args.device_ids
     if torch.cuda.is_available():
         device = torch.device('cuda:0')
-        model = model.to(device)
     else:
         device = 'cpu'
         print('CUDA is not available. Run validation on CPU. It will be very slow...')
-        model = model.to(device)
 
     if torch.cuda.is_available() and len(device_ids) > 1:
         valid_multi_gpu(model, args, config, device_ids, verbose=False)
