@@ -99,17 +99,14 @@ def load_not_compatible_weights(model, weights, verbose=False):
         new_model
     )
 
-
-def valid(model, args, config, device, verbose=False):
-    # For multiGPU extract single model
-    if len(args.device_ids) > 1:
-        model = model.module
-
-    model.eval()
-    all_mixtures_path = sorted(glob.glob(args.valid_path + '/*/mixture.wav'))
-    if verbose:
-        print('Total mixtures: {}'.format(len(all_mixtures_path)))
-
+def proc_list_of_files(
+    mixture_paths,
+    model,
+    args,
+    config,
+    device,
+    verbose=False,
+):
     instruments = config.training.instruments
     if config.training.target_instrument is not None:
         instruments = [config.training.target_instrument]
@@ -118,37 +115,110 @@ def valid(model, args, config, device, verbose=False):
     for instr in config.training.instruments:
         all_sdr[instr] = []
 
-    if not verbose:
-        all_mixtures_path = tqdm(all_mixtures_path)
-
-    pbar_dict = {}
-    for path in all_mixtures_path:
+    for path in mixture_paths:
         mix, sr = sf.read(path)
         folder = os.path.dirname(path)
+        folder_name = os.path.abspath(folder)
         if verbose:
-            print('Song: {}'.format(os.path.basename(folder)))
+            print('Song: {}'.format(folder_name))
         mixture = torch.tensor(mix.T, dtype=torch.float32)
         if args.model_type == 'htdemucs':
             res = demix_track_demucs(config, model, mixture, device)
         else:
             res = demix_track(config, model, mixture, device)
-        for instr in instruments:
-            if instr != 'other' or config.training.other_fix is False:
-                track, sr1 = sf.read(folder + '/{}.wav'.format(instr))
-            else:
-                # other is actually instrumental
-                track, sr1 = sf.read(folder + '/{}.wav'.format('vocals'))
-                track = mix - track
-            # sf.write("{}.wav".format(instr), res[instr].T, sr, subtype='FLOAT')
-            references = np.expand_dims(track, axis=0)
-            estimates = np.expand_dims(res[instr].T, axis=0)
-            sdr_val = sdr(references, estimates)[0]
-            if verbose:
-                print(instr, res[instr].shape, sdr_val)
-            all_sdr[instr].append(sdr_val)
-            pbar_dict['sdr_{}'.format(instr)] = sdr_val
-        if not verbose:
-            all_mixtures_path.set_postfix(pbar_dict)
+        if 1:
+            pbar_dict = {}
+            for instr in instruments:
+                if instr != 'other' or config.training.other_fix is False:
+                    try:
+                        track, sr1 = sf.read(folder + '/{}.wav'.format(instr))
+                    except Exception as e:
+                        # print('No data for stem: {}. Skip!'.format(instr))
+                        continue
+                else:
+                    # other is actually instrumental
+                    track, sr1 = sf.read(folder + '/{}.wav'.format('vocals'))
+                    track = mix - track
+
+                references = np.expand_dims(track, axis=0)
+                estimates = np.expand_dims(res[instr].T, axis=0)
+                sdr_val = sdr(references, estimates)[0]
+                if verbose:
+                    print(instr, res[instr].shape, sdr_val)
+                all_sdr[instr].append(sdr_val)
+                pbar_dict['sdr_{}'.format(instr)] = sdr_val
+
+            try:
+                mixture_paths.set_postfix(pbar_dict)
+            except Exception as e:
+                pass
+
+    return all_sdr
+
+
+def valid_mp(proc_id, queue, all_mixtures_path, model, args, config, device, return_dict):
+    m1 = model.eval().to(device)
+    if proc_id == 0:
+        progress_bar = tqdm(total=len(all_mixtures_path))
+    all_sdr = dict()
+    for instr in config.training.instruments:
+        all_sdr[instr] = []
+    while True:
+        current_step, path = queue.get()
+        if path is None:  # check for sentinel value
+            break
+        sdr_single = proc_list_of_files([path], m1, args, config, device, False)
+        pbar_dict = {}
+        for instr in config.training.instruments:
+            all_sdr[instr] += sdr_single[instr]
+            if len(sdr_single[instr]) > 0:
+                pbar_dict['sdr_{}'.format(instr)] = "{:.4f}".format(sdr_single[instr][0])
+        if proc_id == 0:
+            progress_bar.update(current_step - progress_bar.n)
+            progress_bar.set_postfix(pbar_dict)
+        # print(f"Inference on process {proc_id}", all_sdr)
+    return_dict[proc_id] = all_sdr
+    return
+
+
+def valid_multi_gpu(model, args, config, verbose=False):
+    device_ids = args.device_ids
+    # For multiGPU extract single model
+    if len(device_ids) > 1:
+        model = model.module
+
+    all_mixtures_path = sorted(glob.glob(args.valid_path + '/*/mixture.wav'))
+    print('Total mixtures: {}'.format(len(all_mixtures_path)))
+    print('Overlap: {} Batch size: {}'.format(config.inference.num_overlap, config.inference.batch_size))
+
+    model = model.to('cpu')
+    queue = torch.multiprocessing.Queue()
+    processes = []
+    return_dict = torch.multiprocessing.Manager().dict()
+    for i, device in enumerate(device_ids):
+        if torch.cuda.is_available():
+            device = 'cuda:{}'.format(device)
+        else:
+            device = 'cpu'
+        p = torch.multiprocessing.Process(target=valid_mp, args=(i, queue, all_mixtures_path, model, args, config, device, return_dict))
+        p.start()
+        processes.append(p)
+    for i, path in enumerate(all_mixtures_path):
+        queue.put((i, path))
+    for _ in range(len(device_ids)):
+        queue.put((None, None))  # sentinel value to signal subprocesses to exit
+    for p in processes:
+        p.join()  # wait for all subprocesses to finish
+
+    all_sdr = dict()
+    for instr in config.training.instruments:
+        all_sdr[instr] = []
+        for i in range(len(device_ids)):
+            all_sdr[instr] += return_dict[i][instr]
+
+    instruments = config.training.instruments
+    if config.training.target_instrument is not None:
+        instruments = [config.training.target_instrument]
 
     sdr_avg = 0.0
     for instr in instruments:
@@ -245,7 +315,7 @@ def train_model(args):
         model = model.to(device)
 
     if 0:
-        valid(model, args, config, device, verbose=True)
+        valid_multi_gpu(model, args, config, verbose=True)
 
     if config.training.optimizer == 'adam':
         optimizer = Adam(model.parameters(), lr=config.training.lr)
@@ -288,7 +358,7 @@ def train_model(args):
     print('Train for: {}'.format(config.training.num_epochs))
     best_sdr = -100
     for epoch in range(config.training.num_epochs):
-        model.train()
+        model.train().to(device)
         print('Train epoch: {} Learning rate: {}'.format(epoch, optimizer.param_groups[0]['lr']))
         loss_val = 0.
         total = 0
@@ -346,7 +416,7 @@ def train_model(args):
             loss.detach()
 
         print('Training loss: {:.6f}'.format(loss_val / total))
-        sdr_avg = valid(model, args, config, device, verbose=False)
+        sdr_avg = valid_multi_gpu(model, args, config, verbose=False)
         if sdr_avg > best_sdr:
             store_path = args.results_path + '/model_{}_ep_{}_sdr_{:.4f}.ckpt'.format(args.model_type, epoch, sdr_avg)
             print('Store weights: {}'.format(store_path))
