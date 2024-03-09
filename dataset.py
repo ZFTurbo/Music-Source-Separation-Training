@@ -30,10 +30,13 @@ def load_chunk(path, length, chunk_size, offset=None):
 
 
 class MSSDataset(torch.utils.data.Dataset):
-    def __init__(self, config, data_path, metadata_path="metadata.pkl", dataset_type=1):
+    def __init__(self, config, data_path, metadata_path="metadata.pkl", dataset_type=1, batch_size=None):
         self.config = config
         self.dataset_type = dataset_type # 1, 2, 3 or 4
         self.instruments = instruments = config.training.instruments
+        if batch_size is None:
+            batch_size = config.training.batch_size
+        self.batch_size = batch_size
 
         # Augmentation block
         self.aug = False
@@ -138,7 +141,7 @@ class MSSDataset(torch.utils.data.Dataset):
         self.min_mean_abs = config.audio.min_mean_abs
 
     def __len__(self):
-        return self.config.training.num_steps * self.config.training.batch_size
+        return self.config.training.num_steps * self.batch_size
 
     def load_source(self, metadata, instr):
         while True:

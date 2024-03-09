@@ -1,6 +1,6 @@
 # coding: utf-8
 __author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 import random
 import argparse
@@ -188,8 +188,6 @@ def valid_multi_gpu(model, args, config, verbose=False):
         model = model.module
 
     all_mixtures_path = sorted(glob.glob(args.valid_path + '/*/mixture.wav'))
-    print('Total mixtures: {}'.format(len(all_mixtures_path)))
-    print('Overlap: {} Batch size: {}'.format(config.inference.num_overlap, config.inference.batch_size))
 
     model = model.to('cpu')
     queue = torch.multiprocessing.Queue()
@@ -273,16 +271,20 @@ def train_model(args):
     except:
         pass
 
+    device_ids = args.device_ids
+    batch_size = config.training.batch_size * len(device_ids)
+
     trainset = MSSDataset(
         config,
         args.data_path,
+        batch_size=batch_size,
         metadata_path=os.path.join(args.results_path, 'metadata_{}.pkl'.format(args.dataset_type)),
         dataset_type=args.dataset_type,
     )
 
     train_loader = DataLoader(
         trainset,
-        batch_size=config.training.batch_size,
+        batch_size=batch_size,
         shuffle=True,
         num_workers=args.num_workers,
         pin_memory=args.pin_memory
@@ -300,7 +302,6 @@ def train_model(args):
             )
 
     if torch.cuda.is_available():
-        device_ids = args.device_ids
         if len(device_ids) <= 1:
             print('Use single GPU: {}'.format(device_ids))
             device = torch.device(f'cuda:{device_ids[0]}')
@@ -337,9 +338,9 @@ def train_model(args):
     print("Patience: {} Reduce factor: {} Batch size: {} Grad accum steps: {} Effective batch size: {}".format(
         config.training.patience,
         config.training.reduce_factor,
-        config.training.batch_size,
+        batch_size,
         gradient_accumulation_steps,
-        config.training.batch_size * gradient_accumulation_steps,
+        batch_size * gradient_accumulation_steps,
     ))
     # Reduce LR if no SDR improvements for several epochs
     scheduler = ReduceLROnPlateau(optimizer, 'max', patience=config.training.patience, factor=config.training.reduce_factor)
