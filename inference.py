@@ -3,6 +3,7 @@ __author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
 
 import argparse
 import time
+import librosa
 from tqdm import tqdm
 import sys
 import os
@@ -20,8 +21,8 @@ warnings.filterwarnings("ignore")
 def run_folder(model, args, config, device, verbose=False):
     start_time = time.time()
     model.eval()
-    all_mixtures_path = glob.glob(args.input_folder + '/*.wav')
-    print('Total tracks found: {}'.format(len(all_mixtures_path)))
+    all_mixtures_path = glob.glob(args.input_folder + '/*.*')
+    print('Total files found: {}'.format(len(all_mixtures_path)))
 
     instruments = config.training.instruments
     if config.training.target_instrument is not None:
@@ -34,7 +35,14 @@ def run_folder(model, args, config, device, verbose=False):
         all_mixtures_path = tqdm(all_mixtures_path)
 
     for path in all_mixtures_path:
-        mix, sr = sf.read(path)
+        try:
+            # mix, sr = sf.read(path)
+            mix, sr = librosa.load(path, sr=44100, mono=False)
+            mix = mix.T
+        except Exception as e:
+            print('Can read track: {}'.format(path))
+            print('Error message: {}'.format(str(e)))
+            continue
 
         # Convert mono to stereo if needed
         if len(mix.shape) == 1:
