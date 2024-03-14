@@ -4,11 +4,8 @@ __version__ = '1.0.2'
 
 import random
 import argparse
-import yaml
 import time
 import copy
-from ml_collections import ConfigDict
-from omegaconf import OmegaConf
 from tqdm import tqdm
 import sys
 import os
@@ -322,12 +319,7 @@ def train_model(args):
     torch.backends.cudnn.deterministic = False # Fix possible slow down with dilation convolutions
     torch.multiprocessing.set_start_method('spawn')
 
-    with open(args.config_path) as f:
-        if args.model_type == 'htdemucs':
-            config = OmegaConf.load(args.config_path)
-        else:
-            config = ConfigDict(yaml.load(f, Loader=yaml.FullLoader))
-
+    model, config = get_model_from_config(args.model_type, args.config_path)
     print("Instruments: {}".format(config.training.instruments))
 
     if not os.path.isdir(args.results_path):
@@ -357,8 +349,6 @@ def train_model(args):
         num_workers=args.num_workers,
         pin_memory=args.pin_memory
     )
-
-    model = get_model_from_config(args.model_type, config)
 
     if args.start_check_point != '':
         print('Start from checkpoint: {}'.format(args.start_check_point))

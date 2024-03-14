@@ -2,10 +2,7 @@
 __author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
 
 import argparse
-import yaml
 import time
-from ml_collections import ConfigDict
-from omegaconf import OmegaConf
 from tqdm import tqdm
 import sys
 import os
@@ -230,15 +227,7 @@ def check_validation(args):
     torch.backends.cudnn.benchmark = True
     torch.multiprocessing.set_start_method('spawn')
 
-    with open(args.config_path) as f:
-        if args.model_type == 'htdemucs':
-            config = OmegaConf.load(args.config_path)
-        else:
-            config = ConfigDict(yaml.load(f, Loader=yaml.FullLoader))
-
-    print("Instruments: {}".format(config.training.instruments))
-
-    model = get_model_from_config(args.model_type, config)
+    model, config = get_model_from_config(args.model_type, args.config_path)
     if args.start_check_point != '':
         print('Start from checkpoint: {}'.format(args.start_check_point))
         state_dict = torch.load(args.start_check_point)
@@ -247,6 +236,8 @@ def check_validation(args):
             if 'state' in state_dict:
                 state_dict = state_dict['state']
         model.load_state_dict(state_dict)
+
+    print("Instruments: {}".format(config.training.instruments))
 
     device_ids = args.device_ids
     if torch.cuda.is_available():

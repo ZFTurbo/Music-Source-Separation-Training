@@ -5,9 +5,18 @@ import time
 import numpy as np
 import torch
 import torch.nn as nn
+import yaml
+from ml_collections import ConfigDict
+from omegaconf import OmegaConf
 
 
-def get_model_from_config(model_type, config):
+def get_model_from_config(model_type, config_path):
+    with open(config_path) as f:
+        if model_type == 'htdemucs':
+            config = OmegaConf.load(config_path)
+        else:
+            config = ConfigDict(yaml.load(f, Loader=yaml.FullLoader))
+
     if model_type == 'mdx23c':
         from models.mdx23c_tfc_tdf_v3 import TFC_TDF_net
         model = TFC_TDF_net(config)
@@ -44,7 +53,7 @@ def get_model_from_config(model_type, config):
         print('Unknown model: {}'.format(model_type))
         model = None
 
-    return model
+    return model, config
 
 
 def demix_track(config, model, mix, device):
