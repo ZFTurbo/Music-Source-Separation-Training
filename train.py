@@ -103,7 +103,12 @@ def valid(model, args, config, device, verbose=False):
         model = model.module
 
     model.eval()
-    all_mixtures_path = sorted(glob.glob(args.valid_path + '/*/mixture.wav'))
+    all_mixtures_path = []
+    for valid_path in args.valid_path:
+        part = sorted(glob.glob(valid_path + '/*/mixture.wav'))
+        if len(part) == 0:
+            print('No validation data found in: {}'.format(valid_path))
+        all_mixtures_path += part
     if verbose:
         print('Total mixtures: {}'.format(len(all_mixtures_path)))
 
@@ -250,7 +255,12 @@ def valid_multi_gpu(model, args, config, verbose=False):
     if len(device_ids) > 1:
         model = model.module
 
-    all_mixtures_path = sorted(glob.glob(args.valid_path + '/*/mixture.wav'))
+    all_mixtures_path = []
+    for valid_path in args.valid_path:
+        part = sorted(glob.glob(valid_path + '/*/mixture.wav'))
+        if len(part) == 0:
+            print('No validation data found in: {}'.format(valid_path))
+        all_mixtures_path += part
 
     model = model.to('cpu')
     torch.cuda.empty_cache()
@@ -299,9 +309,9 @@ def train_model(args):
     parser.add_argument("--config_path", type=str, help="path to config file")
     parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint to start training")
     parser.add_argument("--results_path", type=str, help="path to folder where results will be stored (weights, metadata)")
-    parser.add_argument("--data_path", nargs="+", type=str, help="dataset path. Can be several parameters.")
+    parser.add_argument("--data_path", nargs="+", type=str, help="Dataset data paths. You can provide several folders.")
     parser.add_argument("--dataset_type", type=int, default=1, help="Dataset type. Must be one of: 1, 2, 3 or 4. Details here: https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/dataset_types.md")
-    parser.add_argument("--valid_path", type=str, help="validate path")
+    parser.add_argument("--valid_path", nargs="+", type=str, help="validation data paths. You can provide several folders.")
     parser.add_argument("--num_workers", type=int, default=0, help="dataloader num_workers")
     parser.add_argument("--pin_memory", type=bool, default=False, help="dataloader pin_memory")
     parser.add_argument("--seed", type=int, default=0, help="random seed")
