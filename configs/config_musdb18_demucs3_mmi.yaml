@@ -1,0 +1,72 @@
+audio:
+  chunk_size: 485100 # samplerate * segment
+  min_mean_abs: 0.000
+  hop_length: 1024
+
+training:
+  batch_size: 8
+  gradient_accumulation_steps: 1
+  grad_clip: 0
+  segment: 11
+  shift: 1
+  samplerate: 44100
+  channels: 2
+  normalize: true
+  instruments: ['drums', 'bass', 'other', 'vocals']
+  target_instrument: null
+  num_epochs: 1000
+  num_steps: 1000
+  optimizer: adam
+  lr: 9.0e-05
+  patience: 2
+  reduce_factor: 0.95
+  q: 0.95
+  coarse_loss_clip: true
+  ema_momentum: 0.999
+  other_fix: false # it's needed for checking on multisong dataset if other is actually instrumental
+  use_amp: false # enable or disable usage of mixed precision (float16) - usually it must be true
+
+augmentations:
+  enable: true # enable or disable all augmentations (to fast disable if needed)
+  loudness: true # randomly change loudness of each stem on the range (loudness_min; loudness_max)
+  loudness_min: 0.5
+  loudness_max: 1.5
+
+inference:
+  num_overlap: 4
+  batch_size: 8
+
+model: hdemucs
+
+hdemucs:  # see demucs/hdemucs.py for a detailed description
+  channels: 48
+  channels_time: null
+  growth: 2
+  nfft: 4096
+  wiener_iters: 0
+  end_iters: 0
+  wiener_residual: False
+  cac: True
+  depth: 6
+  rewrite: True
+  hybrid: True
+  hybrid_old: False
+  multi_freqs: []
+  multi_freqs_depth: 3
+  freq_emb: 0.2
+  emb_scale: 10
+  emb_smooth: True
+  kernel_size: 8
+  stride: 4
+  time_stride: 2
+  context: 1
+  context_enc: 0
+  norm_starts: 4
+  norm_groups: 4
+  dconv_mode: 1
+  dconv_depth: 2
+  dconv_comp: 4
+  dconv_attn: 4
+  dconv_lstm: 4
+  dconv_init: 0.001
+  rescale: 0.1
