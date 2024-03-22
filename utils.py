@@ -127,7 +127,7 @@ def demix_track_demucs(config, model, mix, device):
     step = C // N
     # print(S, C, N, step, mix.shape, mix.device)
 
-    with torch.cuda.amp.autocast():
+    with torch.cuda.amp.autocast(enabled=config.training.use_amp):
         with torch.inference_mode():
             mix = mix.to(device)
             req_shape = (S, ) + tuple(mix.shape)
