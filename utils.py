@@ -76,15 +76,14 @@ def demix_track(config, model, mix, device):
             else:
                 req_shape = (len(config.training.instruments),) + tuple(mix.shape)
 
-            mix = mix.to(device)
-            result = torch.zeros(req_shape, dtype=torch.float32).to(device)
-            counter = torch.zeros(req_shape, dtype=torch.float32).to(device)
+            result = torch.zeros(req_shape, dtype=torch.float32)
+            counter = torch.zeros(req_shape, dtype=torch.float32)
             i = 0
             batch_data = []
             batch_locations = []
             while i < mix.shape[1]:
                 # print(i, i + C, mix.shape[1])
-                part = mix[:, i:i + C]
+                part = mix[:, i:i + C].to(device)
                 length = part.shape[-1]
                 if length < C:
                     if length > C // 2 + 1:
@@ -100,7 +99,7 @@ def demix_track(config, model, mix, device):
                     x = model(arr)
                     for j in range(len(batch_locations)):
                         start, l = batch_locations[j]
-                        result[..., start:start+l] += x[j][..., :l]
+                        result[..., start:start+l] += x[j][..., :l].cpu()
                         counter[..., start:start+l] += 1.
                     batch_data = []
                     batch_locations = []
@@ -129,16 +128,15 @@ def demix_track_demucs(config, model, mix, device):
 
     with torch.cuda.amp.autocast(enabled=config.training.use_amp):
         with torch.inference_mode():
-            mix = mix.to(device)
             req_shape = (S, ) + tuple(mix.shape)
-            result = torch.zeros(req_shape, dtype=torch.float32).to(device)
-            counter = torch.zeros(req_shape, dtype=torch.float32).to(device)
+            result = torch.zeros(req_shape, dtype=torch.float32)
+            counter = torch.zeros(req_shape, dtype=torch.float32)
             i = 0
             batch_data = []
             batch_locations = []
             while i < mix.shape[1]:
                 # print(i, i + C, mix.shape[1])
-                part = mix[:, i:i + C]
+                part = mix[:, i:i + C].to(device)
                 length = part.shape[-1]
                 if length < C:
                     part = nn.functional.pad(input=part, pad=(0, C - length, 0, 0), mode='constant', value=0)
@@ -151,7 +149,7 @@ def demix_track_demucs(config, model, mix, device):
                     x = model(arr)
                     for j in range(len(batch_locations)):
                         start, l = batch_locations[j]
-                        result[..., start:start+l] += x[j][..., :l]
+                        result[..., start:start+l] += x[j][..., :l].cpu()
                         counter[..., start:start+l] += 1.
                     batch_data = []
                     batch_locations = []
