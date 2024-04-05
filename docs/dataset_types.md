@@ -54,7 +54,7 @@ The same as Type 1, but during training all instruments will be from the same po
 
 ### Dataset for validation
 
-* Validation dataset must be the same as Type 1 for training, but also each folder must include `mixture.wav` for each song. `mixture.wav` - it's sum of all stems for song.
+* The validation dataset must be the same structure as type 1 datasets (regardless of what type of dataset you're using for training), but also each folder must include `mixture.wav` for each song. `mixture.wav` - is the sum of all stems for song.
 
 Example:
 ```
