@@ -204,7 +204,7 @@ class MSSDataset(torch.utils.data.Dataset):
         track_path, track_length = random.choice(self.metadata)
         res = []
         for i in self.instruments:
-            attempts = 10
+            attempts = 5
             while attempts:
                 for extension in self.file_types:
                     path_to_audio_file = track_path + '/{}.{}'.format(i, extension)
