@@ -99,7 +99,7 @@ If you trained some good models, please, share them. You can post config and mod
 |             HTDemucs4 FT Bass             | bass | SDR bass: 11.96  | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/configs/config_musdb18_htdemucs.yaml) | [Weights](https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/d12395a8-e57c48e6.th) |
 |            HTDemucs4 FT Other             | other | SDR other: 5.85  | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/configs/config_musdb18_htdemucs.yaml) | [Weights](https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/92cfc3b6-ef3bcb9c.th) |
 | HTDemucs4 FT Vocals (Official repository) | vocals | SDR vocals: 8.38 | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/configs/config_musdb18_htdemucs.yaml) | [Weights](https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/04573f0d-f3cf25b2.th) |
-|     BS Roformer ([viperx](https://github.com/playdasegunda) edition)      | other | SDR other: 6.85  | [Config]() | [Weights](https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_937_sdr_10.5309.ckpt) |
+|     BS Roformer ([viperx](https://github.com/playdasegunda) edition)      | other | SDR other: 6.85  | [Config](https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_937_sdr_10.5309.yaml) | [Weights](https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_937_sdr_10.5309.ckpt) |
 
 **Note**: All models output 4 stems, but quality is best only on target stem (all other stems are dummy).
 
