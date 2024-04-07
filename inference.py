@@ -35,6 +35,8 @@ def run_folder(model, args, config, device, verbose=False):
         all_mixtures_path = tqdm(all_mixtures_path)
 
     for path in all_mixtures_path:
+        if not verbose:
+            all_mixtures_path.set_postfix({'track': os.path.basename(path)})
         try:
             # mix, sr = sf.read(path)
             mix, sr = librosa.load(path, sr=44100, mono=False)
@@ -56,6 +58,10 @@ def run_folder(model, args, config, device, verbose=False):
         for instr in instruments:
             sf.write("{}/{}_{}.wav".format(args.store_dir, os.path.basename(path)[:-4], instr), res[instr].T, sr, subtype='FLOAT')
 
+        if 'vocals' in instruments and args.extract_instrumental:
+            instrum_file_name = "{}/{}_{}.wav".format(args.store_dir, os.path.basename(path)[:-4], 'instrumental')
+            sf.write(instrum_file_name, mix - res['vocals'].T, sr, subtype='FLOAT')
+
     time.sleep(1)
     print("Elapsed time: {:.2f} sec".format(time.time() - start_time))
 
@@ -68,6 +74,7 @@ def proc_folder(args):
     parser.add_argument("--input_folder", type=str, help="folder with mixtures to process")
     parser.add_argument("--store_dir", default="", type=str, help="path to store results as wav file")
     parser.add_argument("--device_ids", nargs='+', type=int, default=0, help='list of gpu ids')
+    parser.add_argument("--extract_instrumental", action='store_true', help="invert vocals to get instrumental if provided")
     if args is None:
         args = parser.parse_args()
     else:
