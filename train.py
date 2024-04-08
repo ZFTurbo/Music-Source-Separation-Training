@@ -1,6 +1,6 @@
 # coding: utf-8
 __author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 import random
 import argparse
