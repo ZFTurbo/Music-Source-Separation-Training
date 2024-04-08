@@ -1,6 +1,6 @@
 ### Batch sizes for BSRoformer 
 
-You can use table below to choose BS Roformer parameter based on your GPUs. Batch size values provided for single GPU. If you have several GPUs you need to multiply value on number of GPUs. 
+You can use table below to choose BS Roformer `batch_size` parameter for training based on your GPUs. Batch size values provided for single GPU. If you have several GPUs you need to multiply value on number of GPUs. 
 
 | chunk_size | dim | depth | batch_size (A6000 48GB) | batch_size (3090/4090 24GB) | batch_size (16GB) |
 |:----------:|:---:|:-----:|:-----------------------:|:---------------------------:|:-----------------:|
