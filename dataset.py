@@ -95,8 +95,10 @@ class MSSDataset(torch.utils.data.Dataset):
                     if type(data_path) == list:
                         for tp in data_path:
                             track_paths += sorted(glob(tp + '/{}/*.wav'.format(instr)))
+                            track_paths += sorted(glob(tp + '/{}/*.flac'.format(instr)))
                     else:
                         track_paths += sorted(glob(data_path + '/{}/*.wav'.format(instr)))
+                        track_paths += sorted(glob(data_path + '/{}/*.flac'.format(instr)))
 
                     for path in tqdm(track_paths):
                         length = len(sf.read(path)[0])
@@ -163,11 +165,22 @@ class MSSDataset(torch.utils.data.Dataset):
                 for extension in self.file_types:
                     path_to_audio_file = track_path + '/{}.{}'.format(instr, extension)
                     if os.path.isfile(path_to_audio_file):
-                        source = load_chunk(path_to_audio_file, track_length, self.chunk_size)
+                        try:
+                            source = load_chunk(path_to_audio_file, track_length, self.chunk_size)
+                        except Exception as e:
+                            # Sometimes error during FLAC reading, catch it and use zero stem
+                            print('Error: {} Path: {}'.format(e, path_to_audio_file))
+                            source = np.zeros((2, self.chunk_size), dtype=np.float32)
                         break
             else:
                 track_path, track_length = random.choice(metadata[instr])
-                source = load_chunk(track_path, track_length, self.chunk_size)
+                try:
+                    source = load_chunk(track_path, track_length, self.chunk_size)
+                except Exception as e:
+                    # Sometimes error during FLAC reading, catch it and use zero stem
+                    print('Error: {} Path: {}'.format(e, track_path))
+                    source = np.zeros((2, self.chunk_size), dtype=np.float32)
+
             if np.abs(source).mean() >= self.min_mean_abs:  # remove quiet chunks
                 break
         if self.aug:
