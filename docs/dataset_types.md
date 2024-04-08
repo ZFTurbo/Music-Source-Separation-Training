@@ -1,6 +1,6 @@
 ### Dataset types for training
 
-* **Type 1 (MUSDB)**: different folders. Each folder contains all needed stems in format _< stem name >.wav_. The same as in MUSDBHQ18 dataset. 
+* **Type 1 (MUSDB)**: different folders. Each folder contains all needed stems in format _< stem name >.wav_. The same as in MUSDBHQ18 dataset. In latest code releases it's possible to use `flac` instead of `wav`. 
 
 Example:
 ```
