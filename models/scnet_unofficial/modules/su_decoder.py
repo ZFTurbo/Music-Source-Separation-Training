@@ -3,7 +3,7 @@ from typing import List, Tuple
 import torch
 import torch.nn as nn
 
-from models.scnet.utils import get_convtranspose_output_padding
+from models.scnet_unofficial.utils import get_convtranspose_output_padding
 
 
 class FusionLayer(nn.Module):

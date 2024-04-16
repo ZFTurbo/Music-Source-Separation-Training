@@ -44,6 +44,11 @@ def get_model_from_config(model_type, config_path):
         model = MultiMaskMultiSourceBandSplitRNNSimple(
             **config.model
         )
+    elif model_type == 'scnet_unofficial':
+        from models.scnet_unofficial import SCNet
+        model = SCNet(
+            **config.model
+        )
     elif model_type == 'scnet':
         from models.scnet import SCNet
         model = SCNet(

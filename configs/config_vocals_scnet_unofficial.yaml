@@ -5,35 +5,26 @@ audio:
   min_mean_abs: 0.000
 
 model:
-  sources: ['vocals', 'other']
-  audio_channels: 2
-  # dims: [4, 32, 64, 128] # small version
-  dims: [4, 64, 128, 256]
-  nfft: 4096
-  hop_size: 1024
-  win_size: 4096
-  normalized: True
-  band_configs: {
-    'low': { 'SR': .175, 'stride': 1, 'kernel': 3 },
-    'mid': { 'SR': .392, 'stride': 4, 'kernel': 4 },
-    'high': { 'SR': .433, 'stride': 16, 'kernel': 16 }
-  }
-  conv_depths: [3, 2, 1]
-  compress: 4
-  conv_kernel: 3
-  # Dual-path RNN
-  num_dplayer: 6
-  expand: 1
-  # mamba
-  use_mamba: False
-  mamba_config: {
-    'd_stat': 16,
-    'd_conv': 4,
-    'd_expand': 2
-  }
+  dims: [4, 32, 64, 128]
+  bandsplit_ratios: [.175, .392, .433]
+  downsample_strides: [1, 4, 16]
+  n_conv_modules: [3, 2, 1]
+  n_rnn_layers: 6
+  rnn_hidden_dim: 128
+  n_sources: 2
+
+  n_fft: 4096
+  hop_length: 1024
+  win_length: 4096
+  stft_normalized: false
+
+  use_mamba: false
+  d_state: 16
+  d_conv: 4
+  d_expand: 2
 
 training:
-  batch_size: 4
+  batch_size: 10
   gradient_accumulation_steps: 2
   grad_clip: 0
   instruments:

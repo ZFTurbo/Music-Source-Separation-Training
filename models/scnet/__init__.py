@@ -1,1 +1,1 @@
-from models.scnet.scnet import SCNet
+from .scnet import SCNet
