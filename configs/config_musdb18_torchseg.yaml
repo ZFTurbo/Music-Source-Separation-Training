@@ -1,0 +1,92 @@
+audio:
+  chunk_size: 261632
+  dim_f: 4096
+  dim_t: 512
+  hop_length: 512
+  n_fft: 8192
+  num_channels: 2
+  sample_rate: 44100
+  min_mean_abs: 0.001
+
+model:
+  encoder_name: maxvit_tiny_tf_512 # look with torchseg.list_encoders(). Currently 858 available
+  decoder_type: unet # unet, fpn
+  act: gelu
+  num_channels: 128
+  num_subbands: 8
+
+training:
+  batch_size: 18
+  gradient_accumulation_steps: 1
+  grad_clip: 0
+  instruments:
+  - vocals
+  - bass
+  - drums
+  - other
+  lr: 5.0e-05
+  patience: 2
+  reduce_factor: 0.95
+  target_instrument: null
+  num_epochs: 1000
+  num_steps: 2000
+  q: 0.95
+  coarse_loss_clip: true
+  ema_momentum: 0.999
+  optimizer: adamw
+  other_fix: false # it's needed for checking on multisong dataset if other is actually instrumental
+  use_amp: true # enable or disable usage of mixed precision (float16) - usually it must be true
+
+augmentations:
+  enable: true # enable or disable all augmentations (to fast disable if needed)
+  loudness: true # randomly change loudness of each stem on the range (loudness_min; loudness_max)
+  loudness_min: 0.5
+  loudness_max: 1.5
+  mixup: true # mix several stems of same type with some probability (only works for dataset types: 1, 2, 3)
+  mixup_probs: !!python/tuple # 2 additional stems of the same type (1st with prob 0.2, 2nd with prob 0.02)
+    - 0.2
+    - 0.02
+  mixup_loudness_min: 0.5
+  mixup_loudness_max: 1.5
+
+  # apply mp3 compression to mixture only (emulate downloading mp3 from internet)
+  mp3_compression_on_mixture: 0.01
+  mp3_compression_on_mixture_bitrate_min: 32
+  mp3_compression_on_mixture_bitrate_max: 320
+  mp3_compression_on_mixture_backend: "lameenc"
+
+  all:
+    channel_shuffle: 0.5 # Set 0 or lower to disable
+    random_inverse: 0.1 # inverse track (better lower probability)
+    random_polarity: 0.5 # polarity change (multiply waveform to -1)
+    mp3_compression: 0.01
+    mp3_compression_min_bitrate: 32
+    mp3_compression_max_bitrate: 320
+    mp3_compression_backend: "lameenc"
+
+  vocals:
+    pitch_shift: 0.1
+    pitch_shift_min_semitones: -5
+    pitch_shift_max_semitones: 5
+    seven_band_parametric_eq: 0.25
+    seven_band_parametric_eq_min_gain_db: -9
+    seven_band_parametric_eq_max_gain_db: 9
+    tanh_distortion: 0.1
+    tanh_distortion_min: 0.1
+    tanh_distortion_max: 0.7
+  other:
+    pitch_shift: 0.1
+    pitch_shift_min_semitones: -4
+    pitch_shift_max_semitones: 4
+    gaussian_noise: 0.1
+    gaussian_noise_min_amplitude: 0.001
+    gaussian_noise_max_amplitude: 0.015
+    time_stretch: 0.01
+    time_stretch_min_rate: 0.8
+    time_stretch_max_rate: 1.25
+
+
+inference:
+  batch_size: 1
+  dim_t: 512
+  num_overlap: 4

@@ -22,3 +22,4 @@ protobuf==3.20.3
 torch_audiomentations
 asteroid==0.7.0
 auraloss
+torchseg

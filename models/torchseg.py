@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import segmentation_models_pytorch as smp
+import torchseg as smp
 
 
 class STFT:
@@ -187,7 +187,7 @@ def get_decoder(config, c):
     return decoder
 
 
-class Segm_Models_Net(nn.Module):
+class Torchseg_Net(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
