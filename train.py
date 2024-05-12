@@ -15,7 +15,7 @@ import soundfile as sf
 import numpy as np
 import auraloss
 import torch.nn as nn
-from torch.optim import Adam, AdamW, SGD
+from torch.optim import Adam, AdamW, SGD, RAdam
 from torch.utils.data import DataLoader
 from torch.cuda.amp.grad_scaler import GradScaler
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -390,6 +390,8 @@ def train_model(args):
         optimizer = Adam(model.parameters(), lr=config.training.lr)
     elif config.training.optimizer == 'adamw':
         optimizer = AdamW(model.parameters(), lr=config.training.lr)
+    elif config.training.optimizer == 'radam':
+        optimizer = RAdam(model.parameters(), lr=config.training.lr)
     elif config.training.optimizer == 'sgd':
         print('Use SGD optimizer')
         optimizer = SGD(model.parameters(), lr=config.training.lr, momentum=0.999)
