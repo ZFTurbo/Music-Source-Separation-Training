@@ -103,7 +103,7 @@ If you trained some good models, please, share them. You can post config and mod
 |           BS Roformer ([viperx](https://github.com/playdasegunda) edition)           |    other    | SDR other: 6.85  | [Config](https://raw.githubusercontent.com/ZFTurbo/Music-Source-Separation-Training/main/configs/viperx/model_bs_roformer_ep_937_sdr_10.5309.yaml) | [Weights](https://github.com/TRvlvr/model_repo/releases/download/all_public_uvr_models/model_bs_roformer_ep_937_sdr_10.5309.ckpt) |
 | MelBand Roformer ([aufr33](https://github.com/aufr33) and [viperx](https://github.com/playdasegunda) edition) |    crowd    | SDR crowd: 5.99  | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.4/model_mel_band_roformer_crowd.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.4/mel_band_roformer_crowd_aufr33_viperx_sdr_8.7144.ckpt) |
 
-**Note**: All models output 4 stems, but quality is best only on target stem (all other stems are dummy).
+**Note**: All HTDemucs4 FT models output 4 stems, but quality is best only on target stem (all other stems are dummy).
 
 ### Multi-stem models
 
