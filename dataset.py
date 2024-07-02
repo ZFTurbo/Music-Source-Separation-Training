@@ -9,6 +9,8 @@ import torch
 import soundfile as sf
 import pickle
 import time
+import itertools
+import multiprocessing
 from tqdm import tqdm
 from glob import glob
 import audiomentations as AU
@@ -29,10 +31,37 @@ def load_chunk(path, length, chunk_size, offset=None):
     return x.T
 
 
+def get_track_set_length(params):
+    path, instruments, file_types = params
+    # Check lengths of all instruments (it can be different in some cases)
+    lengths_arr = []
+    for instr in instruments:
+        length = -1
+        for extension in file_types:
+            path_to_audio_file = path + '/{}.{}'.format(instr, extension)
+            if os.path.isfile(path_to_audio_file):
+                length = len(sf.read(path_to_audio_file)[0])
+                break
+        if length == -1:
+            print('Cant find file "{}" in folder {}'.format(instr, path))
+            continue
+        lengths_arr.append(length)
+    lengths_arr = np.array(lengths_arr)
+    if lengths_arr.min() != lengths_arr.max():
+        print('Warning: lengths of stems are different for path: {}. ({} != {})'.format(
+            path,
+            lengths_arr.min(),
+            lengths_arr.max())
+        )
+    # We use minimum to allow overflow for soundfile read in non-equal length cases
+    return path, lengths_arr.min()
+
+
 class MSSDataset(torch.utils.data.Dataset):
     def __init__(self, config, data_path, metadata_path="metadata.pkl", dataset_type=1, batch_size=None):
         self.config = config
         self.dataset_type = dataset_type # 1, 2, 3 or 4
+        self.data_path = data_path
         self.instruments = instruments = config.training.instruments
         if batch_size is None:
             batch_size = config.training.batch_size
@@ -48,98 +77,11 @@ class MSSDataset(torch.utils.data.Dataset):
         else:
             print('There is no augmentations block in config. Augmentations disabled for training...')
 
-        # metadata_path = data_path + '/metadata'
         try:
             metadata = pickle.load(open(metadata_path, 'rb'))
             print('Loading songs data from cache: {}. If you updated dataset remove {} before training!'.format(metadata_path, os.path.basename(metadata_path)))
-        except Exception:
-            print('Collecting metadata for', str(data_path), 'Dataset type:', self.dataset_type)
-            if self.dataset_type in [1, 4]:
-                metadata = []
-                track_paths = []
-                if type(data_path) == list:
-                    for tp in data_path:
-                        track_paths += sorted(glob(tp + '/*'))
-                else:
-                    track_paths += sorted(glob(data_path + '/*'))
-
-                track_paths = [path for path in track_paths if os.path.basename(path)[0] != '.' and os.path.isdir(path)]
-                for path in tqdm(track_paths):
-                    # Check lengths of all instruments (it can be different in some cases)
-                    lengths_arr = []
-                    for instr in instruments:
-                        length = -1
-                        for extension in self.file_types:
-                            path_to_audio_file = path + '/{}.{}'.format(instr, extension)
-                            if os.path.isfile(path_to_audio_file):
-                                length = len(sf.read(path_to_audio_file)[0])
-                                break
-                        if length == -1:
-                            print('Cant find file "{}" in folder {}'.format(instr, path))
-                            continue
-                        lengths_arr.append(length)
-                    lengths_arr = np.array(lengths_arr)
-                    if lengths_arr.min() != lengths_arr.max():
-                        print('Warning: lengths of stems are different for path: {}. ({} != {})'.format(
-                            path,
-                            lengths_arr.min(),
-                            lengths_arr.max())
-                        )
-                    # We use minimum to allow overflow for soundfile read in non-equal length cases
-                    metadata.append((path, lengths_arr.min()))
-            elif self.dataset_type == 2:
-                metadata = dict()
-                for instr in self.instruments:
-                    metadata[instr] = []
-                    track_paths = []
-                    if type(data_path) == list:
-                        for tp in data_path:
-                            track_paths += sorted(glob(tp + '/{}/*.wav'.format(instr)))
-                            track_paths += sorted(glob(tp + '/{}/*.flac'.format(instr)))
-                    else:
-                        track_paths += sorted(glob(data_path + '/{}/*.wav'.format(instr)))
-                        track_paths += sorted(glob(data_path + '/{}/*.flac'.format(instr)))
-
-                    for path in tqdm(track_paths):
-                        length = len(sf.read(path)[0])
-                        metadata[instr].append((path, length))
-            elif self.dataset_type == 3:
-                import pandas as pd
-                if type(data_path) != list:
-                    data_path = [data_path]
-
-                metadata = dict()
-                for i in range(len(data_path)):
-                    print('Reading tracks from: {}'.format(data_path[i]))
-                    df = pd.read_csv(data_path[i])
-
-                    skipped = 0
-                    for instr in self.instruments:
-                        part = df[df['instrum'] == instr].copy()
-                        print('Tracks found for {}: {}'.format(instr, len(part)))
-                    for instr in self.instruments:
-                        part = df[df['instrum'] == instr].copy()
-                        metadata[instr] = []
-                        track_paths = list(part['path'].values)
-                        for path in tqdm(track_paths):
-                            if not os.path.isfile(path):
-                                print('Cant find track: {}'.format(path))
-                                skipped += 1
-                                continue
-                            # print(path)
-                            try:
-                                length = len(sf.read(path)[0])
-                            except:
-                                print('Problem with path: {}'.format(path))
-                                skipped += 1
-                                continue
-                            metadata[instr].append((path, length))
-                    if skipped > 0:
-                        print('Missing tracks: {} from {}'.format(skipped, len(df)))
-            else:
-                print('Unknown dataset type: {}. Must be 1, 2 or 3'.format(self.dataset_type))
-                exit()
-
+        except Exception as e:
+            metadata = self.get_metadata()
             pickle.dump(metadata, open(metadata_path, 'wb'))
 
         if self.dataset_type in [1, 4]:
@@ -157,6 +99,99 @@ class MSSDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return self.config.training.num_steps * self.batch_size
+
+    def get_metadata(self):
+        read_metadata_procs = 8
+        if 'read_metadata_procs' in self.config['training']:
+            read_metadata_procs = int(self.config['training']['read_metadata_procs'])
+
+        print(
+            'Dataset type:', self.dataset_type,
+            'Processes to use:', read_metadata_procs,
+            '\nCollecting metadata for', str(self.data_path),
+        )
+
+        if self.dataset_type in [1, 4]:
+            metadata = []
+            track_paths = []
+            if type(self.data_path) == list:
+                for tp in self.data_path:
+                    track_paths += sorted(glob(tp + '/*'))
+            else:
+                track_paths += sorted(glob(self.data_path + '/*'))
+
+            track_paths = [path for path in track_paths if os.path.basename(path)[0] != '.' and os.path.isdir(path)]
+
+            if read_metadata_procs <= 1:
+                for path in tqdm(track_paths):
+                    p, ml = get_track_set_length((path, self.instruments, self.file_types))
+                    metadata.append((p, ml))
+            else:
+                p = multiprocessing.Pool(processes=read_metadata_procs)
+                with tqdm(total=len(track_paths)) as pbar:
+                    track_iter = p.imap(
+                        get_track_set_length,
+                        zip(track_paths, itertools.repeat(self.instruments), itertools.repeat(self.file_types))
+                    )
+                    for path, track_len in track_iter:
+                        metadata.append((path, track_len))
+                        pbar.update()
+                p.close()
+
+        elif self.dataset_type == 2:
+            metadata = dict()
+            for instr in self.instruments:
+                metadata[instr] = []
+                track_paths = []
+                if type(self.data_path) == list:
+                    for tp in self.data_path:
+                        track_paths += sorted(glob(tp + '/{}/*.wav'.format(instr)))
+                        track_paths += sorted(glob(tp + '/{}/*.flac'.format(instr)))
+                else:
+                    track_paths += sorted(glob(self.data_path + '/{}/*.wav'.format(instr)))
+                    track_paths += sorted(glob(self.data_path + '/{}/*.flac'.format(instr)))
+
+                for path in tqdm(track_paths):
+                    length = len(sf.read(path)[0])
+                    metadata[instr].append((path, length))
+        elif self.dataset_type == 3:
+            import pandas as pd
+            if type(self.data_path) != list:
+                data_path = [self.data_path]
+
+            metadata = dict()
+            for i in range(len(self.data_path)):
+                print('Reading tracks from: {}'.format(self.data_path[i]))
+                df = pd.read_csv(self.data_path[i])
+
+                skipped = 0
+                for instr in self.instruments:
+                    part = df[df['instrum'] == instr].copy()
+                    print('Tracks found for {}: {}'.format(instr, len(part)))
+                for instr in self.instruments:
+                    part = df[df['instrum'] == instr].copy()
+                    metadata[instr] = []
+                    track_paths = list(part['path'].values)
+                    for path in tqdm(track_paths):
+                        if not os.path.isfile(path):
+                            print('Cant find track: {}'.format(path))
+                            skipped += 1
+                            continue
+                        # print(path)
+                        try:
+                            length = len(sf.read(path)[0])
+                        except:
+                            print('Problem with path: {}'.format(path))
+                            skipped += 1
+                            continue
+                        metadata[instr].append((path, length))
+                if skipped > 0:
+                    print('Missing tracks: {} from {}'.format(skipped, len(df)))
+        else:
+            print('Unknown dataset type: {}. Must be 1, 2, 3 or 4'.format(self.dataset_type))
+            exit()
+
+        return metadata
 
     def load_source(self, metadata, instr):
         while True:

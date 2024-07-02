@@ -38,6 +38,7 @@ training:
   coarse_loss_clip: true
   ema_momentum: 0.999
   optimizer: adam
+  read_metadata_procs: 8 # Number of processes to use during metadata reading for dataset. Can speed up metadata generation
   other_fix: true # it's needed for checking on multisong dataset if other is actually instrumental
   use_amp: true # enable or disable usage of mixed precision (float16) - usually it must be true
 
