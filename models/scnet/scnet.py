@@ -6,6 +6,7 @@ from .separation import SeparationNet
 import typing as tp
 import math
 
+
 class Swish(nn.Module):
     def forward(self, x):
         return x * x.sigmoid()
@@ -14,13 +15,14 @@ class Swish(nn.Module):
 class ConvolutionModule(nn.Module):
     """
     Convolution Module in SD block.
-    
-    Args:    
+
+    Args:
         channels (int): input/output channels.
         depth (int): number of layers in the residual branch. Each layer has its own
         compress (float): amount of channel compression.
         kernel (int): kernel size for the convolutions.
         """
+
     def __init__(self, channels, depth=2, compress=4, kernel=3):
         super().__init__()
         assert kernel % 2 == 1
@@ -32,9 +34,9 @@ class ConvolutionModule(nn.Module):
             padding = (kernel // 2)
             mods = [
                 norm(channels),
-                nn.Conv1d(channels, hidden_size*2, kernel, padding = padding),
-                nn.GLU(1), 
-                nn.Conv1d(hidden_size, hidden_size, kernel, padding = padding, groups = hidden_size),
+                nn.Conv1d(channels, hidden_size * 2, kernel, padding=padding),
+                nn.GLU(1),
+                nn.Conv1d(hidden_size, hidden_size, kernel, padding=padding, groups=hidden_size),
                 norm(hidden_size),
                 Swish(),
                 nn.Conv1d(hidden_size, channels, 1),
@@ -84,6 +86,7 @@ class SDlayer(nn.Module):
                            dictionaries with keys 'SR', 'stride', and 'kernel' for proportion,
                            stride, and kernel size, respectively.
     """
+
     def __init__(self, channels_in, channels_out, band_configs):
         super(SDlayer, self).__init__()
 
@@ -92,10 +95,11 @@ class SDlayer(nn.Module):
         self.strides = []
         self.kernels = []
         for config in band_configs.values():
-            self.convs.append(nn.Conv2d(channels_in, channels_out, (config['kernel'], 1), (config['stride'], 1), (0, 0)))
+            self.convs.append(
+                nn.Conv2d(channels_in, channels_out, (config['kernel'], 1), (config['stride'], 1), (0, 0)))
             self.strides.append(config['stride'])
             self.kernels.append(config['kernel'])
-        
+
         # Saving rate proportions for determining splits
         self.SR_low = band_configs['low']['SR']
         self.SR_mid = band_configs['mid']['SR']
@@ -105,16 +109,16 @@ class SDlayer(nn.Module):
         # Define splitting points based on sampling rates
         splits = [
             (0, math.ceil(Fr * self.SR_low)),
-            (math.ceil(Fr * self.SR_low), math.ceil(Fr * (self.SR_low + self.SR_mid))), 
+            (math.ceil(Fr * self.SR_low), math.ceil(Fr * (self.SR_low + self.SR_mid))),
             (math.ceil(Fr * (self.SR_low + self.SR_mid)), Fr)
         ]
 
         # Processing each band with the corresponding convolution
         outputs = []
-        original_lengths=[]
+        original_lengths = []
         for conv, stride, kernel, (start, end) in zip(self.convs, self.strides, self.kernels, splits):
             extracted = x[:, :, start:end, :]
-            original_lengths.append(end-start)
+            original_lengths.append(end - start)
             current_length = extracted.shape[2]
 
             # padding
@@ -142,6 +146,7 @@ class SUlayer(nn.Module):
     - channels_out: The number of output channels.
     - convtr_configs: Dictionary containing the configurations for transposed convolutions.
     """
+
     def __init__(self, channels_in, channels_out, band_configs):
         super(SUlayer, self).__init__()
 
@@ -164,7 +169,7 @@ class SUlayer(nn.Module):
         for idx, (convtr, (start, end)) in enumerate(zip(self.convtrs, splits)):
             out = convtr(x[:, :, start:end, :])
             # Calculate the distance to trim the output symmetrically to original length
-            current_Fr_length = out.shape[2] 
+            current_Fr_length = out.shape[2]
             dist = abs(origin_lengths[idx] - current_Fr_length) // 2
 
             # Trim the output to the original length symmetrically
@@ -174,14 +179,14 @@ class SUlayer(nn.Module):
 
         # Concatenate trimmed outputs along the frequency dimension to return the final tensor
         x = torch.cat(outputs, dim=2)
- 
+
         return x
 
 
 class SDblock(nn.Module):
     """
     Implements a simplified Sparse Down-sample block in encoder.
-    
+
     Args:
     - channels_in (int): Number of input channels.
     - channels_out (int): Number of output channels.
@@ -189,15 +194,16 @@ class SDblock(nn.Module):
     - conv_config (dict): Configuration for convolution modules applied to each band.
     - depths (list of int): List specifying the convolution depths for low, mid, and high frequency bands.
     """
+
     def __init__(self, channels_in, channels_out, band_configs={}, conv_config={}, depths=[3, 2, 1], kernel_size=3):
         super(SDblock, self).__init__()
         self.SDlayer = SDlayer(channels_in, channels_out, band_configs)
-        
+
         # Dynamically create convolution modules for each band based on depths
         self.conv_modules = nn.ModuleList([
             ConvolutionModule(channels_out, depth, **conv_config) for depth in depths
         ])
-        #Set the kernel_size to an odd number.
+        # Set the kernel_size to an odd number.
         self.globalconv = nn.Conv2d(channels_out, channels_out, kernel_size, 1, (kernel_size - 1) // 2)
 
     def forward(self, x):
@@ -210,7 +216,7 @@ class SDblock(nn.Module):
                 .permute(0, 2, 1, 3)
             )
             for conv, band in zip(self.conv_modules, bands)
-            
+
         ]
         lengths = [band.size(-2) for band in bands]
         full_band = torch.cat(bands, dim=2)
@@ -218,7 +224,7 @@ class SDblock(nn.Module):
 
         output = self.globalconv(full_band)
 
-        return output, skip, lengths, original_lengths 
+        return output, skip, lengths, original_lengths
 
 
 class SCNet(nn.Module):
@@ -233,8 +239,9 @@ class SCNet(nn.Module):
     - win_size (int): Window size for STFT.
     - normalized (bool): Whether to normalize the STFT.
     - dims (List[int]): List of channel dimensions for each block.
-    - band_configs (Dict[str, Dict[str, int]]): Configuration for each frequency band, including how to divide the frequency bands, 
-      and the settings for the upsampling/downsampling convolutional layers.
+    - band_SR (List[float]): The proportion of each frequency band.
+    - band_stride (List[int]): The down-sampling ratio of each frequency band.
+    - band_kernel (List[int]): The kernel sizes for down-sampling convolution in each frequency band
     - conv_depths (List[int]): List specifying the number of convolution modules in each SD block.
     - compress (int): Compression factor for convolution module.
     - conv_kernel (int): Kernel size for convolution layer in convolution module.
@@ -242,47 +249,42 @@ class SCNet(nn.Module):
     - expand (int): Expansion factor in the dual-path RNN, default is 1.
 
     """
+
     def __init__(self,
-                 sources = ['drums', 'bass', 'other', 'vocals'],
-                 audio_channels = 2,
+                 sources=['drums', 'bass', 'other', 'vocals'],
+                 audio_channels=2,
                  # Main structure
-                 dims = [4, 32, 64, 128], # dims = [4, 64, 128, 256] in SCNet-large
+                 dims=[4, 32, 64, 128],  # dims = [4, 64, 128, 256] in SCNet-large
                  # STFT
-                 nfft = 4096,
-                 hop_size = 1024,
-                 win_size = 4096,
-                 normalized = True,
+                 nfft=4096,
+                 hop_size=1024,
+                 win_size=4096,
+                 normalized=True,
                  # SD/SU layer
-                 band_configs = {
-                    'low': { 'SR': .175, 'stride': 1, 'kernel': 3 },
-                    'mid': { 'SR': .392, 'stride': 4, 'kernel': 4 },
-                    'high': {'SR': .433, 'stride': 16, 'kernel': 16 }
-                 },                      
+                 band_SR=[0.175, 0.392, 0.433],
+                 band_stride=[1, 4, 16],
+                 band_kernel=[3, 4, 16],
                  # Convolution Module
-                 conv_depths = [3,2,1], 
-                 compress = 4, 
-                 conv_kernel = 3,
+                 conv_depths=[3, 2, 1],
+                 compress=4,
+                 conv_kernel=3,
                  # Dual-path RNN
-                 num_dplayer = 6,
-                 expand = 1,
-                 # mamba
-                 use_mamba = False,
-                 mamba_config = {
-                    'd_stat': 16,
-                    'd_conv': 4,
-                    'd_expand': 2                       
-                 }):
+                 num_dplayer=6,
+                 expand=1,
+                 ):
         super().__init__()
         self.sources = sources
         self.audio_channels = audio_channels
         self.dims = dims
-        self.band_configs = band_configs
+        band_keys = ['low', 'mid', 'high']
+        self.band_configs = {band_keys[i]: {'SR': band_SR[i], 'stride': band_stride[i], 'kernel': band_kernel[i]} for i
+                             in range(len(band_keys))}
         self.hop_length = hop_size
         self.conv_config = {
             'compress': compress,
             'kernel': conv_kernel,
         }
-    
+
         self.stft_config = {
             'n_fft': nfft,
             'hop_length': hop_size,
@@ -293,36 +295,33 @@ class SCNet(nn.Module):
 
         self.encoder = nn.ModuleList()
         self.decoder = nn.ModuleList()
-        
-        for index in range(len(dims)-1):
+
+        for index in range(len(dims) - 1):
             enc = SDblock(
-                    channels_in = dims[index], 
-                    channels_out = dims[index+1], 
-                    band_configs = self.band_configs,
-                    conv_config = self.conv_config,
-                    depths = conv_depths
-                    )
+                channels_in=dims[index],
+                channels_out=dims[index + 1],
+                band_configs=self.band_configs,
+                conv_config=self.conv_config,
+                depths=conv_depths
+            )
             self.encoder.append(enc)
 
             dec = nn.Sequential(
-                FusionLayer(channels = dims[index+1]),
+                FusionLayer(channels=dims[index + 1]),
                 SUlayer(
-                    channels_in = dims[index+1],
-                    channels_out = dims[index] if index != 0 else dims[index] * len(sources),
-                    band_configs = self.band_configs,
+                    channels_in=dims[index + 1],
+                    channels_out=dims[index] if index != 0 else dims[index] * len(sources),
+                    band_configs=self.band_configs,
                 )
             )
             self.decoder.insert(0, dec)
 
         self.separation_net = SeparationNet(
-            channels = dims[-1],
-            expand = expand,
-            num_layers = num_dplayer,
-            use_mamba = use_mamba,
-            **mamba_config
-        )        
+            channels=dims[-1],
+            expand=expand,
+            num_layers=num_dplayer,
+        )
 
-        
     def forward(self, x):
         # B, C, L = x.shape
         B = x.shape[0]
@@ -332,16 +331,17 @@ class SCNet(nn.Module):
         if (x.shape[-1] + padding) // self.hop_length % 2 == 0:
             padding += self.hop_length
         x = F.pad(x, (0, padding))
-  
+
         # STFT
         L = x.shape[-1]
         x = x.reshape(-1, L)
         x = torch.stft(x, **self.stft_config, return_complex=True)
         x = torch.view_as_real(x)
-        x = x.permute(0, 3, 1, 2).reshape(x.shape[0]//self.audio_channels, x.shape[3]*self.audio_channels, x.shape[1], x.shape[2])
-    
+        x = x.permute(0, 3, 1, 2).reshape(x.shape[0] // self.audio_channels, x.shape[3] * self.audio_channels,
+                                          x.shape[1], x.shape[2])
+
         B, C, Fr, T = x.shape
-    
+
         save_skip = deque()
         save_lengths = deque()
         save_original_lengths = deque()
@@ -352,22 +352,22 @@ class SCNet(nn.Module):
             save_lengths.append(lengths)
             save_original_lengths.append(original_lengths)
 
-        #separation
+        # separation
         x = self.separation_net(x)
 
-        #decoder
+        # decoder
         for fusion_layer, su_layer in self.decoder:
             x = fusion_layer(x, save_skip.pop())
             x = su_layer(x, save_lengths.pop(), save_original_lengths.pop())
 
-        #output
+        # output
         n = self.dims[0]
-        x = x.view(B, n, -1, Fr, T)   
+        x = x.view(B, n, -1, Fr, T)
         x = x.reshape(-1, 2, Fr, T).permute(0, 2, 3, 1)
         x = torch.view_as_complex(x.contiguous())
         x = torch.istft(x, **self.stft_config)
         x = x.reshape(B, len(self.sources), self.audio_channels, -1)
-    
+
         x = x[:, :, :, :-padding]
-        
+
         return x

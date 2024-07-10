@@ -5,33 +5,51 @@ audio:
   min_mean_abs: 0.001
 
 model:
-  dims: [4, 32, 64, 128]
-  bandsplit_ratios: [.175, .392, .433]
-  downsample_strides: [1, 4, 16]
-  n_conv_modules: [3, 2, 1]
-  n_rnn_layers: 6
-  rnn_hidden_dim: 128
-  n_sources: 4
-
-  n_fft: 4096
-  hop_length: 1024
-  win_length: 4096
-  stft_normalized: false
-
-  use_mamba: true
-  d_state: 16
-  d_conv: 4
-  d_expand: 2
+  sources:
+    - drums
+    - bass
+    - other
+    - vocals
+  audio_channels: 2
+  dims:
+    - 4
+    - 32
+    - 64
+    - 128
+  nfft: 4096
+  hop_size: 1024
+  win_size: 4096
+  normalized: True
+  band_SR:
+    - 0.175
+    - 0.392
+    - 0.433
+  band_stride:
+    - 1
+    - 4
+    - 16
+  band_kernel:
+    - 3
+    - 4
+    - 16
+  conv_depths:
+    - 3
+    - 2
+    - 1
+  compress: 4
+  conv_kernel: 3
+  num_dplayer: 6
+  expand: 1
 
 training:
   batch_size: 10
   gradient_accumulation_steps: 1
   grad_clip: 0
   instruments:
-    - vocals
-    - bass
     - drums
+    - bass
     - other
+    - vocals
   lr: 5.0e-04
   patience: 2
   reduce_factor: 0.95
