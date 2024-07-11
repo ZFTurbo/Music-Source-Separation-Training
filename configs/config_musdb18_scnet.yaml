@@ -1,8 +1,8 @@
 audio:
-  chunk_size: 264600
+  chunk_size: 485100 # 44100 * 11
   num_channels: 2
   sample_rate: 44100
-  min_mean_abs: 0.001
+  min_mean_abs: 0.000
 
 model:
   sources:
@@ -77,6 +77,7 @@ augmentations:
   mixup_loudness_max: 1.5
 
 inference:
-  batch_size: 1
+  batch_size: 8
   dim_t: 256
   num_overlap: 4
+  normalize: true

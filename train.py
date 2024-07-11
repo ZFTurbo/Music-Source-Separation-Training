@@ -181,11 +181,20 @@ def proc_list_of_files(
 
     for path in mixture_paths:
         mix, sr = sf.read(path)
+        mix_orig = mix.copy()
+        mix = mix.T # (channels, waveform)
+        if 'normalize' in config.inference:
+            if config.inference['normalize'] is True:
+                mono = mix.mean(0)
+                mean = mono.mean()
+                std = mono.std()
+                mix = (mix - mean) / std
+
         folder = os.path.dirname(path)
         folder_name = os.path.abspath(folder)
         if verbose:
             print('Song: {}'.format(folder_name))
-        mixture = torch.tensor(mix.T, dtype=torch.float32)
+        mixture = torch.tensor(mix, dtype=torch.float32)
         if args.model_type == 'htdemucs':
             res = demix_track_demucs(config, model, mixture, device)
         else:
@@ -202,7 +211,7 @@ def proc_list_of_files(
                 else:
                     # other is actually instrumental
                     track, sr1 = sf.read(folder + '/{}.wav'.format('vocals'))
-                    track = mix - track
+                    track = mix_orig - track
 
                 references = np.expand_dims(track, axis=0)
                 estimates = np.expand_dims(res[instr].T, axis=0)
@@ -383,7 +392,7 @@ def train_model(args):
         print('CUDA is not avilable. Run training on CPU. It will be very slow...')
         model = model.to(device)
 
-    if 0:
+    if 1:
         valid_multi_gpu(model, args, config, verbose=True)
 
     if config.training.optimizer == 'adam':

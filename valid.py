@@ -46,11 +46,20 @@ def proc_list_of_files(
 
     for path in mixture_paths:
         mix, sr = sf.read(path)
+        mix = mix.T # (channels, waveform)
         folder = os.path.dirname(path)
         folder_name = os.path.abspath(folder)
         if verbose:
             print('Song: {}'.format(folder_name))
-        mixture = torch.tensor(mix.T, dtype=torch.float32)
+
+        if 'normalize' in config.inference:
+            if config.inference['normalize'] is True:
+                mono = mix.mean(0)
+                mean = mono.mean()
+                std = mono.std()
+                mix = (mix - mean) / std
+
+        mixture = torch.tensor(mix, dtype=torch.float32)
         if args.model_type == 'htdemucs':
             res = demix_track_demucs(config, model, mixture, device)
         else:
@@ -69,11 +78,16 @@ def proc_list_of_files(
                     track, sr1 = sf.read(folder + '/{}.wav'.format('vocals'))
                     track = mix - track
 
+                estimates = res[instr].T
+                if 'normalize' in config.inference:
+                    if config.inference['normalize'] is True:
+                        estimates = estimates * std + mean
+
                 if args.store_dir != "":
-                    sf.write("{}/{}_{}.wav".format(args.store_dir, os.path.basename(folder), instr), res[instr].T, sr,
+                    sf.write("{}/{}_{}.wav".format(args.store_dir, os.path.basename(folder), instr), estimates, sr,
                              subtype='FLOAT')
                 references = np.expand_dims(track, axis=0)
-                estimates = np.expand_dims(res[instr].T, axis=0)
+                estimates = np.expand_dims(estimates, axis=0)
                 sdr_val = sdr(references, estimates)[0]
                 if verbose:
                     print(instr, res[instr].shape, sdr_val)

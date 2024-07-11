@@ -1,40 +1,47 @@
 audio:
-  chunk_size: 264600
+  chunk_size: 485100 # 44100 * 11
   num_channels: 2
   sample_rate: 44100
   min_mean_abs: 0.000
 
 model:
-  sources: ['vocals', 'other']
+  sources:
+    - vocals
+    - other
   audio_channels: 2
-  # dims: [4, 32, 64, 128] # small version
-  dims: [4, 64, 128, 256]
+  dims:
+    - 4
+    - 32
+    - 64
+    - 128
   nfft: 4096
   hop_size: 1024
   win_size: 4096
   normalized: True
-  band_configs: {
-    'low': { 'SR': .175, 'stride': 1, 'kernel': 3 },
-    'mid': { 'SR': .392, 'stride': 4, 'kernel': 4 },
-    'high': { 'SR': .433, 'stride': 16, 'kernel': 16 }
-  }
-  conv_depths: [3, 2, 1]
+  band_SR:
+    - 0.175
+    - 0.392
+    - 0.433
+  band_stride:
+    - 1
+    - 4
+    - 16
+  band_kernel:
+    - 3
+    - 4
+    - 16
+  conv_depths:
+    - 3
+    - 2
+    - 1
   compress: 4
   conv_kernel: 3
-  # Dual-path RNN
   num_dplayer: 6
   expand: 1
-  # mamba
-  use_mamba: False
-  mamba_config: {
-    'd_stat': 16,
-    'd_conv': 4,
-    'd_expand': 2
-  }
 
 training:
-  batch_size: 4
-  gradient_accumulation_steps: 2
+  batch_size: 10
+  gradient_accumulation_steps: 1
   grad_clip: 0
   instruments:
     - vocals
@@ -69,3 +76,4 @@ inference:
   batch_size: 8
   dim_t: 256
   num_overlap: 4
+  normalize: false
