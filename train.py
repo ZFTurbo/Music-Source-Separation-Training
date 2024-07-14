@@ -392,7 +392,7 @@ def train_model(args):
         print('CUDA is not avilable. Run training on CPU. It will be very slow...')
         model = model.to(device)
 
-    if 1:
+    if 0:
         valid_multi_gpu(model, args, config, verbose=True)
 
     if config.training.optimizer == 'adam':
