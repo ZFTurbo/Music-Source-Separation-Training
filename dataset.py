@@ -116,7 +116,10 @@ class MSSDataset(torch.utils.data.Dataset):
             track_paths = []
             if type(self.data_path) == list:
                 for tp in self.data_path:
-                    track_paths += sorted(glob(tp + '/*'))
+                    tracks_for_folder = sorted(glob(tp + '/*'))
+                    if len(tracks_for_folder) == 0:
+                        print('Warning: no tracks found in folder \'{}\'. Please check it!'.format(tp))
+                    track_paths += tracks_for_folder
             else:
                 track_paths += sorted(glob(self.data_path + '/*'))
 
