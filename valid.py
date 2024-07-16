@@ -121,8 +121,10 @@ def valid(model, args, config, device, verbose=False):
     print("Num overlap: {}".format(config.inference.num_overlap))
     sdr_avg = 0.0
     for instr in instruments:
-        sdr_val = np.array(all_sdr[instr]).mean()
-        print("Instr SDR {}: {:.4f}".format(instr, sdr_val))
+        npsdr = np.array(all_sdr[instr])
+        sdr_val = npsdr.mean()
+        sdr_std = npsdr.std()
+        print("Instr SDR {}: {:.4f} (Std: {:.4f})".format(instr, sdr_val, sdr_std))
         if args.store_dir != "":
             out.write("Instr SDR {}: {:.4f}".format(instr, sdr_val) + "\n")
         sdr_avg += sdr_val
@@ -205,8 +207,10 @@ def valid_multi_gpu(model, args, config, device_ids, verbose=False):
     print("Num overlap: {}".format(config.inference.num_overlap))
     sdr_avg = 0.0
     for instr in instruments:
-        sdr_val = np.array(all_sdr[instr]).mean()
-        print("Instr SDR {}: {:.4f}".format(instr, sdr_val))
+        npsdr = np.array(all_sdr[instr])
+        sdr_val = npsdr.mean()
+        sdr_std = npsdr.std()
+        print("Instr SDR {}: {:.4f} (Std: {:.4f})".format(instr, sdr_val, sdr_std))
         if args.store_dir != "":
             out.write("Instr SDR {}: {:.4f}".format(instr, sdr_val) + "\n")
         sdr_avg += sdr_val
