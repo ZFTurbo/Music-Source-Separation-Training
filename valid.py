@@ -46,6 +46,7 @@ def proc_list_of_files(
 
     for path in mixture_paths:
         mix, sr = sf.read(path)
+        mix_orig = mix.copy()
 
         # Fix for mono
         if len(mix.shape) == 1:
@@ -86,10 +87,10 @@ def proc_list_of_files(
                 else:
                     # other is actually instrumental
                     track, sr1 = sf.read(folder + '/{}.{}'.format('vocals', args.extension))
-                    track = mix - track
+                    track = mix_orig - track
 
                 estimates = res[instr].T
-                print(estimates.shape)
+                # print(estimates.shape)
                 if 'normalize' in config.inference:
                     if config.inference['normalize'] is True:
                         estimates = estimates * std + mean
