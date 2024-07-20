@@ -47,6 +47,11 @@ def get_model_from_config(model_type, config_path):
         model = MultiMaskMultiSourceBandSplitRNNSimple(
             **config.model
         )
+    elif model_type == 'bandit_v2':
+        from models.bandit_v2.bandit import Bandit
+        model = Bandit(
+            **config.kwargs
+        )
     elif model_type == 'scnet_unofficial':
         from models.scnet_unofficial import SCNet
         model = SCNet(
