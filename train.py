@@ -15,7 +15,7 @@ import soundfile as sf
 import numpy as np
 import auraloss
 import torch.nn as nn
-from torch.optim import Adam, AdamW, SGD, RAdam
+from torch.optim import Adam, AdamW, SGD, RAdam, RMSprop
 from torch.utils.data import DataLoader
 from torch.cuda.amp.grad_scaler import GradScaler
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -334,7 +334,7 @@ def train_model(args):
         args = parser.parse_args(args)
 
     manual_seed(args.seed + int(time.time()))
-    torch.backends.cudnn.benchmark = True
+    # torch.backends.cudnn.benchmark = True
     torch.backends.cudnn.deterministic = False # Fix possible slow down with dilation convolutions
     torch.multiprocessing.set_start_method('spawn')
 
@@ -406,6 +406,8 @@ def train_model(args):
         optimizer = AdamW(model.parameters(), lr=config.training.lr, **optim_params)
     elif config.training.optimizer == 'radam':
         optimizer = RAdam(model.parameters(), lr=config.training.lr, **optim_params)
+    elif config.training.optimizer == 'rmsprop':
+        optimizer = RMSprop(model.parameters(), lr=config.training.lr, **optim_params)
     elif config.training.optimizer == 'adamw8bit':
         import bitsandbytes as bnb
         optimizer = bnb.optim.AdamW8bit(model.parameters(), lr=config.training.lr, **optim_params)
@@ -422,12 +424,13 @@ def train_model(args):
     except:
         pass
 
-    print("Patience: {} Reduce factor: {} Batch size: {} Grad accum steps: {} Effective batch size: {}".format(
+    print("Patience: {} Reduce factor: {} Batch size: {} Grad accum steps: {} Effective batch size: {} Optimizer: {}".format(
         config.training.patience,
         config.training.reduce_factor,
         batch_size,
         gradient_accumulation_steps,
         batch_size * gradient_accumulation_steps,
+        config.training.optimizer,
     ))
     # Reduce LR if no SDR improvements for several epochs
     scheduler = ReduceLROnPlateau(optimizer, 'max', patience=config.training.patience, factor=config.training.reduce_factor)
