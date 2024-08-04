@@ -59,9 +59,9 @@ def run_folder(model, args, config, device, verbose=False):
 
         mixture = torch.tensor(mix, dtype=torch.float32)
         if args.model_type == 'htdemucs':
-            res = demix_track_demucs(config, model, mixture, device, pbar=True)
+            res = demix_track_demucs(config, model, mixture, device, pbar=args.detailed_pbar)
         else:
-            res = demix_track(config, model, mixture, device, pbar=True)
+            res = demix_track(config, model, mixture, device, pbar=args.detailed_pbar)
 
         for instr in instruments:
             estimates = res[instr].T
@@ -91,6 +91,7 @@ def proc_folder(args):
     parser.add_argument("--store_dir", default="", type=str, help="path to store results as wav file")
     parser.add_argument("--device_ids", nargs='+', type=int, default=0, help='list of gpu ids')
     parser.add_argument("--extract_instrumental", action='store_true', help="invert vocals to get instrumental if provided")
+    parser.add_argument("--detailed_pbar", action='store_true', help="show detailed progress bar")
     if args is None:
         args = parser.parse_args()
     else:
