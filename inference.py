@@ -32,7 +32,12 @@ def run_folder(model, args, config, device, verbose=False):
         os.mkdir(args.store_dir)
 
     if not verbose:
-        all_mixtures_path = tqdm(all_mixtures_path)
+        all_mixtures_path = tqdm(all_mixtures_path, desc="Total progress")
+
+    if args.disable_detailed_pbar:
+        detailed_pbar = False
+    else:
+        detailed_pbar = True
 
     for path in all_mixtures_path:
         if not verbose:
@@ -59,9 +64,9 @@ def run_folder(model, args, config, device, verbose=False):
 
         mixture = torch.tensor(mix, dtype=torch.float32)
         if args.model_type == 'htdemucs':
-            res = demix_track_demucs(config, model, mixture, device)
+            res = demix_track_demucs(config, model, mixture, device, pbar=detailed_pbar)
         else:
-            res = demix_track(config, model, mixture, device)
+            res = demix_track(config, model, mixture, device, pbar=detailed_pbar)
 
         for instr in instruments:
             estimates = res[instr].T
@@ -91,6 +96,7 @@ def proc_folder(args):
     parser.add_argument("--store_dir", default="", type=str, help="path to store results as wav file")
     parser.add_argument("--device_ids", nargs='+', type=int, default=0, help='list of gpu ids')
     parser.add_argument("--extract_instrumental", action='store_true', help="invert vocals to get instrumental if provided")
+    parser.add_argument("--disable_detailed_pbar", action='store_true', help="disable detailed progress bar")
     if args is None:
         args = parser.parse_args()
     else:
