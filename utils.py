@@ -8,6 +8,7 @@ import torch.nn as nn
 import yaml
 from ml_collections import ConfigDict
 from omegaconf import OmegaConf
+from tqdm import tqdm
 
 
 def get_model_from_config(model_type, config_path):
@@ -69,7 +70,7 @@ def get_model_from_config(model_type, config_path):
     return model, config
 
 
-def demix_track(config, model, mix, device):
+def demix_track(config, model, mix, device, pbar=False):
     C = config.audio.chunk_size
     N = config.inference.num_overlap
     fade_size = C // 10
@@ -107,6 +108,8 @@ def demix_track(config, model, mix, device):
             i = 0
             batch_data = []
             batch_locations = []
+            progress_bar = tqdm(total=mix.shape[1], desc="Processing audio chunks", leave=False) if pbar else None
+
             while i < mix.shape[1]:
                 # print(i, i + C, mix.shape[1])
                 part = mix[:, i:i + C].to(device)
@@ -119,6 +122,9 @@ def demix_track(config, model, mix, device):
                 batch_data.append(part)
                 batch_locations.append((i, length))
                 i += step
+
+                if progress_bar:
+                    progress_bar.update(step)
 
                 if len(batch_data) >= batch_size or (i >= mix.shape[1]):
                     arr = torch.stack(batch_data, dim=0)
@@ -138,6 +144,9 @@ def demix_track(config, model, mix, device):
                     batch_data = []
                     batch_locations = []
 
+            if progress_bar:
+                progress_bar.close()
+
             estimated_sources = result / counter
             estimated_sources = estimated_sources.cpu().numpy()
             np.nan_to_num(estimated_sources, copy=False, nan=0.0)
@@ -152,7 +161,7 @@ def demix_track(config, model, mix, device):
         return {k: v for k, v in zip([config.training.target_instrument], estimated_sources)}
 
 
-def demix_track_demucs(config, model, mix, device):
+def demix_track_demucs(config, model, mix, device, pbar=False):
     S = len(config.training.instruments)
     C = config.training.samplerate * config.training.segment
     N = config.inference.num_overlap
@@ -168,6 +177,8 @@ def demix_track_demucs(config, model, mix, device):
             i = 0
             batch_data = []
             batch_locations = []
+            progress_bar = tqdm(total=mix.shape[1], desc="Processing audio chunks", leave=False) if pbar else None
+
             while i < mix.shape[1]:
                 # print(i, i + C, mix.shape[1])
                 part = mix[:, i:i + C].to(device)
@@ -178,6 +189,9 @@ def demix_track_demucs(config, model, mix, device):
                 batch_locations.append((i, length))
                 i += step
 
+                if progress_bar:
+                    progress_bar.update(step)
+
                 if len(batch_data) >= batch_size or (i >= mix.shape[1]):
                     arr = torch.stack(batch_data, dim=0)
                     x = model(arr)
@@ -187,6 +201,9 @@ def demix_track_demucs(config, model, mix, device):
                         counter[..., start:start+l] += 1.
                     batch_data = []
                     batch_locations = []
+
+            if progress_bar:
+                progress_bar.close()
 
             estimated_sources = result / counter
             estimated_sources = estimated_sources.cpu().numpy()

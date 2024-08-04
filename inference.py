@@ -32,7 +32,7 @@ def run_folder(model, args, config, device, verbose=False):
         os.mkdir(args.store_dir)
 
     if not verbose:
-        all_mixtures_path = tqdm(all_mixtures_path)
+        all_mixtures_path = tqdm(all_mixtures_path, desc="Total progress")
 
     for path in all_mixtures_path:
         if not verbose:
@@ -59,9 +59,9 @@ def run_folder(model, args, config, device, verbose=False):
 
         mixture = torch.tensor(mix, dtype=torch.float32)
         if args.model_type == 'htdemucs':
-            res = demix_track_demucs(config, model, mixture, device)
+            res = demix_track_demucs(config, model, mixture, device, pbar=True)
         else:
-            res = demix_track(config, model, mixture, device)
+            res = demix_track(config, model, mixture, device, pbar=True)
 
         for instr in instruments:
             estimates = res[instr].T
