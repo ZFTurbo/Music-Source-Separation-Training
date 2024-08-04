@@ -32,7 +32,7 @@ def run_folder(model, args, config, device, verbose=False):
         os.mkdir(args.store_dir)
 
     if not verbose:
-        all_mixtures_path = tqdm(all_mixtures_path)
+        all_mixtures_path = tqdm(all_mixtures_path, desc="Total progress")
 
     for path in all_mixtures_path:
         if not verbose:
