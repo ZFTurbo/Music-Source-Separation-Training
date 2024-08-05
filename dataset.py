@@ -58,7 +58,8 @@ def get_track_set_length(params):
 
 
 class MSSDataset(torch.utils.data.Dataset):
-    def __init__(self, config, data_path, metadata_path="metadata.pkl", dataset_type=1, batch_size=None):
+    def __init__(self, config, data_path, metadata_path="metadata.pkl", dataset_type=1, batch_size=None, verbose=True):
+        self.verbose = verbose
         self.config = config
         self.dataset_type = dataset_type # 1, 2, 3 or 4
         self.data_path = data_path
@@ -72,27 +73,32 @@ class MSSDataset(torch.utils.data.Dataset):
         self.aug = False
         if 'augmentations' in config:
             if config['augmentations'].enable is True:
-                print('Use augmentation for training')
+                if self.verbose:
+                    print('Use augmentation for training')
                 self.aug = True
         else:
-            print('There is no augmentations block in config. Augmentations disabled for training...')
+            if self.verbose:
+                print('There is no augmentations block in config. Augmentations disabled for training...')
 
         try:
             metadata = pickle.load(open(metadata_path, 'rb'))
-            print('Loading songs data from cache: {}. If you updated dataset remove {} before training!'.format(metadata_path, os.path.basename(metadata_path)))
+            if self.verbose:
+                print('Loading songs data from cache: {}. If you updated dataset remove {} before training!'.format(metadata_path, os.path.basename(metadata_path)))
         except Exception as e:
             metadata = self.get_metadata()
             pickle.dump(metadata, open(metadata_path, 'wb'))
 
         if self.dataset_type in [1, 4]:
             if len(metadata) > 0:
-                print('Found tracks in dataset: {}'.format(len(metadata)))
+                if self.verbose:
+                    print('Found tracks in dataset: {}'.format(len(metadata)))
             else:
                 print('No tracks found for training. Check paths you provided!')
                 exit()
         else:
             for instr in self.instruments:
-                print('Found tracks for {} in dataset: {}'.format(instr, len(metadata[instr])))
+                if self.verbose:
+                    print('Found tracks for {} in dataset: {}'.format(instr, len(metadata[instr])))
         self.metadata = metadata
         self.chunk_size = config.audio.chunk_size
         self.min_mean_abs = config.audio.min_mean_abs
@@ -105,11 +111,12 @@ class MSSDataset(torch.utils.data.Dataset):
         if 'read_metadata_procs' in self.config['training']:
             read_metadata_procs = int(self.config['training']['read_metadata_procs'])
 
-        print(
-            'Dataset type:', self.dataset_type,
-            'Processes to use:', read_metadata_procs,
-            '\nCollecting metadata for', str(self.data_path),
-        )
+        if self.verbose:
+            print(
+                'Dataset type:', self.dataset_type,
+                'Processes to use:', read_metadata_procs,
+                '\nCollecting metadata for', str(self.data_path),
+            )
 
         if self.dataset_type in [1, 4]:
             metadata = []
@@ -164,7 +171,8 @@ class MSSDataset(torch.utils.data.Dataset):
 
             metadata = dict()
             for i in range(len(self.data_path)):
-                print('Reading tracks from: {}'.format(self.data_path[i]))
+                if self.verbose:
+                    print('Reading tracks from: {}'.format(self.data_path[i]))
                 df = pd.read_csv(self.data_path[i])
 
                 skipped = 0
