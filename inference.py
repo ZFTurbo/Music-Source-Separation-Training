@@ -12,6 +12,10 @@ import torch
 import numpy as np
 import soundfile as sf
 import torch.nn as nn
+
+# Using the embedded version of Python can also correctly import the utils module.
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(current_dir)
 from utils import demix_track, demix_track_demucs, get_model_from_config
 
 import warnings
@@ -73,15 +77,18 @@ def run_folder(model, args, config, device, verbose=False):
             if 'normalize' in config.inference:
                 if config.inference['normalize'] is True:
                     estimates = estimates * std + mean
-            sf.write("{}/{}_{}.wav".format(args.store_dir, os.path.basename(path)[:-4], instr), estimates, sr, subtype='FLOAT')
+            file_name, _ = os.path.splitext(os.path.basename(path))
+            output_file = os.path.join(args.store_dir, f"{file_name}_{instr}.wav")
+            sf.write(output_file, estimates, sr, subtype = 'FLOAT')
 
         if 'vocals' in instruments and args.extract_instrumental:
-            instrum_file_name = "{}/{}_{}.wav".format(args.store_dir, os.path.basename(path)[:-4], 'instrumental')
+            file_name, _ = os.path.splitext(os.path.basename(path))
+            instrum_file_name = os.path.join(args.store_dir, f"{file_name}_instrumental.wav")
             estimates = res['vocals'].T
             if 'normalize' in config.inference:
                 if config.inference['normalize'] is True:
                     estimates = estimates * std + mean
-            sf.write(instrum_file_name, mix_orig.T - estimates, sr, subtype='FLOAT')
+            sf.write(instrum_file_name, mix_orig.T - estimates, sr, subtype = 'FLOAT')
 
     time.sleep(1)
     print("Elapsed time: {:.2f} sec".format(time.time() - start_time))
@@ -102,6 +109,8 @@ def proc_folder(args):
         args = parser.parse_args()
     else:
         args = parser.parse_args(args)
+
+    use_cuda = torch.cuda.is_available() and not args.force_cpu
 
     torch.backends.cudnn.benchmark = True
 
