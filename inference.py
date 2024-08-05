@@ -26,6 +26,7 @@ def run_folder(model, args, config, device, verbose=False):
     start_time = time.time()
     model.eval()
     all_mixtures_path = glob.glob(args.input_folder + '/*.*')
+    all_mixtures_path.sort()
     print('Total files found: {}'.format(len(all_mixtures_path)))
 
     instruments = config.training.instruments
