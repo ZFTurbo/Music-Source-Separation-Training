@@ -26,6 +26,7 @@ def run_folder(model, args, config, device, verbose=False):
     start_time = time.time()
     model.eval()
     all_mixtures_path = glob.glob(args.input_folder + '/*.*')
+    all_mixtures_path.sort()
     print('Total files found: {}'.format(len(all_mixtures_path)))
 
     instruments = config.training.instruments
@@ -44,6 +45,7 @@ def run_folder(model, args, config, device, verbose=False):
         detailed_pbar = True
 
     for path in all_mixtures_path:
+        print("Starting processing track: ", path)
         if not verbose:
             all_mixtures_path.set_postfix({'track': os.path.basename(path)})
         try:
@@ -110,40 +112,39 @@ def proc_folder(args):
     else:
         args = parser.parse_args(args)
 
-    use_cuda = torch.cuda.is_available() and not args.force_cpu
+    
+    device = "cpu"
+    if args.force_cpu:
+        device = "cpu"
+    elif torch.cuda.is_available():
+        print('CUDA is available, use --force_cpu to disable it.')
+        device = "cuda"
+        device = f'cuda:{args.device_ids}' if type(args.device_ids) == int else f'cuda:{args.device_ids[0]}'
+    elif torch.backends.mps.is_available():
+        device = "mps"
 
+    print("Using device: ", device)
+
+    model_load_start_time = time.time()
     torch.backends.cudnn.benchmark = True
 
     model, config = get_model_from_config(args.model_type, args.config_path)
     if args.start_check_point != '':
         print('Start from checkpoint: {}'.format(args.start_check_point))
-        if use_cuda:
-            state_dict = torch.load(args.start_check_point)
-        else:
-            state_dict = torch.load(args.start_check_point, map_location = torch.device('cpu'))
+        state_dict = torch.load(args.start_check_point, map_location = device)
         if args.model_type == 'htdemucs':
             # Fix for htdemucs pround etrained models
             if 'state' in state_dict:
                 state_dict = state_dict['state']
         model.load_state_dict(state_dict)
     print("Instruments: {}".format(config.training.instruments))
+    
+    model = nn.DataParallel(model, device_ids = args.device_ids)
+    model = model.to(device)
 
-    if use_cuda:
-        device_ids = args.device_ids
-        if type(device_ids) == int:
-            device = torch.device(f'cuda:{device_ids}')
-            model = model.to(device)
-        else:
-            device = torch.device(f'cuda:{device_ids[0]}')
-            model = nn.DataParallel(model, device_ids = device_ids).to(device)
-        print('Using CUDA with device_ids: {}'.format(device_ids))
-    else:
-        device = 'cpu'
-        print('Using CPU. It will be very slow!')
-        print('If CUDA is available, use --force_cpu to disable it.')
-        model = model.to(device)
+    print("Model load time: {:.2f} sec".format(time.time() - model_load_start_time))
 
-    run_folder(model, args, config, device, verbose=False)
+    run_folder(model, args, config, device, verbose=True)
 
 
 if __name__ == "__main__":

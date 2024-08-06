@@ -123,9 +123,6 @@ def demix_track(config, model, mix, device, pbar=False):
                 batch_locations.append((i, length))
                 i += step
 
-                if progress_bar:
-                    progress_bar.update(step)
-
                 if len(batch_data) >= batch_size or (i >= mix.shape[1]):
                     arr = torch.stack(batch_data, dim=0)
                     x = model(arr)
@@ -143,6 +140,9 @@ def demix_track(config, model, mix, device, pbar=False):
 
                     batch_data = []
                     batch_locations = []
+
+                if progress_bar:
+                    progress_bar.update(step)
 
             if progress_bar:
                 progress_bar.close()
@@ -189,8 +189,6 @@ def demix_track_demucs(config, model, mix, device, pbar=False):
                 batch_locations.append((i, length))
                 i += step
 
-                if progress_bar:
-                    progress_bar.update(step)
 
                 if len(batch_data) >= batch_size or (i >= mix.shape[1]):
                     arr = torch.stack(batch_data, dim=0)
@@ -201,6 +199,9 @@ def demix_track_demucs(config, model, mix, device, pbar=False):
                         counter[..., start:start+l] += 1.
                     batch_data = []
                     batch_locations = []
+
+                if progress_bar:
+                    progress_bar.update(step)
 
             if progress_bar:
                 progress_bar.close()
