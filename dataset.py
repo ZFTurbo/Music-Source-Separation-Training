@@ -57,6 +57,13 @@ def get_track_set_length(params):
     return path, lengths_arr.min()
 
 
+# For multiprocessing
+def get_track_length(params):
+    path = params
+    length = len(sf.read(path)[0])
+    return (path, length)
+
+
 class MSSDataset(torch.utils.data.Dataset):
     def __init__(self, config, data_path, metadata_path="metadata.pkl", dataset_type=1, batch_size=None, verbose=True):
         self.verbose = verbose
@@ -107,7 +114,7 @@ class MSSDataset(torch.utils.data.Dataset):
         return self.config.training.num_steps * self.batch_size
 
     def get_metadata(self):
-        read_metadata_procs = 8
+        read_metadata_procs = multiprocessing.cpu_count()
         if 'read_metadata_procs' in self.config['training']:
             read_metadata_procs = int(self.config['training']['read_metadata_procs'])
 
@@ -161,9 +168,15 @@ class MSSDataset(torch.utils.data.Dataset):
                     track_paths += sorted(glob(self.data_path + '/{}/*.wav'.format(instr)))
                     track_paths += sorted(glob(self.data_path + '/{}/*.flac'.format(instr)))
 
-                for path in tqdm(track_paths):
-                    length = len(sf.read(path)[0])
-                    metadata[instr].append((path, length))
+                if read_metadata_procs <= 1:
+                    for path in tqdm(track_paths):
+                        length = len(sf.read(path)[0])
+                        metadata[instr].append((path, length))
+                else:
+                    p = multiprocessing.Pool(processes=read_metadata_procs)
+                    for out in tqdm(p.imap(get_track_length, track_paths), total=len(track_paths)):
+                        metadata[instr].append(out)
+
         elif self.dataset_type == 3:
             import pandas as pd
             if type(self.data_path) != list:
