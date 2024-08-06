@@ -24,3 +24,4 @@ asteroid==0.7.0
 auraloss
 torchseg
 bitsandbytes
+wandb

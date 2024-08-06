@@ -11,6 +11,7 @@ import sys
 import os
 import glob
 import torch
+import wandb
 import soundfile as sf
 import numpy as np
 import auraloss
@@ -156,6 +157,7 @@ def valid(model, args, config, device, verbose=False):
     for instr in instruments:
         sdr_val = np.array(all_sdr[instr]).mean()
         print("Instr SDR {}: {:.4f}".format(instr, sdr_val))
+        wandb.log({ f'{instr}_sdr': sdr_val })
         sdr_avg += sdr_val
     sdr_avg /= len(instruments)
     if len(instruments) > 1:
@@ -305,6 +307,7 @@ def valid_multi_gpu(model, args, config, verbose=False):
     for instr in instruments:
         sdr_val = np.array(all_sdr[instr]).mean()
         print("Instr SDR {}: {:.4f}".format(instr, sdr_val))
+        wandb.log({ f'{instr}_sdr': sdr_val })
         sdr_avg += sdr_val
     sdr_avg /= len(instruments)
     if len(instruments) > 1:
@@ -328,6 +331,7 @@ def train_model(args):
     parser.add_argument("--use_multistft_loss", action='store_true', help="Use MultiSTFT Loss (from auraloss package)")
     parser.add_argument("--use_mse_loss", action='store_true', help="Use default MSE loss")
     parser.add_argument("--use_l1_loss", action='store_true', help="Use L1 loss")
+    parser.add_argument("--wandb_key", type=str, default='', help='wandb API Key')
     if args is None:
         args = parser.parse_args()
     else:
@@ -352,6 +356,13 @@ def train_model(args):
 
     device_ids = args.device_ids
     batch_size = config.training.batch_size * len(device_ids)
+
+    # wandb
+    if args.wandb_key is None or args.wandb_key.strip() == '':
+        wandb.init(mode = 'disabled')
+    else:
+        wandb.login(key = args.wandb_key)
+        wandb.init(project = 'msst', config = { 'config': config, 'args': args, 'device_ids': device_ids, 'batch_size': batch_size })
 
     trainset = MSSDataset(
         config,
@@ -504,9 +515,11 @@ def train_model(args):
             loss_val += li
             total += 1
             pbar.set_postfix({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1)})
+            wandb.log({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1), 'total': total, 'loss_val': loss_val, 'i': i })
             loss.detach()
 
         print('Training loss: {:.6f}'.format(loss_val / total))
+        wandb.log({'train_loss': loss_val / total, 'epoch': epoch})
 
         # Save last
         store_path = args.results_path + '/last_{}.ckpt'.format(args.model_type)
@@ -531,6 +544,7 @@ def train_model(args):
             )
             best_sdr = sdr_avg
         scheduler.step(sdr_avg)
+        wandb.log({'sdr_avg': sdr_avg, 'best_sdr': best_sdr})
 
 
 if __name__ == "__main__":
