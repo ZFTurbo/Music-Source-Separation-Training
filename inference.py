@@ -141,7 +141,10 @@ def proc_folder(args):
         model.load_state_dict(state_dict)
     print("Instruments: {}".format(config.training.instruments))
     
-    model = nn.DataParallel(model, device_ids = args.device_ids)
+    # in case multiple CUDA GPUs are used and --device_ids arg is passed
+    if type(args.device_ids) != int:
+        model = nn.DataParallel(model, device_ids = args.device_ids)
+
     model = model.to(device)
 
     print("Model load time: {:.2f} sec".format(time.time() - model_load_start_time))
