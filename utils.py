@@ -70,9 +70,14 @@ def get_model_from_config(model_type, config_path):
     return model, config
 
 @cache
-def _getWindowingArray(C, fade_size):
-    return torch.minimum(window := torch.arange(C)/fade_size, 
-                         torch.minimum(1, (C-1-window)/fade_size))
+def _getWindowingArray(window_size, fade_size):
+    fadein = torch.linspace(0, 1, fade_size)
+    fadeout = torch.linspace(1, 0, fade_size)
+    window = torch.ones(window_size)
+    window[-fade_size:] *= fadeout
+    window[:fade_size] *= fadein
+    return window
+
 
 def demix_track(config, model, mix, device, pbar=False):
     C = config.audio.chunk_size
@@ -122,7 +127,7 @@ def demix_track(config, model, mix, device, pbar=False):
                     arr = torch.stack(batch_data, dim=0)
                     x = model(arr)
 
-                    window = windowingArray 
+                    window = windowingArray
                     if i - step == 0:  # First audio chunk, no fadein
                         window[:fade_size] = 1
                     elif i >= mix.shape[1]:  # Last audio chunk, no fadeout

@@ -25,3 +25,4 @@ auraloss
 torchseg
 bitsandbytes
 wandb
+accelerate
