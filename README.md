@@ -7,11 +7,12 @@ Repository for training models for music source separation. Repository is based 
 Model can be chosen with `--model_type` arg.
 
 Available models for training:
+
 * MDX23C based on [KUIELab TFC TDF v3 architecture](https://github.com/kuielab/sdx23/). Key: `mdx23c`.
 * Demucs4HT [[Paper](https://arxiv.org/abs/2211.08553)]. Key: `htdemucs`.
-* VitLarge23 based on [Segmentation Models Pytorch](https://github.com/qubvel/segmentation_models.pytorch). Key: `segm_models`. 
+* VitLarge23 based on [Segmentation Models Pytorch](https://github.com/qubvel/segmentation_models.pytorch). Key: `segm_models`.
 * TorchSeg based on [TorchSeg module](https://github.com/qubvel/segmentation_models.pytorch). Key: `torchseg`.
-* Band Split RoFormer [[Paper](https://arxiv.org/abs/2309.02612), [Repository](https://github.com/lucidrains/BS-RoFormer)] . Key: `bs_roformer`. 
+* Band Split RoFormer [[Paper](https://arxiv.org/abs/2309.02612), [Repository](https://github.com/lucidrains/BS-RoFormer)] . Key: `bs_roformer`.
 * Mel-Band RoFormer [[Paper](https://arxiv.org/abs/2310.01809), [Repository](https://github.com/lucidrains/BS-RoFormer)]. Key: `mel_band_roformer`.
 * Swin Upernet [[Paper](https://arxiv.org/abs/2103.14030)] Key: `swin_upernet`.
 * BandIt Plus [[Paper](https://arxiv.org/abs/2309.02539), [Repository](https://github.com/karnwatcharasupat/bandit)] Key: `bandit`.
@@ -22,16 +23,17 @@ Available models for training:
 2. **Note 2**: Thanks to [@lucidrains](https://github.com/lucidrains) for recreating the RoFormer models based on papers.
 3. **Note 3**: For `torchseg` gives access to more than 800 encoders from `timm` module. It's similar to `segm_models`.
 
-## How to train
+## How to: Train
 
 To train model you need to:
 
-1) Choose model type with key `--model_type`. Possible values: `mdx23c`, `htdemucs`, `segm_models`, `mel_band_roformer`, `bs_roformer`.
+1) Choose model type with option `--model_type`, including: `mdx23c`, `htdemucs`, `segm_models`, `mel_band_roformer`, `bs_roformer`.
 2) Choose location of config for model `--config_path` `<config path>`. You can find examples of configs in [configs folder](configs/). Prefixes `config_musdb18_` are examples for [MUSDB18 dataset](https://sigsep.github.io/datasets/musdb.html).
-3) If you have some check-point from the same model or from the similar model you can use it with: `--start_check_point` `<weights path>`
+3) If you have a check-point from the same model or from another similar model you can use it with option: `--start_check_point` `<weights path>`
 4) Choose path where to store results of training `--results_path` `<results folder path>`
 
-#### Example
+### Training example
+
 ```bash
 python train.py \ 
     --model_type mel_band_roformer \ 
@@ -44,11 +46,11 @@ python train.py \
     --device_ids 0
 ```
 
-All available training parameters you can find [here](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/train.py#L109).
+All training parameters are [here](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/train.py#L109).
 
-## How to inference
+## How to: Inference
 
-#### Example
+### Inference example
 
 ```bash
 python inference.py \  
@@ -59,29 +61,29 @@ python inference.py \
     --store_dir separation_results/
 ```
 
-All available inference parameters you can find [here](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/inference.py#L54).
+All inference parameters are [here](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/inference.py#L54).
 
 ## Useful notes
 
 * All batch sizes in config are adjusted to use with single NVIDIA A6000 48GB. If you have less memory please adjust correspodningly in model config `training.batch_size` and `training.gradient_accumulation_steps`.
-* It's usually always better to start with old weights even if shapes not fully match. Code supports loading weights for not fully same models (but it must have the same architecture). Training will be much faster. 
+* It's usually always better to start with old weights even if shapes not fully match. Code supports loading weights for not fully same models (but it must have the same architecture). Training will be much faster.
 
 ## Code description
 
 * `configs/config_*.yaml` - configuration files for models
-* `models/*` - set of available models for training and inference 
+* `models/*` - set of available models for training and inference
 * `dataset.py` - dataset which creates new samples for training
 * `inference.py` - process folder with music files and separate them
 * `train.py` - main training code
-* `utils.py` - common functions used by train/valid 
+* `utils.py` - common functions used by train/valid
 * `valid.py` - validation of model with metrics
-
 
 ## Pre-trained models
 
 If you trained some good models, please, share them. You can post config and model weights [in this issue](https://github.com/ZFTurbo/Music-Source-Separation-Training/issues/1).
 
 ### Vocal models
+
 |                            Model Type                            | Instruments |   Metrics (SDR)   | Config | Checkpoint |
 |:----------------------------------------------------------------:|:-------------:|:-----------------:|:-----:|:-----:|
 |                              MDX23C                              | vocals / other | SDR vocals: 10.17 | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/config_vocals_mdx23c.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.0/model_vocals_mdx23c_sdr_10.17.ckpt) |
@@ -95,6 +97,7 @@ If you trained some good models, please, share them. You can post config and mod
 **Note**: Metrics measured on [Multisong Dataset](https://mvsep.com/en/quality_checker).
 
 ### Single stem models
+
 |                                                  Model Type                                                   | Instruments |   Metrics (SDR)    | Config | Checkpoint |
 |:-------------------------------------------------------------------------------------------------------------:|:-----------:|:------------------:|:-----:|:-----:|
 |                                              HTDemucs4 FT Drums                                               |    drums    |  SDR drums: 11.13  | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/configs/config_musdb18_htdemucs.yaml) | [Weights](https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/f7e0c4bc-ba3fe64a.th) |
@@ -119,8 +122,8 @@ If you trained some good models, please, share them. You can post config and mod
 |                                           HTDemucs4                                           |         bass / drums / vocals / other          |                                    Multisong avg: 9.16 (bass: 11.76, drums: 10.88 vocals: 8.24 other: 5.74)                                    | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/configs/config_musdb18_htdemucs.yaml) | [Weights](https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th) |
 |                                      HTDemucs4 (6 stems)                                      | bass / drums / vocals / other / piano / guitar |                              Multisong (bass: 11.22, drums: 10.22 vocals: 8.05 other: --- piano: --- guitar: ---)                              | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/configs/config_htdemucs_6stems.yaml) | [Weights](https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/5c90dfd2-34c22ccb.th) |
 |                                          Demucs3 mmi                                          |         bass / drums / vocals / other          |                                    Multisong avg: 8.88 (bass: 11.17, drums: 10.70 vocals: 8.22 other: 5.42)                                    | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/configs/config_musdb18_demucs3_mmi.yaml) | [Weights](https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/75fc33f5-1941ce65.th) |
-|                       DrumSep (by [inagoy](https://github.com/inagoy))                        |         kick / snare / cymbals / toms          |                                                                      ---                                                                       | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/configs/config_drumsep.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.5/model_drumsep.th) |
-| DrumSep (by [aufr33](https://github.com/aufr33) and [jarredou](https://github.com/jarredou))) |    kick / snare / toms / hh / ride / crash     |                                                                      ---                                                                       | [Config](https://github.com/jarredou/models/releases/download/aufr33-jarredou_MDX23C_DrumSep_model_v0.1/aufr33-jarredou_DrumSep_model_mdx23c_ep_141_sdr_10.8059.yaml) | [Weights](https://github.com/jarredou/models/releases/download/aufr33-jarredou_MDX23C_DrumSep_model_v0.1/aufr33-jarredou_DrumSep_model_mdx23c_ep_141_sdr_10.8059.ckpt) |
+|                       DrumSep htdemucs (by [inagoy](https://github.com/inagoy))                        |         kick / snare / cymbals / toms          |                                                                      ---                                                                       | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/configs/config_drumsep.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.5/model_drumsep.th) |
+| DrumSep mdx23c (by [aufr33](https://github.com/aufr33) and [jarredou](https://github.com/jarredou)))  |    kick / snare / toms / hh / ride / crash     |                                                                      ---                                                                       | [Config](https://github.com/jarredou/models/releases/download/aufr33-jarredou_MDX23C_DrumSep_model_v0.1/aufr33-jarredou_DrumSep_model_mdx23c_ep_141_sdr_10.8059.yaml) | [Weights](https://github.com/jarredou/models/releases/download/aufr33-jarredou_MDX23C_DrumSep_model_v0.1/aufr33-jarredou_DrumSep_model_mdx23c_ep_141_sdr_10.8059.ckpt) |
 |                    SCNet (by [starrytong](https://github.com/starrytong)) ~~*~~               |         bass / drums / vocals / other          |                                    Multisong avg: 8.87 (bass: 11.07, drums: 10.79 vocals: 8.27 other: 5.34)                                    | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.6/config_musdb18_scnet.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v.1.0.6/scnet_checkpoint_musdb18.ckpt) |
 
 ~~*~~ **Note**: Model was trained only on MUSDB18HQ dataset (100 songs train data)
@@ -137,7 +140,7 @@ Look here: [Augmentations](docs/augmentations.md)
 
 * [arxiv paper](https://arxiv.org/abs/2305.07489)
 
-```
+```text
 @misc{solovyev2023benchmarks,
       title={Benchmarks and leaderboards for sound demixing tasks}, 
       author={Roman Solovyev and Alexander Stempkovskiy and Tatiana Habruseva},
