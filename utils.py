@@ -9,7 +9,7 @@ import yaml
 from ml_collections import ConfigDict
 from omegaconf import OmegaConf
 from tqdm import tqdm
-
+from functools import cache
 
 def get_model_from_config(model_type, config_path):
     with open(config_path) as f:
@@ -69,6 +69,10 @@ def get_model_from_config(model_type, config_path):
 
     return model, config
 
+@cache
+def _getWindowingArray(C, fade_size):
+    return torch.minimum(window := torch.arange(C)/fade_size, 
+                         torch.minimum(1, (C-1-window)/fade_size))
 
 def demix_track(config, model, mix, device, pbar=False):
     C = config.audio.chunk_size
@@ -84,17 +88,8 @@ def demix_track(config, model, mix, device, pbar=False):
     if length_init > 2 * border and (border > 0):
         mix = nn.functional.pad(mix, (border, border), mode='reflect')
 
-    # Prepare windows arrays (do 1 time for speed up). This trick repairs click problems on the edges of segment
-    window_size = C
-    fadein = torch.linspace(0, 1, fade_size)
-    fadeout = torch.linspace(1, 0, fade_size)
-    window_start = torch.ones(window_size)
-    window_middle = torch.ones(window_size)
-    window_finish = torch.ones(window_size)
-    window_start[-fade_size:] *= fadeout # First audio chunk, no fadein
-    window_finish[:fade_size] *= fadein # Last audio chunk, no fadeout
-    window_middle[-fade_size:] *= fadeout
-    window_middle[:fade_size] *= fadein
+    # windowingArray crossfades at segment boundaries to mitigate clicking artifacts
+    windowingArray = _getWindowingArray(C, fade_size)
 
     with torch.cuda.amp.autocast(enabled=config.training.use_amp):
         with torch.inference_mode():
@@ -127,11 +122,11 @@ def demix_track(config, model, mix, device, pbar=False):
                     arr = torch.stack(batch_data, dim=0)
                     x = model(arr)
 
-                    window = window_middle
+                    window = windowingArray 
                     if i - step == 0:  # First audio chunk, no fadein
-                        window = window_start
+                        window[:fade_size] = 1
                     elif i >= mix.shape[1]:  # Last audio chunk, no fadeout
-                        window = window_finish
+                        window[-fade_size:] = 1
 
                     for j in range(len(batch_locations)):
                         start, l = batch_locations[j]
