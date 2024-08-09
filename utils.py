@@ -9,7 +9,6 @@ import yaml
 from ml_collections import ConfigDict
 from omegaconf import OmegaConf
 from tqdm import tqdm
-from functools import cache
 
 def get_model_from_config(model_type, config_path):
     with open(config_path) as f:
@@ -69,7 +68,6 @@ def get_model_from_config(model_type, config_path):
 
     return model, config
 
-@cache
 def _getWindowingArray(window_size, fade_size):
     fadein = torch.linspace(0, 1, fade_size)
     fadeout = torch.linspace(1, 0, fade_size)
