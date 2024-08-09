@@ -53,6 +53,7 @@ cover/
 # Jupyter Notebook
 .ipynb_checkpoints
 share/jupyter
+etc/jupyter
 
 # IPython
 profile_default/
