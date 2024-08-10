@@ -13,6 +13,7 @@ import glob
 from tqdm import tqdm
 import os
 import torch
+import wandb
 import auraloss
 import torch.nn as nn
 from torch.optim import Adam, AdamW, SGD, RAdam, RMSprop
@@ -109,6 +110,7 @@ def train_model(args):
     parser.add_argument("--use_multistft_loss", action='store_true', help="Use MultiSTFT Loss (from auraloss package)")
     parser.add_argument("--use_mse_loss", action='store_true', help="Use default MSE loss")
     parser.add_argument("--use_l1_loss", action='store_true', help="Use L1 loss")
+    parser.add_argument("--wandb_key", type=str, default='', help='wandb API Key')
     if args is None:
         args = parser.parse_args()
     else:
@@ -128,6 +130,13 @@ def train_model(args):
 
     device_ids = args.device_ids
     batch_size = config.training.batch_size
+
+    # wandb
+    if accelerator.is_main_process and args.wandb_key is not None and args.wandb_key.strip() != '':
+        wandb.login(key = args.wandb_key)
+        wandb.init(project = 'msst-accelerate', config = { 'config': config, 'args': args, 'device_ids': device_ids, 'batch_size': batch_size })
+    else:
+        wandb.init(mode = 'disabled')
 
     trainset = MSSDataset(
         config,
@@ -313,10 +322,12 @@ def train_model(args):
             loss_val += li
             total += 1
             if accelerator.is_main_process:
+                wandb.log({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1), 'total': total, 'loss_val': loss_val, 'i': i })
                 pbar.set_postfix({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1)})
 
         if accelerator.is_main_process:
             print('Training loss: {:.6f}'.format(loss_val / total))
+            wandb.log({'train_loss': loss_val / total, 'epoch': epoch})
 
         # Save last
         store_path = args.results_path + '/last_{}.ckpt'.format(args.model_type)
@@ -342,11 +353,13 @@ def train_model(args):
             sdr_val = sdr_data[:valid_dataset_length].mean()
             if accelerator.is_main_process:
                 print("Instr SDR {}: {:.4f} Debug: {}".format(instr, sdr_val, len(sdr_data)))
+                wandb.log({ f'{instr}_sdr': sdr_val })
             sdr_avg += sdr_val
         sdr_avg /= len(instruments)
         if len(instruments) > 1:
             if accelerator.is_main_process:
                 print('SDR Avg: {:.4f}'.format(sdr_avg))
+                wandb.log({'sdr_avg': sdr_avg, 'best_sdr': best_sdr})
 
         if accelerator.is_main_process:
             if sdr_avg > best_sdr:
