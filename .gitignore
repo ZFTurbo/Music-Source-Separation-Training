@@ -71,3 +71,6 @@ pyvenv.cfg
 Scripts/
 
 *.code-workspace
+
+results/
+wandb/
