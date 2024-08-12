@@ -2,6 +2,7 @@ from functools import wraps
 from packaging import version
 from collections import namedtuple
 
+import os
 import torch
 from torch import nn, einsum
 import torch.nn.functional as F
@@ -62,8 +63,12 @@ class Attend(nn.Module):
         device_version = version.parse(f'{device_properties.major}.{device_properties.minor}')
 
         if device_version >= version.parse('8.0'):
-            print_once('GPU Compute Capability equal or above 8.0, using flash attention if input tensor is on cuda')
-            self.cuda_config = FlashAttentionConfig(True, False, False)
+            if os.name == 'nt':
+                print_once('Windows OS detected, using math or mem efficient attention if input tensor is on cuda')
+                self.cuda_config = FlashAttentionConfig(False, True, True)
+            else:
+                print_once('GPU Compute Capability equal or above 8.0, using flash attention if input tensor is on cuda')
+                self.cuda_config = FlashAttentionConfig(True, False, False)
         else:
             print_once('GPU Compute Capability below 8.0, using math or mem efficient attention if input tensor is on cuda')
             self.cuda_config = FlashAttentionConfig(False, True, True)
