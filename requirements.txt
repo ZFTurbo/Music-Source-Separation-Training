@@ -27,3 +27,4 @@ bitsandbytes
 wandb
 accelerate
 huggingface-hub>=0.23.0
+prodigyopt

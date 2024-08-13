@@ -419,6 +419,11 @@ def train_model(args):
         optimizer = RAdam(model.parameters(), lr=config.training.lr, **optim_params)
     elif config.training.optimizer == 'rmsprop':
         optimizer = RMSprop(model.parameters(), lr=config.training.lr, **optim_params)
+    elif config.training.optimizer == 'prodigy':
+        from prodigyopt import Prodigy
+        # you can choose weight decay value based on your problem, 0 by default
+        # We recommend using lr=1.0 (default) for all networks.
+        optimizer = Prodigy(model.parameters(), lr=config.training.lr, **optim_params)
     elif config.training.optimizer == 'adamw8bit':
         import bitsandbytes as bnb
         optimizer = bnb.optim.AdamW8bit(model.parameters(), lr=config.training.lr, **optim_params)
