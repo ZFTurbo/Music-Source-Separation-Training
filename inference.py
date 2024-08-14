@@ -83,11 +83,14 @@ def run_folder(model, args, config, device, verbose=False):
             output_file = os.path.join(args.store_dir, f"{file_name}_{instr}.wav")
             sf.write(output_file, estimates, sr, subtype = 'FLOAT')
 
-        # Output "instrumental", which is an inverse of 'vocals'
-        if 'vocals' in instruments and args.extract_instrumental:
+        # Output "instrumental", which is an inverse of 'vocals' (or first stem in list if 'vocals' absent)
+        if args.extract_instrumental:
             file_name, _ = os.path.splitext(os.path.basename(path))
             instrum_file_name = os.path.join(args.store_dir, f"{file_name}_instrumental.wav")
-            estimates = res['vocals'].T
+            if 'vocals' in instruments:
+                estimates = res['vocals'].T
+            else:
+                estimates = res[instruments[0]].T
             if 'normalize' in config.inference:
                 if config.inference['normalize'] is True:
                     estimates = estimates * std + mean
