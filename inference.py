@@ -1,22 +1,27 @@
 # coding: utf-8
 __author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
 
-import argparse
-import time
-import librosa
 from tqdm import tqdm
-import sys
-import os
+from typing import List
+import argparse
 import glob
+import librosa
+import numpy
+import os
+import soundfile
+import sys
+import time
 import torch
-import numpy as np
-import soundfile as sf
 import torch.nn as nn
-
-# Using the embedded version of Python can also correctly import the utils module.
-current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(current_dir)
-from utils import demix_track, demix_track_demucs, get_model_from_config
+while (tryAgain := True):
+    try:
+        from utils import demix_track, demix_track_demucs, get_model_from_config
+        break
+    except ImportError as error:
+        if (pathModule := os.path.dirname(os.path.abspath(__file__))) in sys.path:
+            raise error  # Reraise the error
+        print(f"Added '{pathModule}' to sys.path")
+        sys.path.append(pathModule)
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -29,12 +34,9 @@ def run_folder(model, args, config, device, verbose=False):
     all_mixtures_path.sort()
     print('Total files found: {}'.format(len(all_mixtures_path)))
 
-    instruments = config.training.instruments
-    if config.training.target_instrument is not None:
-        instruments = [config.training.target_instrument]
+    instruments: List[str] = [config.training.target_instrument] if config.training.target_instrument is not None else config.training.instruments
 
-    if not os.path.isdir(args.store_dir):
-        os.mkdir(args.store_dir)
+    os.makedirs(args.store_dir, exist_ok=True)
 
     if not verbose:
         all_mixtures_path = tqdm(all_mixtures_path, desc="Total progress")
@@ -49,52 +51,45 @@ def run_folder(model, args, config, device, verbose=False):
         if not verbose:
             all_mixtures_path.set_postfix({'track': os.path.basename(path)})
         try:
-            # mix, sr = sf.read(path)
             mix, sr = librosa.load(path, sr=44100, mono=False)
         except Exception as e:
-            print('Can read track: {}'.format(path))
+            print('Cannot read track: {}'.format(path))
             print('Error message: {}'.format(str(e)))
             continue
 
         # Convert mono to stereo if needed
         if len(mix.shape) == 1:
-            mix = np.stack([mix, mix], axis=0)
+            mix = numpy.stack([mix, mix], axis=0)
 
-        mix_orig = mix.copy()
-        if 'normalize' in config.inference:
-            if config.inference['normalize'] is True:
-                mono = mix.mean(0)
-                mean = mono.mean()
-                std = mono.std()
-                mix = (mix - mean) / std
+        if config.inference.get('normalize', False) is True:
+            mix_orig = mix.copy()
+            mono = mix.mean(0)
+            mean = mono.mean()
+            std = mono.std()
+            mix = (mix - mean) / std
+        else: # assign a value to 'normalize' if not present in config
+            config.inference['normalize'] = False
 
         mixture = torch.tensor(mix, dtype=torch.float32)
         if args.model_type == 'htdemucs':
-            res = demix_track_demucs(config, model, mixture, device, pbar=detailed_pbar)
+            waveforms = demix_track_demucs(config, model, mixture, device, pbar=detailed_pbar)
         else:
-            res = demix_track(config, model, mixture, device, pbar=detailed_pbar)
+            waveforms = demix_track(config, model, mixture, device, pbar=detailed_pbar)
 
-        for instr in instruments:
-            estimates = res[instr].T
-            if 'normalize' in config.inference:
-                if config.inference['normalize'] is True:
-                    estimates = estimates * std + mean
-            file_name, _ = os.path.splitext(os.path.basename(path))
-            output_file = os.path.join(args.store_dir, f"{file_name}_{instr}.wav")
-            sf.write(output_file, estimates, sr, subtype = 'FLOAT')
+        if config.inference['normalize'] is True:
+            mix = mix_orig.copy()
+            del mix_orig # undo
+            waveforms = {k: v * std + mean for k, v in waveforms.items()}
 
-        # Output "instrumental", which is an inverse of 'vocals' (or first stem in list if 'vocals' absent)
+        # Output "instrumental", which is an inverse of 'vocals' or the first stem in list if 'vocals' absent
         if args.extract_instrumental:
-            file_name, _ = os.path.splitext(os.path.basename(path))
-            instrum_file_name = os.path.join(args.store_dir, f"{file_name}_instrumental.wav")
-            if 'vocals' in instruments:
-                estimates = res['vocals'].T
-            else:
-                estimates = res[instruments[0]].T
-            if 'normalize' in config.inference:
-                if config.inference['normalize'] is True:
-                    estimates = estimates * std + mean
-            sf.write(instrum_file_name, mix_orig.T - estimates, sr, subtype = 'FLOAT')
+            target = 'vocals' if 'vocals' in instruments else instruments[0]
+            waveforms['instrumental'] = mix - waveforms[target]
+
+        for target in instruments:
+            estimate = waveforms[target]
+            output_file = os.path.join(args.store_dir, f"{os.path.splitext(os.path.basename(path))[0]}_{target}.wav")
+            soundfile.write(output_file, estimate.T, sr, subtype = 'FLOAT')
 
     time.sleep(1)
     print("Elapsed time: {:.2f} sec".format(time.time() - start_time))
@@ -102,7 +97,7 @@ def run_folder(model, args, config, device, verbose=False):
 
 def proc_folder(args):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_type", type=str, default='mdx23c', 
+    parser.add_argument("--model_type", type=str, default='mdx23c',
                         help="One of bandit, bandit_v2, bs_roformer, htdemucs, mdx23c, mel_band_roformer, scnet, scnet_unofficial, segm_models, swin_upernet, torchseg")
     parser.add_argument("--config_path", type=str, help="path to config file")
     parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint to valid weights")
@@ -117,7 +112,6 @@ def proc_folder(args):
     else:
         args = parser.parse_args(args)
 
-    
     device = "cpu"
     if args.force_cpu:
         device = "cpu"
@@ -145,7 +139,7 @@ def proc_folder(args):
             state_dict = torch.load(args.start_check_point, map_location = device, weights_only=True)
         model.load_state_dict(state_dict)
     print("Instruments: {}".format(config.training.instruments))
-    
+
     # in case multiple CUDA GPUs are used and --device_ids arg is passed
     if type(args.device_ids) != int:
         model = nn.DataParallel(model, device_ids = args.device_ids)
