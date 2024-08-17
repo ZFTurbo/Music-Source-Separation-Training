@@ -80,13 +80,16 @@ def run_folder(model, args, config, device, verbose=False):
                 if config.inference['normalize'] is True:
                     estimates = estimates * std + mean
             file_name, _ = os.path.splitext(os.path.basename(path))
-            output_file = os.path.join(args.store_dir, f"{file_name}_{instr}.wav")
-            sf.write(output_file, estimates, sr, subtype = 'FLOAT')
+            if args.flac_file:
+                output_file = os.path.join(args.store_dir, f"{file_name}_{instr}.flac")
+                subtype = 'PCM_16' if args.pcm_type == 'PCM_16' else 'PCM_24'
+                sf.write(output_file, estimates, sr, subtype = subtype)
+            else:
+                output_file = os.path.join(args.store_dir, f"{file_name}_{instr}.wav")
+                sf.write(output_file, estimates, sr, subtype = 'FLOAT')
 
         # Output "instrumental", which is an inverse of 'vocals' (or first stem in list if 'vocals' absent)
         if args.extract_instrumental:
-            file_name, _ = os.path.splitext(os.path.basename(path))
-            instrum_file_name = os.path.join(args.store_dir, f"{file_name}_instrumental.wav")
             if 'vocals' in instruments:
                 estimates = res['vocals'].T
             else:
@@ -94,7 +97,14 @@ def run_folder(model, args, config, device, verbose=False):
             if 'normalize' in config.inference:
                 if config.inference['normalize'] is True:
                     estimates = estimates * std + mean
-            sf.write(instrum_file_name, mix_orig.T - estimates, sr, subtype = 'FLOAT')
+            file_name, _ = os.path.splitext(os.path.basename(path))
+            if args.flac_file:
+                instrum_file_name = os.path.join(args.store_dir, f"{file_name}_instrumental.flac")
+                subtype = 'PCM_16' if args.pcm_type == 'PCM_16' else 'PCM_24'
+                sf.write(instrum_file_name, mix_orig.T - estimates, sr, subtype = subtype)
+            else:
+                instrum_file_name = os.path.join(args.store_dir, f"{file_name}_instrumental.wav")
+                sf.write(instrum_file_name, mix_orig.T - estimates, sr, subtype = 'FLOAT')
 
     time.sleep(1)
     print("Elapsed time: {:.2f} sec".format(time.time() - start_time))
@@ -102,7 +112,7 @@ def run_folder(model, args, config, device, verbose=False):
 
 def proc_folder(args):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_type", type=str, default='mdx23c', 
+    parser.add_argument("--model_type", type=str, default='mdx23c',
                         help="One of bandit, bandit_v2, bs_roformer, htdemucs, mdx23c, mel_band_roformer, scnet, scnet_unofficial, segm_models, swin_upernet, torchseg")
     parser.add_argument("--config_path", type=str, help="path to config file")
     parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint to valid weights")
@@ -112,12 +122,14 @@ def proc_folder(args):
     parser.add_argument("--extract_instrumental", action='store_true', help="invert vocals to get instrumental if provided")
     parser.add_argument("--disable_detailed_pbar", action='store_true', help="disable detailed progress bar")
     parser.add_argument("--force_cpu", action = 'store_true', help = "Force the use of CPU even if CUDA is available")
+    parser.add_argument("--flac_file", action = 'store_true', help = "Output flac file instead of wav")
+    parser.add_argument("--pcm_type", type=str, choices=['PCM_16', 'PCM_24'], default='PCM_24', help="PCM type for FLAC files (PCM_16 or PCM_24)")
     if args is None:
         args = parser.parse_args()
     else:
         args = parser.parse_args(args)
 
-    
+
     device = "cpu"
     if args.force_cpu:
         device = "cpu"
@@ -145,7 +157,7 @@ def proc_folder(args):
             state_dict = torch.load(args.start_check_point, map_location = device, weights_only=True)
         model.load_state_dict(state_dict)
     print("Instruments: {}".format(config.training.instruments))
-    
+
     # in case multiple CUDA GPUs are used and --device_ids arg is passed
     if type(args.device_ids) != int:
         model = nn.DataParallel(model, device_ids = args.device_ids)
