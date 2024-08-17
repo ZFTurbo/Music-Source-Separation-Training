@@ -52,7 +52,7 @@ def run_folder(model, args, config, device, verbose=False):
             # mix, sr = sf.read(path)
             mix, sr = librosa.load(path, sr=44100, mono=False)
         except Exception as e:
-            print('Can read track: {}'.format(path))
+            print('Cannot read track: {}'.format(path))
             print('Error message: {}'.format(str(e)))
             continue
 
@@ -70,12 +70,12 @@ def run_folder(model, args, config, device, verbose=False):
 
         mixture = torch.tensor(mix, dtype=torch.float32)
         if args.model_type == 'htdemucs':
-            res = demix_track_demucs(config, model, mixture, device, pbar=detailed_pbar)
+            waveforms = demix_track_demucs(config, model, mixture, device, pbar=detailed_pbar)
         else:
-            res = demix_track(config, model, mixture, device, pbar=detailed_pbar)
+            waveforms = demix_track(config, model, mixture, device, pbar=detailed_pbar)
 
         for instr in instruments:
-            estimates = res[instr].T
+            estimates = waveforms[instr].T
             if 'normalize' in config.inference:
                 if config.inference['normalize'] is True:
                     estimates = estimates * std + mean
@@ -83,17 +83,17 @@ def run_folder(model, args, config, device, verbose=False):
             if args.flac_file:
                 output_file = os.path.join(args.store_dir, f"{file_name}_{instr}.flac")
                 subtype = 'PCM_16' if args.pcm_type == 'PCM_16' else 'PCM_24'
-                sf.write(output_file, estimates, sr, subtype = subtype)
+                sf.write(output_file, estimates, sr, subtype=subtype)
             else:
                 output_file = os.path.join(args.store_dir, f"{file_name}_{instr}.wav")
-                sf.write(output_file, estimates, sr, subtype = 'FLOAT')
+                sf.write(output_file, estimates, sr, subtype='FLOAT')
 
         # Output "instrumental", which is an inverse of 'vocals' (or first stem in list if 'vocals' absent)
         if args.extract_instrumental:
             if 'vocals' in instruments:
-                estimates = res['vocals'].T
+                estimates = waveforms['vocals'].T
             else:
-                estimates = res[instruments[0]].T
+                estimates = waveforms[instruments[0]].T
             if 'normalize' in config.inference:
                 if config.inference['normalize'] is True:
                     estimates = estimates * std + mean
@@ -101,10 +101,10 @@ def run_folder(model, args, config, device, verbose=False):
             if args.flac_file:
                 instrum_file_name = os.path.join(args.store_dir, f"{file_name}_instrumental.flac")
                 subtype = 'PCM_16' if args.pcm_type == 'PCM_16' else 'PCM_24'
-                sf.write(instrum_file_name, mix_orig.T - estimates, sr, subtype = subtype)
+                sf.write(instrum_file_name, mix_orig.T - estimates, sr, subtype=subtype)
             else:
                 instrum_file_name = os.path.join(args.store_dir, f"{file_name}_instrumental.wav")
-                sf.write(instrum_file_name, mix_orig.T - estimates, sr, subtype = 'FLOAT')
+                sf.write(instrum_file_name, mix_orig.T - estimates, sr, subtype='FLOAT')
 
     time.sleep(1)
     print("Elapsed time: {:.2f} sec".format(time.time() - start_time))
@@ -128,7 +128,6 @@ def proc_folder(args):
         args = parser.parse_args()
     else:
         args = parser.parse_args(args)
-
 
     device = "cpu"
     if args.force_cpu:
