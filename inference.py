@@ -82,7 +82,8 @@ def run_folder(model, args, config, device, verbose=False):
             file_name, _ = os.path.splitext(os.path.basename(path))
             if args.flac_file:
                 output_file = os.path.join(args.store_dir, f"{file_name}_{instr}.flac")
-                sf.write(output_file, estimates, sr)
+                subtype = 'PCM_16' if args.pcm_type == 'PCM_16' else 'PCM_24'
+                sf.write(output_file, estimates, sr, subtype = subtype)
             else:
                 output_file = os.path.join(args.store_dir, f"{file_name}_{instr}.wav")
                 sf.write(output_file, estimates, sr, subtype = 'FLOAT')
@@ -99,7 +100,8 @@ def run_folder(model, args, config, device, verbose=False):
             file_name, _ = os.path.splitext(os.path.basename(path))
             if args.flac_file:
                 instrum_file_name = os.path.join(args.store_dir, f"{file_name}_instrumental.flac")
-                sf.write(instrum_file_name, mix_orig.T - estimates, sr)
+                subtype = 'PCM_16' if args.pcm_type == 'PCM_16' else 'PCM_24'
+                sf.write(instrum_file_name, mix_orig.T - estimates, sr, subtype = subtype)
             else:
                 instrum_file_name = os.path.join(args.store_dir, f"{file_name}_instrumental.wav")
                 sf.write(instrum_file_name, mix_orig.T - estimates, sr, subtype = 'FLOAT')
@@ -121,6 +123,7 @@ def proc_folder(args):
     parser.add_argument("--disable_detailed_pbar", action='store_true', help="disable detailed progress bar")
     parser.add_argument("--force_cpu", action = 'store_true', help = "Force the use of CPU even if CUDA is available")
     parser.add_argument("--flac_file", action = 'store_true', help = "Output flac file instead of wav")
+    parser.add_argument("--pcm_type", type=str, choices=['PCM_16', 'PCM_24'], default='PCM_24', help="PCM type for FLAC files (PCM_16 or PCM_24)")
     if args is None:
         args = parser.parse_args()
     else:
