@@ -96,6 +96,13 @@ def run_folder(model, args, config, device, verbose=False):
         for el in waveforms:
             waveforms[el] = waveforms[el] / len(full_result)
 
+        # Create a new `instr` in instruments list, 'instrumental' 
+        if args.extract_instrumental:
+            instr = 'vocals' if 'vocals' in instruments else instruments[0]
+            instruments.append('instrumental')
+            # Output "instrumental", which is an inverse of 'vocals' or the first stem in list if 'vocals' absent
+            waveforms['instrumental'] = mix_orig - waveforms[instr]
+
         for instr in instruments:
             estimates = waveforms[instr].T
             if 'normalize' in config.inference:
@@ -109,24 +116,6 @@ def run_folder(model, args, config, device, verbose=False):
             else:
                 output_file = os.path.join(args.store_dir, f"{file_name}_{instr}.wav")
                 sf.write(output_file, estimates, sr, subtype='FLOAT')
-
-        # Output "instrumental", which is an inverse of 'vocals' (or first stem in list if 'vocals' absent)
-        if args.extract_instrumental:
-            if 'vocals' in instruments:
-                estimates = waveforms['vocals'].T
-            else:
-                estimates = waveforms[instruments[0]].T
-            if 'normalize' in config.inference:
-                if config.inference['normalize'] is True:
-                    estimates = estimates * std + mean
-            file_name, _ = os.path.splitext(os.path.basename(path))
-            if args.flac_file:
-                instrum_file_name = os.path.join(args.store_dir, f"{file_name}_instrumental.flac")
-                subtype = 'PCM_16' if args.pcm_type == 'PCM_16' else 'PCM_24'
-                sf.write(instrum_file_name, mix_orig.T - estimates, sr, subtype=subtype)
-            else:
-                instrum_file_name = os.path.join(args.store_dir, f"{file_name}_instrumental.wav")
-                sf.write(instrum_file_name, mix_orig.T - estimates, sr, subtype='FLOAT')
 
     time.sleep(1)
     print("Elapsed time: {:.2f} sec".format(time.time() - start_time))
