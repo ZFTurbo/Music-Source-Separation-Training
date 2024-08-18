@@ -45,6 +45,7 @@ def proc_list_of_files(
         mixture_paths = tqdm(mixture_paths)
 
     for path in mixture_paths:
+        start_time = time.time()
         mix, sr = sf.read(path)
         mix_orig = mix.copy()
 
@@ -65,46 +66,69 @@ def proc_list_of_files(
                 std = mono.std()
                 mix = (mix - mean) / std
 
-        mixture = torch.tensor(mix, dtype=torch.float32)
-        if args.model_type == 'htdemucs':
-            res = demix_track_demucs(config, model, mixture, device)
+        if args.use_tta:
+            # orig, channel inverse, polarity inverse
+            track_proc_list = [mix.copy(), mix[::-1].copy(), -1. * mix.copy()]
         else:
-            res = demix_track(config, model, mixture, device)
-        if 1:
-            pbar_dict = {}
-            for instr in instruments:
-                if instr != 'other' or config.training.other_fix is False:
-                    try:
-                        track, sr1 = sf.read(folder + '/{}.{}'.format(instr, args.extension))
+            track_proc_list = [mix.copy()]
 
-                        # Fix for mono
-                        if len(track.shape) == 1:
-                            track = np.expand_dims(track, axis=-1)
+        full_result = []
+        for single_track in track_proc_list:
+            mixture = torch.tensor(single_track, dtype=torch.float32)
+            if args.model_type == 'htdemucs':
+                waveforms = demix_track_demucs(config, model, mixture, device)
+            else:
+                waveforms = demix_track(config, model, mixture, device)
+            full_result.append(waveforms)
 
-                    except Exception as e:
-                        print('No data for stem: {}. Skip!'.format(instr))
-                        continue
+        # Average all values in single dict
+        waveforms = full_result[0]
+        for i in range(1, len(full_result)):
+            d = full_result[i]
+            for el in d:
+                if i == 2:
+                    waveforms[el] += -1.0 * d[el]
+                elif i == 1:
+                    waveforms[el] += d[el][::-1].copy()
                 else:
-                    # other is actually instrumental
-                    track, sr1 = sf.read(folder + '/{}.{}'.format('vocals', args.extension))
-                    track = mix_orig - track
+                    waveforms[el] += d[el]
+        for el in waveforms:
+            waveforms[el] = waveforms[el] / len(full_result)
 
-                estimates = res[instr].T
-                # print(estimates.shape)
-                if 'normalize' in config.inference:
-                    if config.inference['normalize'] is True:
-                        estimates = estimates * std + mean
+        pbar_dict = {}
+        for instr in instruments:
+            if instr != 'other' or config.training.other_fix is False:
+                try:
+                    track, sr1 = sf.read(folder + '/{}.{}'.format(instr, args.extension))
 
-                if args.store_dir != "":
-                    sf.write("{}/{}_{}.wav".format(args.store_dir, os.path.basename(folder), instr), estimates, sr,
-                             subtype='FLOAT')
-                references = np.expand_dims(track, axis=0)
-                estimates = np.expand_dims(estimates, axis=0)
-                sdr_val = sdr(references, estimates)[0]
-                if verbose:
-                    print(instr, res[instr].shape, sdr_val)
-                all_sdr[instr].append(sdr_val)
-                pbar_dict['sdr_{}'.format(instr)] = sdr_val
+                    # Fix for mono
+                    if len(track.shape) == 1:
+                        track = np.expand_dims(track, axis=-1)
+
+                except Exception as e:
+                    print('No data for stem: {}. Skip!'.format(instr))
+                    continue
+            else:
+                # other is actually instrumental
+                track, sr1 = sf.read(folder + '/{}.{}'.format('vocals', args.extension))
+                track = mix_orig - track
+
+            estimates = waveforms[instr].T
+            # print(estimates.shape)
+            if 'normalize' in config.inference:
+                if config.inference['normalize'] is True:
+                    estimates = estimates * std + mean
+
+            if args.store_dir != "":
+                sf.write("{}/{}_{}.wav".format(args.store_dir, os.path.basename(folder), instr), estimates, sr,
+                         subtype='FLOAT')
+            references = np.expand_dims(track, axis=0)
+            estimates = np.expand_dims(estimates, axis=0)
+            sdr_val = sdr(references, estimates)[0]
+            if verbose:
+                print(instr, waveforms[instr].shape, sdr_val, "Time: {:.2f} sec".format(time.time() - start_time))
+            all_sdr[instr].append(sdr_val)
+            pbar_dict['sdr_{}'.format(instr)] = sdr_val
 
             try:
                 mixture_paths.set_postfix(pbar_dict)
@@ -250,6 +274,7 @@ def check_validation(args):
     parser.add_argument("--num_workers", type=int, default=0, help="dataloader num_workers")
     parser.add_argument("--pin_memory", type=bool, default=False, help="dataloader pin_memory")
     parser.add_argument("--extension", type=str, default='wav', help="Choose extension for validation")
+    parser.add_argument("--use_tta", action='store_true', help="Flag adds test time augmentation during inference (polarity and channel inverse). While this triples the runtime, it reduces noise and slightly improves prediction quality.")
     if args is None:
         args = parser.parse_args()
     else:
