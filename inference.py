@@ -49,7 +49,6 @@ def run_folder(model, args, config, device, verbose=False):
         if not verbose:
             all_mixtures_path.set_postfix({'track': os.path.basename(path)})
         try:
-            # mix, sr = sf.read(path)
             mix, sr = librosa.load(path, sr=44100, mono=False)
         except Exception as e:
             print('Cannot read track: {}'.format(path))
@@ -68,11 +67,34 @@ def run_folder(model, args, config, device, verbose=False):
                 std = mono.std()
                 mix = (mix - mean) / std
 
-        mixture = torch.tensor(mix, dtype=torch.float32)
-        if args.model_type == 'htdemucs':
-            waveforms = demix_track_demucs(config, model, mixture, device, pbar=detailed_pbar)
+        if args.use_tta:
+            # orig, channel inverse, polarity inverse
+            track_proc_list = [mix.copy(), mix[::-1].copy(), -1. * mix.copy()]
         else:
-            waveforms = demix_track(config, model, mixture, device, pbar=detailed_pbar)
+            track_proc_list = [mix.copy()]
+
+        full_result = []
+        for single_track in track_proc_list:
+            mixture = torch.tensor(single_track, dtype=torch.float32)
+            if args.model_type == 'htdemucs':
+                waveforms = demix_track_demucs(config, model, mixture, device, pbar=detailed_pbar)
+            else:
+                waveforms = demix_track(config, model, mixture, device, pbar=detailed_pbar)
+            full_result.append(waveforms)
+
+        # Average all values in single dict
+        waveforms = full_result[0]
+        for i in range(1, len(full_result)):
+            d = full_result[i]
+            for el in d:
+                if i == 2:
+                    waveforms[el] += -1.0 * d[el]
+                elif i == 1:
+                    waveforms[el] += d[el][::-1].copy()
+                else:
+                    waveforms[el] += d[el]
+        for el in waveforms:
+            waveforms[el] = waveforms[el] / len(full_result)
 
         for instr in instruments:
             estimates = waveforms[instr].T
@@ -112,8 +134,7 @@ def run_folder(model, args, config, device, verbose=False):
 
 def proc_folder(args):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_type", type=str, default='mdx23c',
-                        help="One of bandit, bandit_v2, bs_roformer, htdemucs, mdx23c, mel_band_roformer, scnet, scnet_unofficial, segm_models, swin_upernet, torchseg")
+    parser.add_argument("--model_type", type=str, default='mdx23c', help="One of bandit, bandit_v2, bs_roformer, htdemucs, mdx23c, mel_band_roformer, scnet, scnet_unofficial, segm_models, swin_upernet, torchseg")
     parser.add_argument("--config_path", type=str, help="path to config file")
     parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint to valid weights")
     parser.add_argument("--input_folder", type=str, help="folder with mixtures to process")
@@ -121,9 +142,10 @@ def proc_folder(args):
     parser.add_argument("--device_ids", nargs='+', type=int, default=0, help='list of gpu ids')
     parser.add_argument("--extract_instrumental", action='store_true', help="invert vocals to get instrumental if provided")
     parser.add_argument("--disable_detailed_pbar", action='store_true', help="disable detailed progress bar")
-    parser.add_argument("--force_cpu", action = 'store_true', help = "Force the use of CPU even if CUDA is available")
-    parser.add_argument("--flac_file", action = 'store_true', help = "Output flac file instead of wav")
+    parser.add_argument("--force_cpu", action = 'store_true', help="Force the use of CPU even if CUDA is available")
+    parser.add_argument("--flac_file", action = 'store_true', help="Output flac file instead of wav")
     parser.add_argument("--pcm_type", type=str, choices=['PCM_16', 'PCM_24'], default='PCM_24', help="PCM type for FLAC files (PCM_16 or PCM_24)")
+    parser.add_argument("--use_tta", action='store_true', help="Flag adds test time augmentation during inference (polarity and channel inverse). While this triples the runtime, it reduces noise and slightly improves prediction quality.")
     if args is None:
         args = parser.parse_args()
     else:
