@@ -29,7 +29,7 @@ def run_folder(model, args, config, device, verbose=False):
     all_mixtures_path.sort()
     print('Total files found: {}'.format(len(all_mixtures_path)))
 
-    instruments = config.training.instruments
+    instruments = config.training.instruments.copy()
     if config.training.target_instrument is not None:
         instruments = [config.training.target_instrument]
 
