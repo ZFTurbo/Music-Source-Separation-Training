@@ -75,6 +75,7 @@ class MSSDataset(torch.utils.data.Dataset):
             batch_size = config.training.batch_size
         self.batch_size = batch_size
         self.file_types = ['wav', 'flac']
+        self.metadata_path = metadata_path
 
         # Augmentation block
         self.aug = False
@@ -87,13 +88,7 @@ class MSSDataset(torch.utils.data.Dataset):
             if self.verbose:
                 print('There is no augmentations block in config. Augmentations disabled for training...')
 
-        try:
-            metadata = pickle.load(open(metadata_path, 'rb'))
-            if self.verbose:
-                print('Loading songs data from cache: {}. If you updated dataset remove {} before training!'.format(metadata_path, os.path.basename(metadata_path)))
-        except Exception as e:
-            metadata = self.get_metadata()
-            pickle.dump(metadata, open(metadata_path, 'wb'))
+        metadata = self.get_metadata()
 
         if self.dataset_type in [1, 4]:
             if len(metadata) > 0:
@@ -113,6 +108,27 @@ class MSSDataset(torch.utils.data.Dataset):
     def __len__(self):
         return self.config.training.num_steps * self.batch_size
 
+    def read_from_metadata_cache(self, track_paths):
+        metadata = []
+        if os.path.isfile(self.metadata_path):
+            if self.verbose:
+                print('Found metadata cache file: {}'.format(self.metadata_path))
+            old_metadata = pickle.load(open(self.metadata_path, 'rb'))
+        else:
+            return track_paths, metadata
+
+        # We will not re-read tracks existed in old metadata file
+        track_paths_set = set(track_paths)
+        for old_path, file_size in old_metadata:
+            if old_path in track_paths_set:
+                metadata.append([old_path, file_size])
+                track_paths_set.remove(old_path)
+        track_paths = list(track_paths_set)
+        if len(metadata) > 0:
+            print('Old metadata was used for {} tracks.'.format(len(metadata)))
+        return track_paths, metadata
+
+
     def get_metadata(self):
         read_metadata_procs = multiprocessing.cpu_count()
         if 'read_metadata_procs' in self.config['training']:
@@ -126,7 +142,6 @@ class MSSDataset(torch.utils.data.Dataset):
             )
 
         if self.dataset_type in [1, 4]:
-            metadata = []
             track_paths = []
             if type(self.data_path) == list:
                 for tp in self.data_path:
@@ -138,11 +153,12 @@ class MSSDataset(torch.utils.data.Dataset):
                 track_paths += sorted(glob(self.data_path + '/*'))
 
             track_paths = [path for path in track_paths if os.path.basename(path)[0] != '.' and os.path.isdir(path)]
+            track_paths, metadata = self.read_from_metadata_cache(track_paths)
 
             if read_metadata_procs <= 1:
                 for path in tqdm(track_paths):
-                    p, ml = get_track_set_length((path, self.instruments, self.file_types))
-                    metadata.append((p, ml))
+                    track_path, track_length = get_track_set_length((path, self.instruments, self.file_types))
+                    metadata.append((track_path, track_length))
             else:
                 p = multiprocessing.Pool(processes=read_metadata_procs)
                 with tqdm(total=len(track_paths)) as pbar:
@@ -150,8 +166,8 @@ class MSSDataset(torch.utils.data.Dataset):
                         get_track_set_length,
                         zip(track_paths, itertools.repeat(self.instruments), itertools.repeat(self.file_types))
                     )
-                    for path, track_len in track_iter:
-                        metadata.append((path, track_len))
+                    for track_path, track_length in track_iter:
+                        metadata.append((track_path, track_length))
                         pbar.update()
                 p.close()
 
@@ -167,6 +183,8 @@ class MSSDataset(torch.utils.data.Dataset):
                 else:
                     track_paths += sorted(glob(self.data_path + '/{}/*.wav'.format(instr)))
                     track_paths += sorted(glob(self.data_path + '/{}/*.flac'.format(instr)))
+
+                track_paths, metadata[instr] = self.read_from_metadata_cache(track_paths)
 
                 if read_metadata_procs <= 1:
                     for path in tqdm(track_paths):
@@ -196,6 +214,8 @@ class MSSDataset(torch.utils.data.Dataset):
                     part = df[df['instrum'] == instr].copy()
                     metadata[instr] = []
                     track_paths = list(part['path'].values)
+                    track_paths, metadata[instr] = self.read_from_metadata_cache(track_paths)
+
                     for path in tqdm(track_paths):
                         if not os.path.isfile(path):
                             print('Cant find track: {}'.format(path))
@@ -215,6 +235,8 @@ class MSSDataset(torch.utils.data.Dataset):
             print('Unknown dataset type: {}. Must be 1, 2, 3 or 4'.format(self.dataset_type))
             exit()
 
+        # Save metadata
+        pickle.dump(metadata, open(self.metadata_path, 'wb'))
         return metadata
 
     def load_source(self, metadata, instr):
