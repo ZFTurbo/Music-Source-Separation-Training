@@ -146,7 +146,7 @@ def proc_folder(args):
     elif torch.cuda.is_available():
         print('CUDA is available, use --force_cpu to disable it.')
         device = "cuda"
-        device = f'cuda:{args.device_ids}' if type(args.device_ids) == int else f'cuda:{args.device_ids[0]}'
+        device = f'cuda:{args.device_ids[0]}' if type(args.device_ids) == list else f'cuda:{args.device_ids}'
     elif torch.backends.mps.is_available():
         device = "mps"
 
@@ -169,7 +169,7 @@ def proc_folder(args):
     print("Instruments: {}".format(config.training.instruments))
 
     # in case multiple CUDA GPUs are used and --device_ids arg is passed
-    if type(args.device_ids) != int:
+    if type(args.device_ids) == list and len(args.device_ids) > 1 and not args.force_cpu:
         model = nn.DataParallel(model, device_ids = args.device_ids)
 
     model = model.to(device)
