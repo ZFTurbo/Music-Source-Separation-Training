@@ -16,7 +16,7 @@ import torch.nn as nn
 # Using the embedded version of Python can also correctly import the utils module.
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
-from utils import demix_track, demix_track_demucs, get_model_from_config
+from utils import demix, get_model_from_config
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -74,12 +74,8 @@ def run_folder(model, args, config, device, verbose=False):
             track_proc_list = [mix.copy()]
 
         full_result = []
-        for single_track in track_proc_list:
-            mixture = torch.tensor(single_track, dtype=torch.float32)
-            if args.model_type == 'htdemucs':
-                waveforms = demix_track_demucs(config, model, mixture, device, pbar=detailed_pbar)
-            else:
-                waveforms = demix_track(config, model, mixture, device, pbar=detailed_pbar)
+        for mix in track_proc_list:
+            waveforms = demix(config, model, mix, device, pbar=detailed_pbar, model_type=args.model_type)
             full_result.append(waveforms)
 
         # Average all values in single dict

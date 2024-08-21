@@ -23,7 +23,7 @@ import torch.nn.functional as F
 from accelerate import Accelerator
 
 from dataset import MSSDataset
-from utils import get_model_from_config, demix_track_demucs, demix_track, sdr
+from utils import get_model_from_config, demix, sdr
 from train import masked_loss, manual_seed, load_not_compatible_weights
 import warnings
 
@@ -48,11 +48,7 @@ def valid(model, valid_loader, args, config, device, verbose=False):
         path = path_list[0]
         mix, sr = sf.read(path)
         folder = os.path.dirname(path)
-        mixture = torch.tensor(mix.T, dtype=torch.float32)
-        if args.model_type == 'htdemucs':
-            res = demix_track_demucs(config, model, mixture, device)
-        else:
-            res = demix_track(config, model, mixture, device)
+        res = demix(config, model, mix.T, device, model_type=args.model_type) # mix.T
         for instr in instruments:
             if instr != 'other' or config.training.other_fix is False:
                 track, sr1 = sf.read(folder + '/{}.wav'.format(instr))
