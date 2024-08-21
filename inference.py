@@ -59,27 +59,16 @@ def run_folder(model, args, config, device, verbose=False):
         if len(mix.shape) == 1:
             mix = np.stack([mix, mix], axis=0)
 
-        mix_orig = mix.copy()
-        if 'normalize' in config.inference:
-            if config.inference['normalize'] is True:
-                mono = mix.mean(0)
-                mean = mono.mean()
-                std = mono.std()
-                mix = (mix - mean) / std
-
         waveforms = demix(config, model, mix, device, pbar=detailed_pbar, moduleArgs=args)
 
         if args.extract_instrumental:
             instr = 'vocals' if 'vocals' in instruments else instruments[0]
             instruments.append('instrumental')
             # Output "instrumental", which is an inverse of 'vocals' or the first stem in list if 'vocals' absent
-            waveforms['instrumental'] = mix_orig - waveforms[instr]
+            waveforms['instrumental'] = mix - waveforms[instr]
 
         for instr in instruments:
             estimates = waveforms[instr].T
-            if 'normalize' in config.inference:
-                if config.inference['normalize'] is True:
-                    estimates = estimates * std + mean
             file_name, _ = os.path.splitext(os.path.basename(path))
             if args.flac_file:
                 output_file = os.path.join(args.store_dir, f"{file_name}_{instr}.flac")

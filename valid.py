@@ -47,7 +47,6 @@ def proc_list_of_files(
     for path in mixture_paths:
         start_time = time.time()
         mix, sr = sf.read(path)
-        mix_orig = mix.copy()
 
         # Fix for mono
         if len(mix.shape) == 1:
@@ -58,13 +57,6 @@ def proc_list_of_files(
         folder_name = os.path.abspath(folder)
         if verbose:
             print('Song: {}'.format(folder_name))
-
-        if 'normalize' in config.inference:
-            if config.inference['normalize'] is True:
-                mono = mix.mean(0)
-                mean = mono.mean()
-                std = mono.std()
-                mix = (mix - mean) / std
 
         waveforms = demix(config, model, mix, device, moduleArgs=args)
 
@@ -84,13 +76,10 @@ def proc_list_of_files(
             else:
                 # other is actually instrumental
                 track, sr1 = sf.read(folder + '/{}.{}'.format('vocals', args.extension))
-                track = mix_orig - track
+                track = mix - track
 
             estimates = waveforms[instr].T
             # print(estimates.shape)
-            if 'normalize' in config.inference:
-                if config.inference['normalize'] is True:
-                    estimates = estimates * std + mean
 
             if args.store_dir != "":
                 sf.write("{}/{}_{}.wav".format(args.store_dir, os.path.basename(folder), instr), estimates, sr,

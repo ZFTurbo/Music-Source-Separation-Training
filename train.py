@@ -179,14 +179,7 @@ def proc_list_of_files(
 
     for path in mixture_paths:
         mix, sr = sf.read(path)
-        mix_orig = mix.copy()
         mix = mix.T # (channels, waveform)
-        if 'normalize' in config.inference:
-            if config.inference['normalize'] is True:
-                mono = mix.mean(0)
-                mean = mono.mean()
-                std = mono.std()
-                mix = (mix - mean) / std
 
         folder = os.path.dirname(path)
         folder_name = os.path.abspath(folder)
@@ -205,7 +198,7 @@ def proc_list_of_files(
                 else:
                     # other is actually instrumental
                     track, sr1 = sf.read(folder + '/{}.wav'.format('vocals'))
-                    track = mix_orig - track
+                    track = mix - track
 
                 references = np.expand_dims(track, axis=0)
                 estimates = np.expand_dims(res[instr].T, axis=0)
