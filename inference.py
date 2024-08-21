@@ -59,51 +59,16 @@ def run_folder(model, args, config, device, verbose=False):
         if len(mix.shape) == 1:
             mix = np.stack([mix, mix], axis=0)
 
-        mix_orig = mix.copy()
-        if 'normalize' in config.inference:
-            if config.inference['normalize'] is True:
-                mono = mix.mean(0)
-                mean = mono.mean()
-                std = mono.std()
-                mix = (mix - mean) / std
+        waveforms = demix(config, model, mix, device, pbar=detailed_pbar, moduleArgs=args)
 
-        if args.use_tta:
-            # orig, channel inverse, polarity inverse
-            track_proc_list = [mix.copy(), mix[::-1].copy(), -1. * mix.copy()]
-        else:
-            track_proc_list = [mix.copy()]
-
-        full_result = []
-        for mix in track_proc_list:
-            waveforms = demix(config, model, mix, device, pbar=detailed_pbar, model_type=args.model_type)
-            full_result.append(waveforms)
-
-        # Average all values in single dict
-        waveforms = full_result[0]
-        for i in range(1, len(full_result)):
-            d = full_result[i]
-            for el in d:
-                if i == 2:
-                    waveforms[el] += -1.0 * d[el]
-                elif i == 1:
-                    waveforms[el] += d[el][::-1].copy()
-                else:
-                    waveforms[el] += d[el]
-        for el in waveforms:
-            waveforms[el] = waveforms[el] / len(full_result)
-
-        # Create a new `instr` in instruments list, 'instrumental' 
         if args.extract_instrumental:
             instr = 'vocals' if 'vocals' in instruments else instruments[0]
             instruments.append('instrumental')
             # Output "instrumental", which is an inverse of 'vocals' or the first stem in list if 'vocals' absent
-            waveforms['instrumental'] = mix_orig - waveforms[instr]
+            waveforms['instrumental'] = mix - waveforms[instr]
 
         for instr in instruments:
             estimates = waveforms[instr].T
-            if 'normalize' in config.inference:
-                if config.inference['normalize'] is True:
-                    estimates = estimates * std + mean
             file_name, _ = os.path.splitext(os.path.basename(path))
             if args.flac_file:
                 output_file = os.path.join(args.store_dir, f"{file_name}_{instr}.flac")
