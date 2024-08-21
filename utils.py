@@ -225,9 +225,35 @@ def sdr(references, estimates):
     den += delta
     return 10 * np.log10(num / den)
 
-def demix(config, model, mix: NDArray, device, pbar=False, model_type: str = None) -> Dict[str, NDArray]:
+def apply_normalize(demixFunction):
+    def normal_rapper(config, model, mix, device, pbar, moduleArgs, *args, **kwargs):
+        # Access 'normalize' from config, if available
+        normalize = getattr(config.inference, 'normalize', False)
+
+        # Handle normalization logic
+        if normalize:
+            print('Normalizing')
+            mono = mix.mean(0)
+            mean = mono.mean()
+            std = mono.std()
+            mix = (mix - mean) / std
+
+            dictionaryWaveforms = demixFunction(config, model, mix, device, pbar, moduleArgs, *args, **kwargs)
+
+            for instr, estimates in dictionaryWaveforms.items():
+                estimates = estimates * std + mean
+                dictionaryWaveforms[instr] = estimates
+        else:
+            dictionaryWaveforms = demixFunction(config, model, mix, device, pbar, moduleArgs, *args, **kwargs)
+
+        return dictionaryWaveforms
+    return normal_rapper
+
+@apply_normalize
+def demix(config, model, mix: NDArray, device, pbar=False, moduleArgs: dict = None) -> Dict[str, NDArray]:
     mix = torch.tensor(mix, dtype=torch.float32)
-    if model_type == 'htdemucs':
+    if moduleArgs.model_type == 'htdemucs':
         return demix_track_demucs(config, model, mix, device, pbar=pbar)
     else:
         return demix_track(config, model, mix, device, pbar=pbar)
+
