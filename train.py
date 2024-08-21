@@ -23,7 +23,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch.nn.functional as F
 
 from dataset import MSSDataset
-from utils import demix_track, demix_track_demucs, sdr, get_model_from_config
+from utils import demix, sdr, get_model_from_config
 
 import warnings
 
@@ -130,11 +130,7 @@ def valid(model, args, config, device, verbose=False):
         folder = os.path.dirname(path)
         if verbose:
             print('Song: {}'.format(os.path.basename(folder)))
-        mixture = torch.tensor(mix.T, dtype=torch.float32)
-        if args.model_type == 'htdemucs':
-            res = demix_track_demucs(config, model, mixture, device)
-        else:
-            res = demix_track(config, model, mixture, device)
+        res = demix(config, model, mix.T, device, model_type=args.model_type) # mix.T
         for instr in instruments:
             if instr != 'other' or config.training.other_fix is False:
                 track, sr1 = sf.read(folder + '/{}.wav'.format(instr))
@@ -196,11 +192,7 @@ def proc_list_of_files(
         folder_name = os.path.abspath(folder)
         if verbose:
             print('Song: {}'.format(folder_name))
-        mixture = torch.tensor(mix, dtype=torch.float32)
-        if args.model_type == 'htdemucs':
-            res = demix_track_demucs(config, model, mixture, device)
-        else:
-            res = demix_track(config, model, mixture, device)
+        res = demix(config, model, mix, device, model_type=args.model_type)
         if 1:
             pbar_dict = {}
             for instr in instruments:

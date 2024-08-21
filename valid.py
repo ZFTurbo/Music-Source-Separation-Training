@@ -17,7 +17,7 @@ import multiprocessing
 import warnings
 warnings.filterwarnings("ignore")
 
-from utils import demix_track, demix_track_demucs, sdr, get_model_from_config
+from utils import demix, sdr, get_model_from_config
 
 
 def proc_list_of_files(
@@ -73,12 +73,8 @@ def proc_list_of_files(
             track_proc_list = [mix.copy()]
 
         full_result = []
-        for single_track in track_proc_list:
-            mixture = torch.tensor(single_track, dtype=torch.float32)
-            if args.model_type == 'htdemucs':
-                waveforms = demix_track_demucs(config, model, mixture, device)
-            else:
-                waveforms = demix_track(config, model, mixture, device)
+        for mix in track_proc_list:
+            waveforms = demix(config, model, mix, device, model_type=args.model_type)
             full_result.append(waveforms)
 
         # Average all values in single dict

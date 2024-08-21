@@ -9,6 +9,8 @@ import yaml
 from ml_collections import ConfigDict
 from omegaconf import OmegaConf
 from tqdm import tqdm
+from numpy.typing import NDArray
+from typing import Dict
 
 def get_model_from_config(model_type, config_path):
     with open(config_path) as f:
@@ -222,3 +224,10 @@ def sdr(references, estimates):
     num += delta
     den += delta
     return 10 * np.log10(num / den)
+
+def demix(config, model, mix: NDArray, device, pbar=False, model_type: str = None) -> Dict[str, NDArray]:
+    mix = torch.tensor(mix, dtype=torch.float32)
+    if model_type == 'htdemucs':
+        return demix_track_demucs(config, model, mix, device, pbar=pbar)
+    else:
+        return demix_track(config, model, mix, device, pbar=pbar)
