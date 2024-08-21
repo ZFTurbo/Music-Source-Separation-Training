@@ -67,32 +67,8 @@ def run_folder(model, args, config, device, verbose=False):
                 std = mono.std()
                 mix = (mix - mean) / std
 
-        if args.use_tta:
-            # orig, channel inverse, polarity inverse
-            track_proc_list = [mix.copy(), mix[::-1].copy(), -1. * mix.copy()]
-        else:
-            track_proc_list = [mix.copy()]
+        waveforms = demix(config, model, mix, device, pbar=detailed_pbar, moduleArgs=args)
 
-        full_result = []
-        for mix in track_proc_list:
-            waveforms = demix(config, model, mix, device, pbar=detailed_pbar, model_type=args.model_type)
-            full_result.append(waveforms)
-
-        # Average all values in single dict
-        waveforms = full_result[0]
-        for i in range(1, len(full_result)):
-            d = full_result[i]
-            for el in d:
-                if i == 2:
-                    waveforms[el] += -1.0 * d[el]
-                elif i == 1:
-                    waveforms[el] += d[el][::-1].copy()
-                else:
-                    waveforms[el] += d[el]
-        for el in waveforms:
-            waveforms[el] = waveforms[el] / len(full_result)
-
-        # Create a new `instr` in instruments list, 'instrumental' 
         if args.extract_instrumental:
             instr = 'vocals' if 'vocals' in instruments else instruments[0]
             instruments.append('instrumental')
