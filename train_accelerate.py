@@ -118,8 +118,7 @@ def train_model(args):
     torch.multiprocessing.set_start_method('spawn')
 
     model, config = get_model_from_config(args.model_type, args.config_path)
-    if accelerator.is_main_process:
-        print("Instruments: {}".format(config.training.instruments))
+    accelerator.print("Instruments: {}".format(config.training.instruments))
 
     if not os.path.isdir(args.results_path):
         os.mkdir(args.results_path)
@@ -163,8 +162,7 @@ def train_model(args):
     valid_loader = accelerator.prepare(valid_loader)
 
     if args.start_check_point != '':
-        if accelerator.is_main_process:
-            print('Start from checkpoint: {}'.format(args.start_check_point))
+        accelerator.print('Start from checkpoint: {}'.format(args.start_check_point))
         if 1:
             load_not_compatible_weights(model, args.start_check_point, verbose=False)
         else:
@@ -175,7 +173,7 @@ def train_model(args):
     optim_params = dict()
     if 'optimizer' in config:
         optim_params = dict(config['optimizer'])
-        print('Optimizer params from config:\n{}'.format(optim_params))
+        accelerator.print('Optimizer params from config:\n{}'.format(optim_params))
 
     if config.training.optimizer == 'adam':
         optimizer = Adam(model.parameters(), lr=config.training.lr, **optim_params)
@@ -189,10 +187,10 @@ def train_model(args):
         import bitsandbytes as bnb
         optimizer = bnb.optim.AdamW8bit(model.parameters(), lr=config.training.lr, **optim_params)
     elif config.training.optimizer == 'sgd':
-        print('Use SGD optimizer')
+        accelerator.print('Use SGD optimizer')
         optimizer = SGD(model.parameters(), lr=config.training.lr, **optim_params)
     else:
-        print('Unknown optimizer: {}'.format(config.training.optimizer))
+        accelerator.print('Unknown optimizer: {}'.format(config.training.optimizer))
         exit()
 
     gradient_accumulation_steps = 1
@@ -225,8 +223,7 @@ def train_model(args):
             loss_options = dict(config.loss_multistft)
         except:
             loss_options = dict()
-        if accelerator.is_main_process:
-            print('Loss options: {}'.format(loss_options))
+        accelerator.print('Loss options: {}'.format(loss_options))
         loss_multistft = auraloss.freq.MultiResolutionSTFTLoss(
             **loss_options
         )
@@ -248,34 +245,25 @@ def train_model(args):
         # print(sdr_list[instr])
         sdr_data = torch.cat(sdr_list[instr], dim=0).cpu().numpy()
         sdr_val = sdr_data.mean()
-        if accelerator.is_main_process:
-            print("Valid length: {}".format(valid_dataset_length))
-            print("Instr SDR {}: {:.4f} Debug: {}".format(instr, sdr_val, len(sdr_data)))
+        accelerator.print("Valid length: {}".format(valid_dataset_length))
+        accelerator.print("Instr SDR {}: {:.4f} Debug: {}".format(instr, sdr_val, len(sdr_data)))
         sdr_val = sdr_data[:valid_dataset_length].mean()
-        if accelerator.is_main_process:
-            print("Instr SDR {}: {:.4f} Debug: {}".format(instr, sdr_val, len(sdr_data)))
+        accelerator.print("Instr SDR {}: {:.4f} Debug: {}".format(instr, sdr_val, len(sdr_data)))
         sdr_avg += sdr_val
     sdr_avg /= len(instruments)
     if len(instruments) > 1:
-        if accelerator.is_main_process:
-            print('SDR Avg: {:.4f}'.format(sdr_avg))
+        accelerator.print('SDR Avg: {:.4f}'.format(sdr_avg))
     sdr_list = None
 
-    if accelerator.is_main_process:
-        print('Train for: {}'.format(config.training.num_epochs))
+    accelerator.print('Train for: {}'.format(config.training.num_epochs))
     best_sdr = -100
     for epoch in range(config.training.num_epochs):
         model.train().to(device)
-        if accelerator.is_main_process:
-            print('Train epoch: {} Learning rate: {}'.format(epoch, optimizer.param_groups[0]['lr']))
+        accelerator.print('Train epoch: {} Learning rate: {}'.format(epoch, optimizer.param_groups[0]['lr']))
         loss_val = 0.
         total = 0
 
-        # total_loss = None
-        if accelerator.is_main_process:
-            pbar = tqdm(train_loader)
-        else:
-            pbar = train_loader
+        pbar = tqdm(train_loader, disable=not accelerator.is_local_main_process)
         for i, (batch, mixes) in enumerate(pbar):
             y = batch.to(device)
             x = mixes.to(device)  # mixture
@@ -283,9 +271,6 @@ def train_model(args):
             if args.model_type in ['mel_band_roformer', 'bs_roformer']:
                 # loss is computed in forward pass
                 loss = model(x, y)
-                if type(device_ids) != int:
-                    # If it's multiple GPUs sum partial loss
-                    loss = loss.mean()
             else:
                 y_ = model(x)
                 if args.use_multistft_loss:
@@ -314,6 +299,7 @@ def train_model(args):
                 accelerator.clip_grad_norm_(model.parameters(), config.training.grad_clip)
 
             optimizer.step()
+            optimizer.zero_grad()
             li = loss.item()
             loss_val += li
             total += 1
@@ -365,8 +351,10 @@ def train_model(args):
                 accelerator.save(unwrapped_model.state_dict(), store_path)
                 best_sdr = sdr_avg
 
-        scheduler.step(sdr_avg)
+            scheduler.step(sdr_avg)
+
         sdr_list = None
+        accelerator.wait_for_everyone()
 
 
 if __name__ == "__main__":
