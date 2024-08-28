@@ -107,6 +107,7 @@ def train_model(args):
     parser.add_argument("--use_mse_loss", action='store_true', help="Use default MSE loss")
     parser.add_argument("--use_l1_loss", action='store_true', help="Use L1 loss")
     parser.add_argument("--wandb_key", type=str, default='', help='wandb API Key')
+    parser.add_argument("--pre_valid", action='store_true', help='Run validation before training')
     if args is None:
         args = parser.parse_args()
     else:
@@ -132,6 +133,9 @@ def train_model(args):
         wandb.init(project = 'msst-accelerate', config = { 'config': config, 'args': args, 'device_ids': device_ids, 'batch_size': batch_size })
     else:
         wandb.init(mode = 'disabled')
+
+    # Fix for num of steps
+    config.training.num_steps *= accelerator.num_processes
 
     trainset = MSSDataset(
         config,
@@ -183,6 +187,11 @@ def train_model(args):
         optimizer = RAdam(model.parameters(), lr=config.training.lr, **optim_params)
     elif config.training.optimizer == 'rmsprop':
         optimizer = RMSprop(model.parameters(), lr=config.training.lr, **optim_params)
+    elif config.training.optimizer == 'prodigy':
+        from prodigyopt import Prodigy
+        # you can choose weight decay value based on your problem, 0 by default
+        # We recommend using lr=1.0 (default) for all networks.
+        optimizer = Prodigy(model.parameters(), lr=config.training.lr, **optim_params)
     elif config.training.optimizer == 'adamw8bit':
         import bitsandbytes as bnb
         optimizer = bnb.optim.AdamW8bit(model.parameters(), lr=config.training.lr, **optim_params)
@@ -193,20 +202,12 @@ def train_model(args):
         accelerator.print('Unknown optimizer: {}'.format(config.training.optimizer))
         exit()
 
-    gradient_accumulation_steps = 1
-    try:
-        gradient_accumulation_steps = int(config.training.gradient_accumulation_steps)
-    except:
-        pass
-
     if accelerator.is_main_process:
         print('Processes GPU: {}'.format(accelerator.num_processes))
-        print("Patience: {} Reduce factor: {} Batch size: {} Grad accum steps: {} Effective batch size: {} Optimizer: {}".format(
+        print("Patience: {} Reduce factor: {} Batch size: {} Optimizer: {}".format(
             config.training.patience,
             config.training.reduce_factor,
             batch_size,
-            gradient_accumulation_steps,
-            batch_size * gradient_accumulation_steps,
             config.training.optimizer,
         ))
     # Reduce LR if no SDR improvements for several epochs
@@ -230,30 +231,31 @@ def train_model(args):
 
     model, optimizer, train_loader, scheduler = accelerator.prepare(model, optimizer, train_loader, scheduler)
 
-    sdr_list = valid(model, valid_loader, args, config, device, verbose=accelerator.is_main_process)
-    sdr_list = accelerator.gather(sdr_list)
-    accelerator.wait_for_everyone()
+    if args.pre_valid:
+        sdr_list = valid(model, valid_loader, args, config, device, verbose=accelerator.is_main_process)
+        sdr_list = accelerator.gather(sdr_list)
+        accelerator.wait_for_everyone()
 
-    # print(sdr_list)
+        # print(sdr_list)
 
-    sdr_avg = 0.0
-    instruments = config.training.instruments
-    if config.training.target_instrument is not None:
-        instruments = [config.training.target_instrument]
+        sdr_avg = 0.0
+        instruments = config.training.instruments
+        if config.training.target_instrument is not None:
+            instruments = [config.training.target_instrument]
 
-    for instr in instruments:
-        # print(sdr_list[instr])
-        sdr_data = torch.cat(sdr_list[instr], dim=0).cpu().numpy()
-        sdr_val = sdr_data.mean()
-        accelerator.print("Valid length: {}".format(valid_dataset_length))
-        accelerator.print("Instr SDR {}: {:.4f} Debug: {}".format(instr, sdr_val, len(sdr_data)))
-        sdr_val = sdr_data[:valid_dataset_length].mean()
-        accelerator.print("Instr SDR {}: {:.4f} Debug: {}".format(instr, sdr_val, len(sdr_data)))
-        sdr_avg += sdr_val
-    sdr_avg /= len(instruments)
-    if len(instruments) > 1:
-        accelerator.print('SDR Avg: {:.4f}'.format(sdr_avg))
-    sdr_list = None
+        for instr in instruments:
+            # print(sdr_list[instr])
+            sdr_data = torch.cat(sdr_list[instr], dim=0).cpu().numpy()
+            sdr_val = sdr_data.mean()
+            accelerator.print("Valid length: {}".format(valid_dataset_length))
+            accelerator.print("Instr SDR {}: {:.4f} Debug: {}".format(instr, sdr_val, len(sdr_data)))
+            sdr_val = sdr_data[:valid_dataset_length].mean()
+            accelerator.print("Instr SDR {}: {:.4f} Debug: {}".format(instr, sdr_val, len(sdr_data)))
+            sdr_avg += sdr_val
+        sdr_avg /= len(instruments)
+        if len(instruments) > 1:
+            accelerator.print('SDR Avg: {:.4f}'.format(sdr_avg))
+        sdr_list = None
 
     accelerator.print('Train for: {}'.format(config.training.num_epochs))
     best_sdr = -100
@@ -263,10 +265,10 @@ def train_model(args):
         loss_val = 0.
         total = 0
 
-        pbar = tqdm(train_loader, disable=not accelerator.is_local_main_process)
+        pbar = tqdm(train_loader, disable=not accelerator.is_main_process)
         for i, (batch, mixes) in enumerate(pbar):
-            y = batch.to(device)
-            x = mixes.to(device)  # mixture
+            y = batch
+            x = mixes
 
             if args.model_type in ['mel_band_roformer', 'bs_roformer']:
                 # loss is computed in forward pass
