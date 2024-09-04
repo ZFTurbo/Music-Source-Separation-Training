@@ -108,7 +108,7 @@ class MSSDataset(torch.utils.data.Dataset):
     def __len__(self):
         return self.config.training.num_steps * self.batch_size
 
-    def read_from_metadata_cache(self, track_paths):
+    def read_from_metadata_cache(self, track_paths, instr=None):
         metadata = []
         if os.path.isfile(self.metadata_path):
             if self.verbose:
@@ -116,6 +116,9 @@ class MSSDataset(torch.utils.data.Dataset):
             old_metadata = pickle.load(open(self.metadata_path, 'rb'))
         else:
             return track_paths, metadata
+
+        if instr:
+            old_metadata = old_metadata[instr]
 
         # We will not re-read tracks existed in old metadata file
         track_paths_set = set(track_paths)
@@ -153,7 +156,7 @@ class MSSDataset(torch.utils.data.Dataset):
                 track_paths += sorted(glob(self.data_path + '/*'))
 
             track_paths = [path for path in track_paths if os.path.basename(path)[0] != '.' and os.path.isdir(path)]
-            track_paths, metadata = self.read_from_metadata_cache(track_paths)
+            track_paths, metadata = self.read_from_metadata_cache(track_paths, None)
 
             if read_metadata_procs <= 1:
                 for path in tqdm(track_paths):
@@ -184,7 +187,7 @@ class MSSDataset(torch.utils.data.Dataset):
                     track_paths += sorted(glob(self.data_path + '/{}/*.wav'.format(instr)))
                     track_paths += sorted(glob(self.data_path + '/{}/*.flac'.format(instr)))
 
-                track_paths, metadata[instr] = self.read_from_metadata_cache(track_paths)
+                track_paths, metadata[instr] = self.read_from_metadata_cache(track_paths, instr)
 
                 if read_metadata_procs <= 1:
                     for path in tqdm(track_paths):
@@ -214,7 +217,7 @@ class MSSDataset(torch.utils.data.Dataset):
                     part = df[df['instrum'] == instr].copy()
                     metadata[instr] = []
                     track_paths = list(part['path'].values)
-                    track_paths, metadata[instr] = self.read_from_metadata_cache(track_paths)
+                    track_paths, metadata[instr] = self.read_from_metadata_cache(track_paths, instr)
 
                     for path in tqdm(track_paths):
                         if not os.path.isfile(path):
