@@ -8,7 +8,7 @@ import torch.nn as nn
 import yaml
 from ml_collections import ConfigDict
 from omegaconf import OmegaConf
-from tqdm import tqdm
+from tqdm.auto import tqdm
 from numpy.typing import NDArray
 from typing import Dict
 

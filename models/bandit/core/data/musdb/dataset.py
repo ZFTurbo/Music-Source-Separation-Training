@@ -262,7 +262,7 @@ class MUSDB18SadOnTheFlyAugmentedDataset(MUSDB18SadDataset):
 # if __name__ == "__main__":
 #
 #     from pprint import pprint
-#     from tqdm import tqdm
+#     from tqdm.auto import tqdm
 #
 #     for split_ in ["train", "val", "test"]:
 #         ds = MUSDB18SadOnTheFlyAugmentedDataset(

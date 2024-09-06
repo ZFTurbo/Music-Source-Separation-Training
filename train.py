@@ -6,7 +6,7 @@ import random
 import argparse
 import time
 import copy
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import sys
 import os
 import glob

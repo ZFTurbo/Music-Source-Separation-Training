@@ -11,7 +11,7 @@ import pickle
 import time
 import itertools
 import multiprocessing
-from tqdm import tqdm
+from tqdm.auto import tqdm
 from glob import glob
 import audiomentations as AU
 import pedalboard as PB

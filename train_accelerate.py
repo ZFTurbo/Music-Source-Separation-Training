@@ -10,7 +10,7 @@ import soundfile as sf
 import numpy as np
 import time
 import glob
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import os
 import torch
 import wandb

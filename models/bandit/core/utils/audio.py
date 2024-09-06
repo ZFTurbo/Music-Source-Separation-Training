@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from tqdm import tqdm
+from tqdm.auto import tqdm
 from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
