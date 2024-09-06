@@ -232,7 +232,7 @@ def loudness_norm(
 
 if __name__ == "__main__":
 
-    from tqdm import tqdm
+    from tqdm.auto import tqdm
     import fire
 
     fire.Fire()

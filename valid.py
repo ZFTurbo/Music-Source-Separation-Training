@@ -3,7 +3,7 @@ __author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
 
 import argparse
 import time
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import sys
 import os
 import glob
