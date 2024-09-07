@@ -121,8 +121,7 @@ def train_model(args):
     model, config = get_model_from_config(args.model_type, args.config_path)
     accelerator.print("Instruments: {}".format(config.training.instruments))
 
-    if not os.path.isdir(args.results_path):
-        os.mkdir(args.results_path)
+    os.makedirs(args.results_path, exist_ok=True)
 
     device_ids = args.device_ids
     batch_size = config.training.batch_size
