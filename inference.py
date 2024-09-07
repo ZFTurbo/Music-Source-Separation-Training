@@ -33,8 +33,7 @@ def run_folder(model, args, config, device, verbose=False):
     if config.training.target_instrument is not None:
         instruments = [config.training.target_instrument]
 
-    if not os.path.isdir(args.store_dir):
-        os.mkdir(args.store_dir)
+    os.makedirs(args.store_dir, exist_ok=True)
 
     if not verbose:
         all_mixtures_path = tqdm(all_mixtures_path, desc="Total progress")

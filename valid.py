@@ -34,8 +34,7 @@ def proc_list_of_files(
         instruments = [config.training.target_instrument]
 
     if args.store_dir != "":
-        if not os.path.isdir(args.store_dir):
-            os.mkdir(args.store_dir)
+        os.makedirs(args.store_dir, exist_ok=True)
 
     all_sdr = dict()
     for instr in config.training.instruments:
