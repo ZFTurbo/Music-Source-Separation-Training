@@ -282,10 +282,13 @@ def check_validation(args):
     if args.start_check_point != '':
         print('Start from checkpoint: {}'.format(args.start_check_point))
         state_dict = torch.load(args.start_check_point)
-        if args.model_type == 'htdemucs':
+        if args.model_type in ['htdemucs', 'apollo']:
             # Fix for htdemucs pretrained models
             if 'state' in state_dict:
                 state_dict = state_dict['state']
+            # Fix for apollo pretrained models
+            if 'state_dict' in state_dict:
+                state_dict = state_dict['state_dict']
         model.load_state_dict(state_dict)
 
     print("Instruments: {}".format(config.training.instruments))

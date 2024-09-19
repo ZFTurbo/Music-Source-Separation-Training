@@ -153,13 +153,16 @@ def proc_folder(args):
     model, config = get_model_from_config(args.model_type, args.config_path)
     if args.start_check_point != '':
         print('Start from checkpoint: {}'.format(args.start_check_point))
-        if args.model_type == 'htdemucs':
-            state_dict = torch.load(args.start_check_point, map_location = device, weights_only=False)
+        if args.model_type in ['htdemucs', 'apollo']:
+            state_dict = torch.load(args.start_check_point, map_location=device, weights_only=False)
             # Fix for htdemucs pretrained models
             if 'state' in state_dict:
                 state_dict = state_dict['state']
+            # Fix for apollo pretrained models
+            if 'state_dict' in state_dict:
+                state_dict = state_dict['state_dict']
         else:
-            state_dict = torch.load(args.start_check_point, map_location = device, weights_only=True)
+            state_dict = torch.load(args.start_check_point, map_location=device, weights_only=True)
         model.load_state_dict(state_dict)
     print("Instruments: {}".format(config.training.instruments))
 

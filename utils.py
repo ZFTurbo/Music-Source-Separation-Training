@@ -64,6 +64,9 @@ def get_model_from_config(model_type, config_path):
         model = SCNet(
             **config.model
         )
+    elif model_type == 'apollo':
+        from models.look2hear.models import BaseModel
+        model = BaseModel.apollo(**config.model)
     else:
         print('Unknown model: {}'.format(model_type))
         model = None
