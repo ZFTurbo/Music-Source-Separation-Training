@@ -67,6 +67,9 @@ def get_model_from_config(model_type, config_path):
     elif model_type == 'apollo':
         from models.look2hear.models import BaseModel
         model = BaseModel.apollo(**config.model)
+    elif model_type == 'bs_mamba2':
+        from models.ts_bs_mamba2 import Separator
+        model = Separator(**config.model)
     else:
         print('Unknown model: {}'.format(model_type))
         model = None

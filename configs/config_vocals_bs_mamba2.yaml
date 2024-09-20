@@ -1,0 +1,51 @@
+audio:
+  chunk_size: 132300  # samplerate * segment
+  hop_length: 1024
+  min_mean_abs: 0.0
+
+training:
+  batch_size: 8
+  gradient_accumulation_steps: 1
+  grad_clip: 0
+  segment: 11
+  shift: 1
+  samplerate: 44100
+  channels: 2
+  normalize: true
+  instruments: ['vocals', 'other']
+  target_instrument: null
+  num_epochs: 1000
+  num_steps: 1000
+  optimizer: prodigy
+  lr: 1.0
+  patience: 2
+  reduce_factor: 0.95
+  q: 0.95
+  coarse_loss_clip: true
+  ema_momentum: 0.999
+  read_metadata_procs: 8
+  other_fix: false # it's needed for checking on multisong dataset if other is actually instrumental
+  use_amp: true # enable or disable usage of mixed precision (float16) - usually it must be true
+
+model:
+  sr: 44100
+  win: 2048
+  stride: 512
+  feature_dim: 128
+  num_repeat_mask: 8
+  num_repeat_map: 4
+  num_output: 2
+
+augmentations:
+  enable: false # enable or disable all augmentations (to fast disable if needed)
+  loudness: true # randomly change loudness of each stem on the range (loudness_min; loudness_max)
+  loudness_min: 0.5
+  loudness_max: 1.5
+  mixup: true # mix several stems of same type with some probability (only works for dataset types: 1, 2, 3)
+  mixup_probs: [0.2, 0.02]
+  mixup_loudness_min: 0.5
+  mixup_loudness_max: 1.5
+
+inference:
+  num_overlap: 2
+  batch_size: 4
