@@ -313,6 +313,7 @@ class Apollo(BaseModel):
             this_RI = self.output[i](feature[:, i]).view(B * nch, 2, self.band_width[i], -1)
             est_spec.append(torch.complex(this_RI[:, 0], this_RI[:, 1]))
         est_spec = torch.cat(est_spec, 1)
+        est_spec = est_spec.to(dtype=torch.complex64)
         output = torch.istft(est_spec, n_fft=self.win, hop_length=self.stride,
                              window=torch.hann_window(self.win).to(input.device), length=nsample).view(B, nch, -1)
 
