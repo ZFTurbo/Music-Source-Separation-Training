@@ -481,8 +481,13 @@ def train_model(args):
                 else:
                     y_ = model(x)
                     if args.use_multistft_loss:
-                        y1_ = torch.reshape(y_, (y_.shape[0], y_.shape[1] * y_.shape[2], y_.shape[3]))
-                        y1 = torch.reshape(y, (y.shape[0], y.shape[1] * y.shape[2], y.shape[3]))
+                        if len(y_.shape) == 3:
+                            # For models like apollo no need to reshape
+                            y1_ = y_
+                            y1 = y
+                        else:
+                            y1_ = torch.reshape(y_, (y_.shape[0], y_.shape[1] * y_.shape[2], y_.shape[3]))
+                            y1 = torch.reshape(y, (y.shape[0], y.shape[1] * y.shape[2], y.shape[3]))
                         loss = loss_multistft(y1_, y1)
                         # We can use many losses at the same time
                         if args.use_mse_loss:
