@@ -23,7 +23,7 @@ training:
   coarse_loss_clip: true
   grad_clip: 0
   q: 0.95
-  use_amp: false
+  use_amp: true
 
 augmentations:
   enable: false # enable or disable all augmentations (to fast disable if needed)
