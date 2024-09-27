@@ -28,3 +28,4 @@ wandb
 accelerate
 huggingface-hub>=0.23.0
 prodigyopt
+torch_log_wmse

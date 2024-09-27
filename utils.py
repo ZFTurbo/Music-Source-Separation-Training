@@ -6,11 +6,13 @@ import numpy as np
 import torch
 import torch.nn as nn
 import yaml
+import torch.nn.functional as F
 from ml_collections import ConfigDict
 from omegaconf import OmegaConf
 from tqdm.auto import tqdm
 from numpy.typing import NDArray
 from typing import Dict
+
 
 def get_model_from_config(model_type, config_path):
     with open(config_path) as f:
@@ -230,6 +232,122 @@ def sdr(references, estimates):
     num += delta
     den += delta
     return 10 * np.log10(num / den)
+
+
+def si_sdr(reference, estimate):
+    eps = 1e-07
+    scale = np.sum(estimate * reference + eps, axis=(0, 1)) / np.sum(reference**2 + eps, axis=(0, 1))
+    scale = np.expand_dims(scale, axis=(0, 1))  # shape - [50, 1]
+    reference = reference * scale
+    sisdr = np.mean(10 * np.log10(np.sum(reference**2, axis=(0, 1)) / (np.sum((reference - estimate)**2, axis=(0, 1)) + eps) + eps))
+    return sisdr
+
+
+def L1Freq_metric(
+    reference,
+    estimate,
+    fft_size=2048,
+    hop_size=1024,
+    device='cpu'
+):
+    reference = torch.from_numpy(reference).to(device)
+    estimate = torch.from_numpy(estimate).to(device)
+    reference_stft = torch.stft(reference, fft_size, hop_size, return_complex=True)
+    estimated_stft = torch.stft(estimate, fft_size, hop_size, return_complex=True)
+    reference_mag = torch.abs(reference_stft)
+    estimate_mag = torch.abs(estimated_stft)
+    loss = 10 * F.l1_loss(estimate_mag, reference_mag)
+    # Metric is on the range from 0 to 100 - larger the better
+    ret = 100 / (1. + float(loss.cpu().numpy()))
+    return ret
+
+
+def LogWMSE_metric(
+    reference,
+    estimate,
+    mixture,
+    device='cpu',
+):
+    from torch_log_wmse import LogWMSE
+    log_wmse = LogWMSE(
+        audio_length=reference.shape[-1] / 44100,
+        sample_rate=44100,
+        return_as_loss=False,  # optional
+        bypass_filter=False,  # optional
+    )
+    reference = torch.from_numpy(reference).unsqueeze(0).unsqueeze(0).to(device)
+    estimate = torch.from_numpy(estimate).unsqueeze(0).unsqueeze(0).to(device)
+    mixture = torch.from_numpy(mixture).unsqueeze(0).to(device)
+    # print(reference.shape, estimate.shape, mixture.shape)
+    res = log_wmse(mixture, reference, estimate)
+    return float(res.cpu().numpy())
+
+
+def AuraSTFT_metric(
+    reference,
+    estimate,
+    device='cpu',
+):
+    from auraloss.freq import STFTLoss
+    stft_loss = STFTLoss(
+        w_log_mag=1.0,
+        w_lin_mag=0.0,
+        w_sc=1.0,
+        device=device,
+    )
+    reference = torch.from_numpy(reference).unsqueeze(0).to(device)
+    estimate = torch.from_numpy(estimate).unsqueeze(0).to(device)
+    res = 100 / (1. + 10 * stft_loss(reference, estimate))
+    return float(res.cpu().numpy())
+
+
+def AuraMRSTFT_metric(
+    reference,
+    estimate,
+    device='cpu',
+):
+    from auraloss.freq import MultiResolutionSTFTLoss
+    mrstft_loss = MultiResolutionSTFTLoss(
+        fft_sizes=[1024, 2048, 4096],
+        hop_sizes=[256, 512, 1024],
+        win_lengths=[1024, 2048, 4096],
+        scale="mel",
+        n_bins=128,
+        sample_rate=44100,
+        perceptual_weighting=True,
+        device=device
+    )
+    reference = torch.from_numpy(reference).unsqueeze(0).float().to(device)
+    estimate = torch.from_numpy(estimate).unsqueeze(0).float().to(device)
+    res = 100 / (1. + 10 * mrstft_loss(reference, estimate))
+    return float(res.cpu().numpy())
+
+
+def get_metrics(
+    metrics,
+    reference, # (ch, length)
+    estimate,  # (ch, length)
+    mix,       # (ch, length)
+    device='cpu',
+):
+    result = dict()
+    if 'sdr' in metrics:
+        references = np.expand_dims(reference, axis=0)
+        estimates = np.expand_dims(estimate, axis=0)
+        result['sdr'] = sdr(references, estimates)[0]
+    if 'si_sdr' in metrics:
+        result['si_sdr'] = si_sdr(reference, estimate)
+    if 'l1_freq' in metrics:
+        result['l1_freq'] = L1Freq_metric(reference, estimate, device=device)
+    if 'log_wmse' in metrics:
+        result['log_wmse'] = LogWMSE_metric(reference, estimate, mix, device)
+    if 'aura_stft' in metrics:
+        result['aura_stft'] = AuraSTFT_metric(reference, estimate, device)
+    if 'aura_mrstft' in metrics:
+        result['aura_mrstft'] = AuraMRSTFT_metric(reference, estimate, device)
+    # print(result)
+    return result
+
 
 def demix(config, model, mix: NDArray, device, pbar=False, model_type: str = None) -> Dict[str, NDArray]:
     mix = torch.tensor(mix, dtype=torch.float32)
