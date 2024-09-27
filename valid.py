@@ -19,7 +19,6 @@ warnings.filterwarnings("ignore")
 
 from utils import demix, get_metrics, get_model_from_config
 
-
 def proc_list_of_files(
     mixture_paths,
     model,
@@ -33,8 +32,18 @@ def proc_list_of_files(
     if config.training.target_instrument is not None:
         instruments = [config.training.target_instrument]
 
-    if args.store_dir != "":
-        os.makedirs(args.store_dir, exist_ok=True)
+    store_dir = ''
+    if hasattr(args, 'store_dir'):
+        store_dir = args.store_dir
+    use_tta = False
+    if hasattr(args, 'use_tta'):
+        use_tta = args.use_tta
+    extension = 'wav'
+    if hasattr(args, 'extension'):
+        extension = args.extension
+
+    if store_dir != '':
+        os.makedirs(store_dir, exist_ok=True)
 
     # Initialize metrics dictionary
     all_metrics = dict()
@@ -68,7 +77,7 @@ def proc_list_of_files(
                 std = mono.std()
                 mix = (mix - mean) / std
 
-        if args.use_tta:
+        if use_tta:
             # orig, channel inverse, polarity inverse
             track_proc_list = [mix.copy(), mix[::-1].copy(), -1. * mix.copy()]
         else:
@@ -99,7 +108,7 @@ def proc_list_of_files(
                 print("Instr: {}".format(instr))
             if instr != 'other' or config.training.other_fix is False:
                 try:
-                    track, sr1 = sf.read(folder + '/{}.{}'.format(instr, args.extension))
+                    track, sr1 = sf.read(folder + '/{}.{}'.format(instr, extension))
 
                     # Fix for mono
                     if len(track.shape) == 1:
@@ -110,7 +119,7 @@ def proc_list_of_files(
                     continue
             else:
                 # other is actually instrumental
-                track, sr1 = sf.read(folder + '/{}.{}'.format('vocals', args.extension))
+                track, sr1 = sf.read(folder + '/{}.{}'.format('vocals', extension))
                 track = mix_orig - track
 
             estimates = waveforms[instr].T
@@ -119,8 +128,8 @@ def proc_list_of_files(
                 if config.inference['normalize'] is True:
                     estimates = estimates * std + mean
 
-            if args.store_dir != "":
-                out_wav_name = "{}/{}_{}.wav".format(args.store_dir, os.path.basename(folder), instr)
+            if store_dir != "":
+                out_wav_name = "{}/{}_{}.wav".format(store_dir, os.path.basename(folder), instr)
                 sf.write(out_wav_name, estimates, sr, subtype='FLOAT')
 
             track_metrics = get_metrics(
@@ -151,9 +160,24 @@ def proc_list_of_files(
 def valid(model, args, config, device, verbose=False):
     start_time = time.time()
     model.eval().to(device)
-    all_mixtures_path = glob.glob(args.valid_path + '/*/mixture.' + args.extension)
-    print('Total mixtures: {}'.format(len(all_mixtures_path)))
-    print('Overlap: {} Batch size: {}'.format(config.inference.num_overlap, config.inference.batch_size))
+
+    store_dir = ''
+    if hasattr(args, 'store_dir'):
+        store_dir = args.store_dir
+    extension = 'wav'
+    if hasattr(args, 'extension'):
+        extension = args.extension
+
+    all_mixtures_path = []
+    for valid_path in args.valid_path:
+        part = sorted(glob.glob(valid_path + '/*/mixture.{}'.format(extension)))
+        if len(part) == 0:
+            if verbose:
+                print('No validation data found in: {}'.format(valid_path))
+        all_mixtures_path += part
+    if verbose:
+        print('Total mixtures: {}'.format(len(all_mixtures_path)))
+        print('Overlap: {} Batch size: {}'.format(config.inference.num_overlap, config.inference.batch_size))
 
     all_metrics = proc_list_of_files(all_mixtures_path, model, args, config, device, verbose, not verbose)
 
@@ -161,8 +185,8 @@ def valid(model, args, config, device, verbose=False):
     if config.training.target_instrument is not None:
         instruments = [config.training.target_instrument]
 
-    if args.store_dir != "":
-        out = open(args.store_dir + '/results.txt', 'w')
+    if store_dir != "":
+        out = open(store_dir + '/results.txt', 'w')
         out.write(str(args) + "\n")
     print("Num overlap: {}".format(config.inference.num_overlap))
 
@@ -173,7 +197,7 @@ def valid(model, args, config, device, verbose=False):
             mean_val = metric_values.mean()
             std_val = metric_values.std()
             print("Instr {} {}: {:.4f} (Std: {:.4f})".format(instr, metric_name, mean_val, std_val))
-            if args.store_dir != "":
+            if store_dir != "":
                 out.write("Instr {} {}: {:.4f} (Std: {:.4f})".format(instr, metric_name, mean_val, std_val) + "\n")
             if metric_name not in metric_avg:
                 metric_avg[metric_name] = 0.0
@@ -184,10 +208,10 @@ def valid(model, args, config, device, verbose=False):
     if len(instruments) > 1:
         for metric_name in metric_avg:
             print('Metric avg {:11s}: {:.4f}'.format(metric_name, metric_avg[metric_name]))
-            if args.store_dir != "":
+            if store_dir != "":
                 out.write('Metric avg {:11s}: {:.4f}'.format(metric_name, metric_avg[metric_name]) + "\n")
     print("Elapsed time: {:.2f} sec".format(time.time() - start_time))
-    if args.store_dir != "":
+    if store_dir != "":
         out.write("Elapsed time: {:.2f} sec".format(time.time() - start_time) + "\n")
         out.close()
 
@@ -227,11 +251,33 @@ def valid_mp(proc_id, queue, all_mixtures_path, model, args, config, device, ret
 
 def valid_multi_gpu(model, args, config, device_ids, verbose=False):
     start_time = time.time()
-    all_mixtures_path = glob.glob(args.valid_path + '/*/mixture.' + args.extension)
-    print('Total mixtures: {}'.format(len(all_mixtures_path)))
-    print('Overlap: {} Batch size: {}'.format(config.inference.num_overlap, config.inference.batch_size))
+
+    store_dir = ''
+    if hasattr(args, 'store_dir'):
+        store_dir = args.store_dir
+    extension = 'wav'
+    if hasattr(args, 'extension'):
+        extension = args.extension
+
+    all_mixtures_path = []
+    for valid_path in args.valid_path:
+        part = sorted(glob.glob(valid_path + '/*/mixture.{}'.format(extension)))
+        if len(part) == 0:
+            if verbose:
+                print('No validation data found in: {}'.format(valid_path))
+        all_mixtures_path += part
+    if verbose:
+        print('Total mixtures: {}'.format(len(all_mixtures_path)))
+        print('Overlap: {} Batch size: {}'.format(config.inference.num_overlap, config.inference.batch_size))
 
     model = model.to('cpu')
+    try:
+        # For multiGPU training extract single model
+        if len(device_ids) > 1:
+            model = model.module
+    except Exception as e:
+        pass
+
     queue = torch.multiprocessing.Queue()
     processes = []
     return_dict = torch.multiprocessing.Manager().dict()
@@ -262,8 +308,8 @@ def valid_multi_gpu(model, args, config, device_ids, verbose=False):
     if config.training.target_instrument is not None:
         instruments = [config.training.target_instrument]
 
-    if args.store_dir != "":
-        out = open(args.store_dir + '/results.txt', 'w')
+    if store_dir != "":
+        out = open(store_dir + '/results.txt', 'w')
         out.write(str(args) + "\n")
     print("Num overlap: {}".format(config.inference.num_overlap))
 
@@ -274,7 +320,7 @@ def valid_multi_gpu(model, args, config, device_ids, verbose=False):
             mean_val = metric_values.mean()
             std_val = metric_values.std()
             print("Instr {} {}: {:.4f} (Std: {:.4f})".format(instr, metric_name, mean_val, std_val))
-            if args.store_dir != "":
+            if store_dir != "":
                 out.write("Instr {} {}: {:.4f} (Std: {:.4f})".format(instr, metric_name, mean_val, std_val) + "\n")
             if metric_name not in metric_avg:
                 metric_avg[metric_name] = 0.0
@@ -285,10 +331,10 @@ def valid_multi_gpu(model, args, config, device_ids, verbose=False):
     if len(instruments) > 1:
         for metric_name in metric_avg:
             print('Metric avg {:11s}: {:.4f}'.format(metric_name, metric_avg[metric_name]))
-            if args.store_dir != "":
+            if store_dir != "":
                 out.write('Metric avg {:11s}: {:.4f}'.format(metric_name, metric_avg[metric_name]) + "\n")
     print("Elapsed time: {:.2f} sec".format(time.time() - start_time))
-    if args.store_dir != "":
+    if store_dir != "":
         out.write("Elapsed time: {:.2f} sec".format(time.time() - start_time) + "\n")
         out.close()
 
@@ -300,7 +346,7 @@ def check_validation(args):
     parser.add_argument("--model_type", type=str, default='mdx23c', help="One of mdx23c, htdemucs, segm_models, mel_band_roformer, bs_roformer, swin_upernet, bandit")
     parser.add_argument("--config_path", type=str, help="path to config file")
     parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint to valid weights")
-    parser.add_argument("--valid_path", type=str, help="validate path")
+    parser.add_argument("--valid_path", nargs="+", type=str, help="validate path")
     parser.add_argument("--store_dir", default="", type=str, help="path to store results as wav file")
     parser.add_argument("--device_ids", nargs='+', type=int, default=0, help='list of gpu ids')
     parser.add_argument("--num_workers", type=int, default=0, help="dataloader num_workers")
