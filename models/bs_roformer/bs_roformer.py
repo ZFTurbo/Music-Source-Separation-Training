@@ -355,7 +355,8 @@ class BSRoformer(Module):
             multi_stft_resolutions_window_sizes: Tuple[int, ...] = (4096, 2048, 1024, 512, 256),
             multi_stft_hop_size=147,
             multi_stft_normalized=False,
-            multi_stft_window_fn: Callable = torch.hann_window
+            multi_stft_window_fn: Callable = torch.hann_window,
+            mlp_expansion_factor=4,
     ):
         super().__init__()
 
@@ -420,7 +421,8 @@ class BSRoformer(Module):
             mask_estimator = MaskEstimator(
                 dim=dim,
                 dim_inputs=freqs_per_bands_with_complex,
-                depth=mask_estimator_depth
+                depth=mask_estimator_depth,
+                mlp_expansion_factor=mlp_expansion_factor,
             )
 
             self.mask_estimators.append(mask_estimator)
