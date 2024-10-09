@@ -354,6 +354,7 @@ class MelBandRoformer(Module):
             multi_stft_normalized=False,
             multi_stft_window_fn: Callable = torch.hann_window,
             match_input_audio_length=False,  # if True, pad output tensor to match length of input tensor
+            mlp_expansion_factor=4,
     ):
         super().__init__()
 
@@ -451,7 +452,8 @@ class MelBandRoformer(Module):
             mask_estimator = MaskEstimator(
                 dim=dim,
                 dim_inputs=freqs_per_bands_with_complex,
-                depth=mask_estimator_depth
+                depth=mask_estimator_depth,
+                mlp_expansion_factor=mlp_expansion_factor,
             )
 
             self.mask_estimators.append(mask_estimator)
