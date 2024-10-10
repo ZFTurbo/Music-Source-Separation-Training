@@ -48,6 +48,11 @@ def get_model_from_config(model_type, config_path):
         model = BSRoformer(
             **dict(config.model)
         )
+    elif model_type == 'bs_roformer_low_mem':
+        from models.bs_roformer.bs_roformer_low_mem import BSRoformer
+        model = BSRoformer(
+            **dict(config.model)
+        )
     elif model_type == 'swin_upernet':
         from models.upernet_swin_transformers import Swin_UperNet_Model
         model = Swin_UperNet_Model(config)
