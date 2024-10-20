@@ -1,6 +1,7 @@
 import wx
 import wx.adv
 import wx.html
+import wx.html2
 import subprocess
 import os
 import threading
@@ -179,7 +180,7 @@ class MainFrame(wx.Frame):
         # Model Type
         model_type_sizer = wx.BoxSizer(wx.HORIZONTAL)
         model_type_sizer.Add(wx.StaticText(panel, label="Model Type:"), 0, wx.ALIGN_CENTER_VERTICAL)
-        self.model_type = wx.Choice(panel, choices=["mdx23c", "htdemucs", "segm_models", "mel_band_roformer", "bs_roformer"])
+        self.model_type = wx.Choice(panel, choices=["apollo", "bandit", "bandit_v2", "bs_roformer", "htdemucs", "mdx23c", "mel_band_roformer", "scnet", "scnet_unofficial", "segm_models", "swin_upernet", "torchseg"])
         self.model_type.SetFont(self.font)
         model_type_sizer.Add(self.model_type, 0, wx.LEFT, 5)
         sizer.Add(model_type_sizer, 0, wx.EXPAND | wx.ALL, 5)
@@ -230,7 +231,7 @@ class MainFrame(wx.Frame):
         # Model Type
         infer_model_type_sizer = wx.BoxSizer(wx.HORIZONTAL)
         infer_model_type_sizer.Add(wx.StaticText(panel, label="Model Type:"), 0, wx.ALIGN_CENTER_VERTICAL)
-        self.infer_model_type = wx.Choice(panel, choices=["mdx23c", "htdemucs", "segm_models", "mel_band_roformer", "bs_roformer"])
+        self.infer_model_type = wx.Choice(panel, choices=["apollo", "bandit", "bandit_v2", "bs_roformer", "htdemucs", "mdx23c", "mel_band_roformer", "scnet", "scnet_unofficial", "segm_models", "swin_upernet", "torchseg"])
         self.infer_model_type.SetFont(self.font)
         infer_model_type_sizer.Add(self.infer_model_type, 0, wx.LEFT, 5)
         sizer.Add(infer_model_type_sizer, 0, wx.EXPAND | wx.ALL, 5)
@@ -277,7 +278,7 @@ class MainFrame(wx.Frame):
             if is_config:
                 wildcard = "YAML files (*.yaml)|*.yaml"
             elif is_checkpoint:
-                wildcard = "Checkpoint files (*.bin;*.ckpt;*.th)|*.bin;*.ckpt;*.th"
+                wildcard = "Checkpoint files (*.bin;*.chpt;*.ckpt;*.th)|*.bin;*.chpt;*.ckpt;*.th"
             
             dialog = wx.FileDialog(self, "Choose a file", style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST, wildcard=wildcard)
         
@@ -452,14 +453,9 @@ class MainFrame(wx.Frame):
     def on_download_models(self, event):
         DownloadModelsFrame(self).Show()
 
-class CustomHtmlWindow(wx.html.HtmlWindow):
-    def __init__(self, parent, *args, **kwargs):
-        super().__init__(parent, *args, **kwargs)
-        self.SetStandardFonts(size=9, normal_face="Poppins", fixed_face="Poppins")
-
 class DownloadModelsFrame(wx.Frame):
     def __init__(self, parent):
-        super().__init__(parent, title="Download Models", size=(994, 670))
+        super().__init__(parent, title="Download Models", size=(994, 670), style=wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
         self.SetBackgroundColour(wx.Colour(247, 248, 250))  # #F7F8FA
         self.SetFont(wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False, "Poppins"))
         
@@ -473,31 +469,45 @@ class DownloadModelsFrame(wx.Frame):
         panel = wx.Panel(self)
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        # Add scrolled window
-        scrolled_window = wx.ScrolledWindow(panel, style=wx.VSCROLL)
-        scrolled_window.SetScrollRate(0, 20)
-        scroll_sizer = wx.BoxSizer(wx.VERTICAL)
+        # Add WebView
+        self.web_view = wx.html2.WebView.New(panel)
+        self.web_view.LoadURL("https://bascurtiz.x10.mx/models-checkpoint-config-urls.html")
+        self.web_view.Bind(wx.html2.EVT_WEBVIEW_NAVIGATING, self.on_link_click)
+        self.web_view.Bind(wx.html2.EVT_WEBVIEW_NAVIGATED, self.on_page_load)
+        sizer.Add(self.web_view, 1, wx.EXPAND)
 
-        html_window = CustomHtmlWindow(scrolled_window, style=wx.html.HW_SCROLLBAR_AUTO)
-        html_window.SetPage(self.get_content())
-        html_window.Bind(wx.html.EVT_HTML_LINK_CLICKED, self.on_link_click)
-        scroll_sizer.Add(html_window, 1, wx.EXPAND | wx.ALL, 10)
-
-        scrolled_window.SetSizer(scroll_sizer)
-        sizer.Add(scrolled_window, 1, wx.EXPAND)
         panel.SetSizer(sizer)
 
-    def get_content(self):
-        try:
-            response = requests.get("https://bascurtiz.x10.mx/models-checkpoint-config-urls.html")
-            response.raise_for_status()
-            return response.text
-        except requests.RequestException as e:
-            return f"<html><body><p>An error occurred while fetching the content: {str(e)}</p></body></html>"
-
     def on_link_click(self, event):
-        href = event.GetLinkInfo().GetHref()
-        webbrowser.open(href)
+        url = event.GetURL()
+        if not url.startswith("https://bascurtiz.x10.mx"):
+            event.Veto()  # Prevent the WebView from navigating
+            webbrowser.open(url)  # Open the link in the default browser
+
+    def on_page_load(self, event):
+        self.inject_custom_css()
+
+    def inject_custom_css(self):
+        css = """
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        """
+        js = f"var style = document.createElement('style'); style.textContent = `{css}`; document.head.appendChild(style);"
+        self.web_view.RunScript(js)
 
 if __name__ == "__main__":
     app = wx.App()
