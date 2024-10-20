@@ -153,10 +153,10 @@ def train_model(args):
 
     # wandb
     if args.wandb_key is None or args.wandb_key.strip() == '':
-        wandb.init(mode = 'disabled')
+        wandb.init(mode='disabled')
     else:
-        wandb.login(key = args.wandb_key)
-        wandb.init(project = 'msst', config = { 'config': config, 'args': args, 'device_ids': device_ids, 'batch_size': batch_size })
+        wandb.login(key=args.wandb_key)
+        wandb.init(project='msst', config={'config': config, 'args': args, 'device_ids': device_ids, 'batch_size': batch_size })
 
     trainset = MSSDataset(
         config,

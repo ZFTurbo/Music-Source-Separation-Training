@@ -79,6 +79,7 @@ All inference parameters are [here](https://github.com/ZFTurbo/Music-Source-Sepa
 * `train.py` - main training code
 * `utils.py` - common functions used by train/valid
 * `valid.py` - validation of model with metrics
+* `ensemble.py` - useful script to ensemble results of different models to make results better (see [docs](docs/ensemble.md)).   
 
 ## Pre-trained models
 
@@ -141,6 +142,10 @@ Look here: [Dataset types](docs/dataset_types.md)
 ## Augmentations
 
 Look here: [Augmentations](docs/augmentations.md)
+
+## Graphical user interface
+
+Look here: [GUI](docs/gui.md)
 
 ## Citation
 
