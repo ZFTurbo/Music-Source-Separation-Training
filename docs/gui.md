@@ -2,7 +2,7 @@
 
 GUI was prepared by **Bas Curtiz** and is based on [wxpython](https://en.wikipedia.org/wiki/WxPython) module.
 
-![Window example](gui/wx_msst_screen.png)
+![Window example](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/gui/wx_msst_screen.png)
 
 ### How to
 
