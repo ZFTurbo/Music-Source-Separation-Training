@@ -80,6 +80,19 @@ class CollapsiblePanel(wx.Panel):
     def get_content_panel(self):
         return self.content_panel
 
+class CustomToolTip(wx.PopupWindow):
+    def __init__(self, parent, text):
+        wx.PopupWindow.__init__(self, parent)
+        
+        panel = wx.Panel(self)
+        self.st = wx.StaticText(panel, -1, text, pos=(10, 10))
+        
+        size = self.st.GetBestSize()
+        self.SetSize((size.width + 20, size.height + 20))
+        panel.SetSize(self.GetSize())
+        
+        panel.SetBackgroundColour(wx.Colour(240, 240, 240))
+
 class MainFrame(wx.Frame):
     def __init__(self):
         super().__init__(parent=None, title="Music Source Separation Training & Inference GUI")
@@ -88,6 +101,8 @@ class MainFrame(wx.Frame):
         
         icon = wx.Icon("gui/favicon.ico", wx.BITMAP_TYPE_ICO)
         self.SetIcon(icon)
+
+        self.saved_combinations = {}
 
         # Center the window on the screen
         self.Center()
@@ -185,8 +200,8 @@ class MainFrame(wx.Frame):
         model_type_sizer.Add(self.model_type, 0, wx.LEFT, 5)
         sizer.Add(model_type_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
-        # Config Path
-        self.config_entry = self.add_browse_control(panel, sizer, "Config Path:", is_folder=False, is_config=True)
+        # Config File
+        self.config_entry = self.add_browse_control(panel, sizer, "Config File:", is_folder=False, is_config=True)
 
         # Start Checkpoint
         self.checkpoint_entry = self.add_browse_control(panel, sizer, "Checkpoint:", is_folder=False, is_checkpoint=True)
@@ -228,16 +243,66 @@ class MainFrame(wx.Frame):
     def create_inference_controls(self, panel):
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        # Model Type
+        # Model Type and Saved Combinations
         infer_model_type_sizer = wx.BoxSizer(wx.HORIZONTAL)
         infer_model_type_sizer.Add(wx.StaticText(panel, label="Model Type:"), 0, wx.ALIGN_CENTER_VERTICAL)
         self.infer_model_type = wx.Choice(panel, choices=["apollo", "bandit", "bandit_v2", "bs_roformer", "htdemucs", "mdx23c", "mel_band_roformer", "scnet", "scnet_unofficial", "segm_models", "swin_upernet", "torchseg"])
         self.infer_model_type.SetFont(self.font)
         infer_model_type_sizer.Add(self.infer_model_type, 0, wx.LEFT, 5)
+
+        # Add "Preset:" label
+        infer_model_type_sizer.Add(wx.StaticText(panel, label="Preset:"), 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 20)
+
+        # Add dropdown for saved combinations
+        self.saved_combinations_dropdown = wx.Choice(panel, choices=[])
+        self.saved_combinations_dropdown.SetFont(self.font)
+        self.saved_combinations_dropdown.Bind(wx.EVT_CHOICE, self.on_combination_selected)
+
+        # Set the width to 200px and an appropriate height
+        self.saved_combinations_dropdown.SetMinSize((358, -1))  # -1 keeps the height unchanged
+
+        # Add to sizer
+        infer_model_type_sizer.Add(self.saved_combinations_dropdown, 0, wx.LEFT, 5)
+
+        # Add plus button
+        plus_button = self.create_styled_button(panel, "+", self.on_save_combination)
+        plus_button.SetMinSize((30, 30))
+        infer_model_type_sizer.Add(plus_button, 0, wx.LEFT, 5)
+
+        # Add help button with custom tooltip
+        help_button = wx.StaticText(panel, label="?")
+        help_button.SetFont(self.bold_font)
+        help_button.SetForegroundColour(wx.Colour(1, 118, 179))  #0176B3
+        tooltip_text = ("How to add a preset:\n\n"
+                        "1. Click Download Models\n"
+                        "2. Download a model's Config && Checkpoint\n"
+                        "3. Choose the associated Model Type\n"
+                        "4. Select the Config File\n"
+                        "5. Select the Checkpoint\n"
+                        "6. Click the + button\n"
+                        "7. Name it (copy Model name from Download Models)\n"
+                        "8. Click OK\n\n"
+                        "On next use, just select it from the Preset dropdown.")
+        
+        self.tooltip = CustomToolTip(self, tooltip_text)
+        self.tooltip.Hide()
+
+        def on_help_enter(event):
+            self.tooltip.Position(help_button.ClientToScreen((0, help_button.GetSize().height)), (0, 0))
+            self.tooltip.Show()
+
+        def on_help_leave(event):
+            self.tooltip.Hide()
+
+        help_button.Bind(wx.EVT_ENTER_WINDOW, on_help_enter)
+        help_button.Bind(wx.EVT_LEAVE_WINDOW, on_help_leave)
+
+        infer_model_type_sizer.Add(help_button, 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
+
         sizer.Add(infer_model_type_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
-        # Config Path
-        self.infer_config_entry = self.add_browse_control(panel, sizer, "Config Path:", is_folder=False, is_config=True)
+        # Config File
+        self.infer_config_entry = self.add_browse_control(panel, sizer, "Config File:", is_folder=False, is_config=True)
 
         # Start Checkpoint
         self.infer_checkpoint_entry = self.add_browse_control(panel, sizer, "Checkpoint:", is_folder=False, is_checkpoint=True)
@@ -265,7 +330,7 @@ class MainFrame(wx.Frame):
         entry = wx.TextCtrl(panel)
         entry.SetFont(self.font)
         browse_sizer.Add(entry, 1, wx.EXPAND | wx.LEFT, 5)
-        browse_button = self.create_styled_button(panel, "Browse", lambda event, entry=entry, is_folder=is_folder, is_config=is_config, is_checkpoint=is_checkpoint: self.browse(event, entry, is_folder, is_config, is_checkpoint))
+        browse_button = self.create_styled_button(panel, "Browse", lambda event, entry=entry, is_folder=is_folder, is_config=is_config, is_checkpoint=is_checkpoint: self.browse(event, entry, is_folder, is_config, is_checkpoint))        
         browse_sizer.Add(browse_button, 0, wx.LEFT, 5)
         sizer.Add(browse_sizer, 0, wx.EXPAND | wx.ALL, 5)
         return entry
@@ -422,10 +487,11 @@ class MainFrame(wx.Frame):
             "infer_start_checkpoint": self.infer_checkpoint_entry.GetValue(),
             "infer_input_folder": self.infer_input_entry.GetValue(),
             "infer_store_dir": self.infer_store_entry.GetValue(),
-            "extract_instrumental": self.extract_instrumental_checkbox.GetValue()
+            "extract_instrumental": self.extract_instrumental_checkbox.GetValue(),
+            "saved_combinations": self.saved_combinations
         }
         with open("settings.json", "w") as f:
-            json.dump(settings, f)
+            json.dump(settings, f, indent=2, ensure_ascii=False)
 
     def load_settings(self):
         try:
@@ -447,11 +513,43 @@ class MainFrame(wx.Frame):
             self.infer_input_entry.SetValue(settings.get("infer_input_folder", ""))
             self.infer_store_entry.SetValue(settings.get("infer_store_dir", ""))
             self.extract_instrumental_checkbox.SetValue(settings.get("extract_instrumental", False))
+            self.saved_combinations = settings.get("saved_combinations", {})
+
+            self.update_saved_combinations()
         except FileNotFoundError:
             pass  # If the settings file doesn't exist, use default values
 
     def on_download_models(self, event):
         DownloadModelsFrame(self).Show()
+
+    def on_save_combination(self, event):
+        dialog = wx.TextEntryDialog(self, "Enter a name for this preset:", "Save Preset")
+        if dialog.ShowModal() == wx.ID_OK:
+            name = dialog.GetValue()
+            if name:
+                combination = {
+                    "model_type": self.infer_model_type.GetStringSelection(),
+                    "config_path": self.infer_config_entry.GetValue(),
+                    "checkpoint": self.infer_checkpoint_entry.GetValue()
+                }
+                self.saved_combinations[name] = combination
+                self.update_saved_combinations()
+                self.save_settings()
+        dialog.Destroy()
+
+    def on_combination_selected(self, event):
+        name = self.saved_combinations_dropdown.GetStringSelection()
+        if name:
+            combination = self.saved_combinations.get(name)
+            if combination:
+                self.infer_model_type.SetStringSelection(combination["model_type"])
+                self.infer_config_entry.SetValue(combination["config_path"])
+                self.infer_checkpoint_entry.SetValue(combination["checkpoint"])
+
+    def update_saved_combinations(self):
+        self.saved_combinations_dropdown.Clear()
+        for name in self.saved_combinations.keys():
+            self.saved_combinations_dropdown.Append(name)
 
 class DownloadModelsFrame(wx.Frame):
     def __init__(self, parent):
