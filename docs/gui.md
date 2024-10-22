@@ -28,3 +28,4 @@ Video guide on [Youtube](https://youtu.be/gyxMCbDwfAw) (~8 minutes).
 ### Other links
 
 * You can try [non-official GUI to MSST](https://github.com/SUC-DriverOld/MSST-WebUI).
+* The one more version [by SiftedSand](https://github.com/SiftedSand/MusicSepGUI)
