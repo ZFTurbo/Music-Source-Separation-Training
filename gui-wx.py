@@ -83,15 +83,33 @@ class CollapsiblePanel(wx.Panel):
 class CustomToolTip(wx.PopupWindow):
     def __init__(self, parent, text):
         wx.PopupWindow.__init__(self, parent)
-        
+
+        # Main panel for tooltip
         panel = wx.Panel(self)
-        self.st = wx.StaticText(panel, -1, text, pos=(10, 10))
-        
+        self.st = wx.StaticText(panel, 1, text, pos=(10, 10))
+
+        font = wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False, "Poppins")
+        self.st.SetFont(font)
+
         size = self.st.GetBestSize()
         self.SetSize((size.width + 20, size.height + 20))
+
+        # Adjust the panel size
         panel.SetSize(self.GetSize())
-        
-        panel.SetBackgroundColour(wx.Colour(240, 240, 240))
+        panel.SetBackgroundColour(wx.Colour(255, 255, 255))
+
+        # Bind paint event to draw border
+        panel.Bind(wx.EVT_PAINT, self.on_paint)
+
+    def on_paint(self, event):
+        # Get the device context for the panel (not self)
+        panel = event.GetEventObject()  # Get the panel triggering the paint event
+        dc = wx.PaintDC(panel)  # Use panel as the target of the PaintDC
+        dc.SetPen(wx.Pen(wx.Colour(210, 210, 210), 1))  # Border color
+        dc.SetBrush(wx.Brush(wx.Colour(255, 255, 255)))  # Fill with white
+
+        size = panel.GetSize()
+        dc.DrawRectangle(0, 0, size.width, size.height)  # Draw border around panel
 
 class MainFrame(wx.Frame):
     def __init__(self):
@@ -273,15 +291,17 @@ class MainFrame(wx.Frame):
         help_button = wx.StaticText(panel, label="?")
         help_button.SetFont(self.bold_font)
         help_button.SetForegroundColour(wx.Colour(1, 118, 179))  #0176B3
-        tooltip_text = ("How to add a preset:\n\n"
+        tooltip_text = ("How to add a preset?\n\n"
                         "1. Click Download Models\n"
-                        "2. Download a model's Config && Checkpoint\n"
-                        "3. Choose the associated Model Type\n"
-                        "4. Select the Config File\n"
-                        "5. Select the Checkpoint\n"
-                        "6. Click the + button\n"
-                        "7. Name it (copy Model name from Download Models)\n"
-                        "8. Click OK\n\n"
+                        "2. Right-click a model's Config && Checkpoint\n"
+                        "3. Save link as && select a proper destination\n"
+                        "4. Copy the Model name\n"
+                        "5. Close Download Models\n\n"
+                        "6. Browse for the Config file\n"
+                        "7. Browse for the Checkpoint\n"
+                        "8. Select the Model Type\n"
+                        "9. Click the + button\n"
+                        "10. Paste the Model name && click OK\n\n"
                         "On next use, just select it from the Preset dropdown.")
         
         self.tooltip = CustomToolTip(self, tooltip_text)

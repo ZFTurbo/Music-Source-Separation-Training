@@ -25,6 +25,8 @@ Video guide on [Youtube](https://youtu.be/gyxMCbDwfAw) (~8 minutes).
 
 [![Tutorial screenshot](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/gui/tutorial_screenshot.jpg)](https://youtu.be/gyxMCbDwfAw)
 
+Also you can use GUI as EXE-file on Windows: [Link](https://mega.nz/file/xAAzTCzR#2IapG3RJ9Vew3oC8l9H2zrw1vwUtZSqsUdJAjmARmPs).
+
 ### Other links
 
 * You can try [non-official GUI to MSST](https://github.com/SUC-DriverOld/MSST-WebUI).
