@@ -270,6 +270,14 @@ def train_model(args):
             y = batch.to(device)
             x = mixes.to(device)  # mixture
 
+            if 'normalize' in config.training:
+                if config.training.normalize:
+                    mean = x.mean()
+                    std = x.std()
+                    if std != 0:
+                        x = (x - mean) / std
+                        y = (y - mean) / std
+
             with torch.cuda.amp.autocast(enabled=use_amp):
                 if args.model_type in ['mel_band_roformer', 'bs_roformer']:
                     # loss is computed in forward pass
