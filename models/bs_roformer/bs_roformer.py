@@ -6,6 +6,7 @@ from torch.nn import Module, ModuleList
 import torch.nn.functional as F
 
 from models.bs_roformer.attend import Attend
+from torch.utils.checkpoint import checkpoint
 
 from beartype.typing import Tuple, Optional, List, Callable
 from beartype import beartype
@@ -357,12 +358,16 @@ class BSRoformer(Module):
             multi_stft_normalized=False,
             multi_stft_window_fn: Callable = torch.hann_window,
             mlp_expansion_factor=4,
+            use_torch_checkpoint=False,
+            skip_connection=False,
     ):
         super().__init__()
 
         self.stereo = stereo
         self.audio_channels = 2 if stereo else 1
         self.num_stems = num_stems
+        self.use_torch_checkpoint = use_torch_checkpoint
+        self.skip_connection = skip_connection
 
         self.layers = ModuleList([])
 
@@ -490,39 +495,63 @@ class BSRoformer(Module):
 
         x = rearrange(stft_repr, 'b f t c -> b t (f c)')
 
-        x = self.band_split(x)
+        if self.use_torch_checkpoint:
+            x = checkpoint(self.band_split, x)
+        else:
+            x = self.band_split(x)
 
         # axial / hierarchical attention
 
-        for transformer_block in self.layers:
+        store = [None] * len(self.layers)
+        for i, transformer_block in enumerate(self.layers):
 
             if len(transformer_block) == 3:
                 linear_transformer, time_transformer, freq_transformer = transformer_block
 
                 x, ft_ps = pack([x], 'b * d')
-                x = linear_transformer(x)
+                if self.use_torch_checkpoint:
+                    x = checkpoint(linear_transformer, x)
+                else:
+                    x = linear_transformer(x)
                 x, = unpack(x, ft_ps, 'b * d')
             else:
                 time_transformer, freq_transformer = transformer_block
 
+            if self.skip_connection:
+                # Sum all previous
+                for j in range(i):
+                    x = x + store[j]
+
             x = rearrange(x, 'b t f d -> b f t d')
             x, ps = pack([x], '* t d')
 
-            x = time_transformer(x)
+            if self.use_torch_checkpoint:
+                x = checkpoint(time_transformer, x)
+            else:
+                x = time_transformer(x)
 
             x, = unpack(x, ps, '* t d')
             x = rearrange(x, 'b f t d -> b t f d')
             x, ps = pack([x], '* f d')
 
-            x = freq_transformer(x)
+            if self.use_torch_checkpoint:
+                x = checkpoint(freq_transformer, x)
+            else:
+                x = freq_transformer(x)
 
             x, = unpack(x, ps, '* f d')
+
+            if self.skip_connection:
+                store[i] = x
 
         x = self.final_norm(x)
 
         num_stems = len(self.mask_estimators)
 
-        mask = torch.stack([fn(x) for fn in self.mask_estimators], dim=1)
+        if self.use_torch_checkpoint:
+            mask = torch.stack([checkpoint(fn, x, use_reentrant=False) for fn in self.mask_estimators], dim=1)
+        else:
+            mask = torch.stack([fn(x) for fn in self.mask_estimators], dim=1)
         mask = rearrange(mask, 'b n t (f c) -> b n f t c', c=2)
 
         # modulate frequency representation

@@ -38,6 +38,9 @@ model:
     - 256
   multi_stft_hop_size: 147
   multi_stft_normalized: False
+  mlp_expansion_factor: 4 # Probably too big (requires a lot of memory for weights)
+  use_torch_checkpoint: False  # it allows to greatly reduce GPU memory consumption during training (not fully tested)
+  skip_connection: False # Enable skip connection between transformer blocks - can solve problem with gradients and probably faster training
 
 training:
   batch_size: 7
