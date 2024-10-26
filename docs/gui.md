@@ -15,13 +15,15 @@ Select Desktop development with C++
 4. Install PyTorch: https://pytorch.org/get-started/locally/
 5. Download and unzip Music Source Separation Universal Training Code:
 https://github.com/ZFTurbo/Music-Source-Separation-Training
-6. Open up CMD inside the folder and enter: `pip install -r requirements.txt` 
-7. enter: `pip install wxpython` 
-8. enter: `python gui-wx.py`
-9. Download models - assign the config (.yaml) and checkpoint (.bin, .ckpt, or .th)
-10. Done.
+6. Open up CMD inside the folder and enter: `pip install -r requirements.txt`
+7. Enter: `python gui-wx.py`
+8. Download models - assign the config (.yaml) and checkpoint (.bin, .ckpt, or .th)
+9. Alternatively, you can use a compiled exe of the GUI:
+https://mega.nz/file/xAAzTCzR#2IapG3RJ9Vew3oC8l9H2zrw1vwUtZSqsUdJAjmARmPs
+Put it inside the root folder.
+This way you can make a shortcut to the exe on your desktop to run it with a double-click. 
 
-Video guide on [Youtube](https://youtu.be/gyxMCbDwfAw) (~8 minutes).
+Video guide on [Youtube](https://youtu.be/M8JKFeN7HfU) (~6.5 minutes).
 
 [![Tutorial screenshot](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/gui/tutorial_screenshot.jpg)](https://youtu.be/gyxMCbDwfAw)
 

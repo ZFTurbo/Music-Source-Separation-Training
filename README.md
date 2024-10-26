@@ -146,7 +146,7 @@ Look here: [Augmentations](docs/augmentations.md)
 
 ## Graphical user interface
 
-Look here: [GUI documentation](docs/gui.md) or see tutorial on [Youtube](https://youtu.be/gyxMCbDwfAw)
+Look here: [GUI documentation](docs/gui.md) or see tutorial on [Youtube](https://youtu.be/M8JKFeN7HfU)
 
 ## Citation
 
