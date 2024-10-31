@@ -11,7 +11,7 @@ from ml_collections import ConfigDict
 from omegaconf import OmegaConf
 from tqdm.auto import tqdm
 from numpy.typing import NDArray
-from typing import Dict
+from typing import Dict, List
 
 
 def get_model_from_config(model_type, config_path):
@@ -106,10 +106,7 @@ def demix_track(config, model, mix, device, pbar=False):
 
     with torch.cuda.amp.autocast(enabled=config.training.use_amp):
         with torch.inference_mode():
-            if config.training.target_instrument is not None:
-                req_shape = (1, ) + tuple(mix.shape)
-            else:
-                req_shape = (len(config.training.instruments),) + tuple(mix.shape)
+            req_shape = (len(prefer_target_instrument(config)),) + tuple(mix.shape)
 
             result = torch.zeros(req_shape, dtype=torch.float32)
             counter = torch.zeros(req_shape, dtype=torch.float32)
@@ -163,11 +160,7 @@ def demix_track(config, model, mix, device, pbar=False):
                 # Remove pad
                 estimated_sources = estimated_sources[..., border:-border]
 
-    if config.training.target_instrument is None:
-        return {k: v for k, v in zip(config.training.instruments, estimated_sources)}
-    else:
-        return {k: v for k, v in zip([config.training.target_instrument], estimated_sources)}
-
+    return {k: v for k, v in zip(prefer_target_instrument(config), estimated_sources)}
 
 def demix_track_demucs(config, model, mix, device, pbar=False):
     S = len(config.training.instruments)
@@ -355,3 +348,9 @@ def demix(config, model, mix: NDArray, device, pbar=False, model_type: str = Non
         return demix_track_demucs(config, model, mix, device, pbar=pbar)
     else:
         return demix_track(config, model, mix, device, pbar=pbar)
+
+def prefer_target_instrument(config: ConfigDict) -> List[str]:
+    if config.training.get('target_instrument'):
+        return [config.training.target_instrument]
+    else:
+        return config.training.instruments
