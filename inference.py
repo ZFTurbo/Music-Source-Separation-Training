@@ -12,6 +12,7 @@ import torch
 import numpy as np
 import soundfile as sf
 import torch.nn as nn
+from utils import prefer_target_instrument
 
 # Using the embedded version of Python can also correctly import the utils module.
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -29,9 +30,7 @@ def run_folder(model, args, config, device, verbose=False):
     all_mixtures_path.sort()
     print('Total files found: {}'.format(len(all_mixtures_path)))
 
-    instruments = config.training.instruments.copy()
-    if config.training.target_instrument is not None:
-        instruments = [config.training.target_instrument]
+    instruments = prefer_target_instrument(config)
 
     os.makedirs(args.store_dir, exist_ok=True)
 

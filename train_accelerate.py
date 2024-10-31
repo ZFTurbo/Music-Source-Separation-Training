@@ -23,7 +23,7 @@ import torch.nn.functional as F
 from accelerate import Accelerator
 
 from dataset import MSSDataset
-from utils import get_model_from_config, demix, sdr
+from utils import get_model_from_config, demix, sdr, prefer_target_instrument
 from train import masked_loss, manual_seed, load_not_compatible_weights
 import warnings
 
@@ -31,9 +31,7 @@ warnings.filterwarnings("ignore")
 
 
 def valid(model, valid_loader, args, config, device, verbose=False):
-    instruments = config.training.instruments
-    if config.training.target_instrument is not None:
-        instruments = [config.training.target_instrument]
+    instruments = prefer_target_instrument(config)
 
     all_sdr = dict()
     for instr in instruments:
@@ -238,9 +236,7 @@ def train_model(args):
         # print(sdr_list)
 
         sdr_avg = 0.0
-        instruments = config.training.instruments
-        if config.training.target_instrument is not None:
-            instruments = [config.training.target_instrument]
+        instruments = prefer_target_instrument(config)
 
         for instr in instruments:
             # print(sdr_list[instr])
@@ -324,9 +320,7 @@ def train_model(args):
         accelerator.wait_for_everyone()
 
         sdr_avg = 0.0
-        instruments = config.training.instruments
-        if config.training.target_instrument is not None:
-            instruments = [config.training.target_instrument]
+        instruments = prefer_target_instrument(config)
 
         for instr in instruments:
             if accelerator.is_main_process and 0:

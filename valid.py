@@ -17,7 +17,7 @@ import multiprocessing
 import warnings
 warnings.filterwarnings("ignore")
 
-from utils import demix, get_metrics, get_model_from_config
+from utils import demix, get_metrics, get_model_from_config, prefer_target_instrument
 
 def proc_list_of_files(
     mixture_paths,
@@ -28,9 +28,7 @@ def proc_list_of_files(
     verbose=False,
     is_tqdm=True
 ):
-    instruments = config.training.instruments
-    if config.training.target_instrument is not None:
-        instruments = [config.training.target_instrument]
+    instruments = prefer_target_instrument(config)
 
     store_dir = ''
     if hasattr(args, 'store_dir'):
@@ -181,9 +179,7 @@ def valid(model, args, config, device, verbose=False):
 
     all_metrics = proc_list_of_files(all_mixtures_path, model, args, config, device, verbose, not verbose)
 
-    instruments = config.training.instruments
-    if config.training.target_instrument is not None:
-        instruments = [config.training.target_instrument]
+    instruments = prefer_target_instrument(config)
 
     if store_dir != "":
         out = open(store_dir + '/results.txt', 'w')
@@ -304,9 +300,7 @@ def valid_multi_gpu(model, args, config, device_ids, verbose=False):
             for i in range(len(device_ids)):
                 all_metrics[metric][instr] += return_dict[i][metric][instr]
 
-    instruments = config.training.instruments
-    if config.training.target_instrument is not None:
-        instruments = [config.training.target_instrument]
+    instruments = prefer_target_instrument(config)
 
     if store_dir != "":
         out = open(store_dir + '/results.txt', 'w')

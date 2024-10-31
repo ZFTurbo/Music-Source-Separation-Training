@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torchseg as smp
-
+from utils import prefer_target_instrument
 
 class STFT:
     def __init__(self, config):
@@ -194,7 +194,7 @@ class Torchseg_Net(nn.Module):
 
         act = get_act(act_type=config.model.act)
 
-        self.num_target_instruments = 1 if config.training.target_instrument else len(config.training.instruments)
+        self.num_target_instruments = len(prefer_target_instrument(config))
         self.num_subbands = config.model.num_subbands
 
         dim_c = self.num_subbands * config.audio.num_channels * 2
