@@ -2,6 +2,9 @@ __pycache__
 .DS_Store
 *.py[cod]
 *$py.class
+separation_env/
+separated/
+
 
 # Distribution / packaging
 .Python
