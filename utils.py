@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import yaml
+import librosa
 import torch.nn.functional as F
 from ml_collections import ConfigDict
 from omegaconf import OmegaConf
@@ -316,6 +317,46 @@ def AuraMRSTFT_metric(
     return float(res.cpu().numpy())
 
 
+def bleed_full(
+    reference,
+    estimate,
+    sr=44100,
+    n_fft=4096,
+    hop_length=1024,
+    n_mels=512,
+    device='cpu',
+):
+    # Compute STFTs
+    D1 = np.abs(librosa.stft(reference, n_fft=n_fft, hop_length=hop_length))
+    D2 = np.abs(librosa.stft(estimate, n_fft=n_fft, hop_length=hop_length))
+
+    # Convert to mel spectrograms
+    mel_basis = librosa.filters.mel(sr=sr, n_fft=n_fft, n_mels=n_mels)
+    S1_mel = np.dot(mel_basis, D1)
+    S2_mel = np.dot(mel_basis, D2)
+
+    # Convert to decibels
+    S1_db = librosa.amplitude_to_db(S1_mel)
+    S2_db = librosa.amplitude_to_db(S2_mel)
+
+    # Calculate difference
+    diff = S2_db - S1_db
+
+    # Separate positive and negative differences
+    positive_diff = diff[diff > 0]
+    negative_diff = diff[diff < 0]
+
+    # Calculate averages
+    average_positive = np.mean(positive_diff) if len(positive_diff) > 0 else 0
+    average_negative = np.mean(negative_diff) if len(negative_diff) > 0 else 0
+
+    # Scale with 100 as best score
+    bleedness = 100 * 1 / (average_positive + 1)  # **0.5 # scaling modulation ratio if needed
+    fullness = 100 * 1 / (-average_negative + 1)  # **0.5
+
+    return bleedness, fullness
+
+
 def get_metrics(
     metrics,
     reference, # (ch, length)
@@ -338,7 +379,12 @@ def get_metrics(
         result['aura_stft'] = AuraSTFT_metric(reference, estimate, device)
     if 'aura_mrstft' in metrics:
         result['aura_mrstft'] = AuraMRSTFT_metric(reference, estimate, device)
-    # print(result)
+    if 'bleedless' in metrics or 'fullness' in metrics:
+        bleedless, fullness = bleed_full(reference, estimate, device=device)
+        if 'bleedless' in metrics:
+            result['bleedless'] = bleedless
+        if 'fullness' in metrics:
+            result['fullness'] = fullness
     return result
 
 
@@ -348,6 +394,7 @@ def demix(config, model, mix: NDArray, device, pbar=False, model_type: str = Non
         return demix_track_demucs(config, model, mix, device, pbar=pbar)
     else:
         return demix_track(config, model, mix, device, pbar=pbar)
+
 
 def prefer_target_instrument(config: ConfigDict) -> List[str]:
     if config.training.get('target_instrument'):

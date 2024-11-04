@@ -122,7 +122,7 @@ def train_model(args):
     parser.add_argument("--wandb_key", type=str, default='', help='wandb API Key')
     parser.add_argument("--pre_valid", action='store_true', help='Run validation before training')
     parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"], choices=['sdr', 'l1_freq', 'si_sdr', 'log_wmse', 'aura_stft', 'aura_mrstft'], help='List of metrics to use.')
-    parser.add_argument("--metric_for_scheduler", default="sdr", choices=['sdr', 'l1_freq', 'si_sdr', 'log_wmse', 'aura_stft', 'aura_mrstft'], help='Metric which will be used for scheduler.')
+    parser.add_argument("--metric_for_scheduler", default="sdr", choices=['sdr', 'l1_freq', 'si_sdr', 'log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless', 'fullness'], help='Metric which will be used for scheduler.')
     if args is None:
         args = parser.parse_args()
     else:
