@@ -39,6 +39,8 @@ def proc_list_of_files(
     extension = 'wav'
     if hasattr(args, 'extension'):
         extension = args.extension
+    if 'extension' in config['inference']:
+        extension = config['inference']['extension']
 
     if store_dir != '':
         os.makedirs(store_dir, exist_ok=True)
@@ -165,6 +167,8 @@ def valid(model, args, config, device, verbose=False):
     extension = 'wav'
     if hasattr(args, 'extension'):
         extension = args.extension
+    if 'extension' in config['inference']:
+        extension = config['inference']['extension']
 
     all_mixtures_path = []
     for valid_path in args.valid_path:
@@ -254,6 +258,8 @@ def valid_multi_gpu(model, args, config, device_ids, verbose=False):
     extension = 'wav'
     if hasattr(args, 'extension'):
         extension = args.extension
+    if 'extension' in config['inference']:
+        extension = config['inference']['extension']
 
     all_mixtures_path = []
     for valid_path in args.valid_path:
