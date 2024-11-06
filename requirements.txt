@@ -30,3 +30,4 @@ huggingface-hub>=0.23.0
 prodigyopt
 torch_log_wmse
 wxpython==4.2.2
+musdb
