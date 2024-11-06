@@ -31,3 +31,4 @@ prodigyopt
 torch_log_wmse
 wxpython==4.2.2
 musdb
+museval
