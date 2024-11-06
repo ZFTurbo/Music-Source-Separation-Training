@@ -14,8 +14,8 @@ import os
 import shutil
 
 # Set the dataset folder and model name here
-dataset_folder = "../data/MUSDB18_small_test"  # Change this to your dataset folder path
-model_choice = "mdx23c"  # Change this to "mdx23c", "bs_mamba2", "scnet", or "htdemucs"
+dataset_folder = "../data/MUSDB18"  # Change this to your dataset folder path
+model_choice = "htdemucs"  # Change this to "mdx23c", "bs_mamba2", "scnet", or "htdemucs"
 
 # Model configuration mappings
 models = {
@@ -36,7 +36,7 @@ models = {
     },
     "htdemucs": {
         "config_path": "configs/config_musdb18_htdemucs.yaml",
-        "checkpoint": "results/htdemucs_ckpt.th",
+        "checkpoint": "results/demucs_ckpt.th",
         "store_dir": "separated/htdemucs/"
     }
 }
@@ -176,6 +176,7 @@ with open(output_file, 'a') as f:
     f.write(f"Date and Time: {current_datetime}\n")
     f.write(f"Machine Name: {machine_name}\n")
     f.write(f"Model Folder: {estimates_directory}\n")
+    f.write(f"Dataset Folder: {dataset_folder}\n")
     f.write(f"Separation Duration: {separation_duration:.2f} seconds\n\n")
     f.write("Method Evaluation Results:\n")
     f.write(f"{str(method)}\n")
