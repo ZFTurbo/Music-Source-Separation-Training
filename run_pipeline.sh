@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --time=01:00:00
-#SBATCH --account=kaim
+#SBATCH --account=def-ichiro
 
 echo 'loading venv'
 module load python/3.10
