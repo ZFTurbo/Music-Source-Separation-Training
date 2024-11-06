@@ -1,0 +1,41 @@
+loading venv
+RuntimeError: failed to build image pip because:
+Traceback (most recent call last):
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Compiler/gcccore/python/3.10.13/lib/python3.10/site-packages/virtualenv/seed/embed/via_app_data/via_app_data.py", line 57, in _install
+    installer.install(creator.interpreter.version_info)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Compiler/gcccore/python/3.10.13/lib/python3.10/site-packages/virtualenv/seed/embed/via_app_data/pip_install/base.py", line 33, in install
+    self._uninstall_previous_version()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Compiler/gcccore/python/3.10.13/lib/python3.10/site-packages/virtualenv/seed/embed/via_app_data/pip_install/base.py", line 144, in _uninstall_previous_version
+    dist_name = self._dist_info.stem.split("-")[0]
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Compiler/gcccore/python/3.10.13/lib/python3.10/site-packages/virtualenv/seed/embed/via_app_data/pip_install/base.py", line 110, in _dist_info
+    raise RuntimeError(msg)  # pragma: no cover
+RuntimeError: no .dist-info at /home/kaim/.local/share/virtualenv/wheel/3.10/image/1/CopyPipInstall/pip-24.2-py3-none-any, has pip
+
+/localscratch/spool/slurmd/job47755440/slurm_script: line 8: /localscratch/kaim.47755440.0/env/bin/activate: No such file or directory
+Defaulting to user installation because normal site-packages is not writeable
+Looking in links: /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v3, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/generic, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic
+Requirement already satisfied: pip in /cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Compiler/gcccore/python/3.10.13/lib/python3.10/site-packages (23.2.1)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/pip-24.2+computecanada-py3-none-any.whl
+Installing collected packages: pip
+Successfully installed pip-24.2+computecanada
+Defaulting to user installation because normal site-packages is not writeable
+Looking in links: /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v3, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/generic, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v3/torch-2.5.1+computecanada-cp310-cp310-linux_x86_64.whl (from -r requirements.txt (line 1))
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/generic/numpy-2.1.1+computecanada-cp310-cp310-linux_x86_64.whl (from -r requirements.txt (line 2))
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v3/pandas-2.2.2+computecanada-cp310-cp310-linux_x86_64.whl (from -r requirements.txt (line 3))
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/generic/scipy-1.14.1+computecanada-cp310-cp310-linux_x86_64.whl (from -r requirements.txt (line 4))
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/soundfile-0.12.1+computecanada-py2.py3-none-any.whl (from -r requirements.txt (line 5))
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/ml_collections-0.1.1+computecanada-py3-none-any.whl (from -r requirements.txt (line 6))
+Collecting tqdm (from -r requirements.txt (line 7))
+  Using cached tqdm-4.67.0-py3-none-any.whl.metadata (57 kB)
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/segmentation_models_pytorch-0.3.3+computecanada-py3-none-any.whl (from -r requirements.txt (line 8))
+Processing /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/timm-0.9.2+computecanada-py3-none-any.whl (from -r requirements.txt (line 9))
+Collecting audiomentations==0.24.0 (from -r requirements.txt (line 10))
+  Downloading audiomentations-0.24.0-py3-none-any.whl.metadata (35 kB)
+ERROR: Could not find a version that satisfies the requirement pedalboard~=0.8.1 (from versions: 0.9.16+computecanada)
+ERROR: No matching distribution found for pedalboard~=0.8.1
+running pipeline script
+Traceback (most recent call last):
+  File "/project/6002780/kaim/Music-Source-Separation-Training/run_pipeline.py", line 1, in <module>
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'
