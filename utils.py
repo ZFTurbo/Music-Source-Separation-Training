@@ -326,18 +326,30 @@ def bleed_full(
     n_mels=512,
     device='cpu',
 ):
-    # Compute STFTs
-    D1 = np.abs(librosa.stft(reference, n_fft=n_fft, hop_length=hop_length))
-    D2 = np.abs(librosa.stft(estimate, n_fft=n_fft, hop_length=hop_length))
+    from torchaudio.transforms import AmplitudeToDB
 
-    # Convert to mel spectrograms
+    # Move tensors to GPU if available
+    reference = torch.from_numpy(reference).float().to(device)
+    estimate = torch.from_numpy(estimate).float().to(device)
+
+    # Create a Hann window
+    window = torch.hann_window(n_fft).to(device)
+
+    # Compute STFTs with the Hann window
+    D1 = torch.abs(torch.stft(reference, n_fft=n_fft, hop_length=hop_length, window=window, return_complex=True, pad_mode="constant"))
+    D2 = torch.abs(torch.stft(estimate, n_fft=n_fft, hop_length=hop_length, window=window, return_complex=True, pad_mode="constant"))
+
+    # create mel filterbank
     mel_basis = librosa.filters.mel(sr=sr, n_fft=n_fft, n_mels=n_mels)
-    S1_mel = np.dot(mel_basis, D1)
-    S2_mel = np.dot(mel_basis, D2)
+    mel_filter_bank = torch.from_numpy(mel_basis).to(device)  # (melbandroformer is doing it that way) edit: sent to right device now
+
+    # apply mel scale
+    S1_mel = torch.matmul(mel_filter_bank, D1)
+    S2_mel = torch.matmul(mel_filter_bank, D2)
 
     # Convert to decibels
-    S1_db = librosa.amplitude_to_db(S1_mel)
-    S2_db = librosa.amplitude_to_db(S2_mel)
+    S1_db = AmplitudeToDB(stype="magnitude", top_db=80)(S1_mel)
+    S2_db = AmplitudeToDB(stype="magnitude", top_db=80)(S2_mel)
 
     # Calculate difference
     diff = S2_db - S1_db
@@ -347,14 +359,14 @@ def bleed_full(
     negative_diff = diff[diff < 0]
 
     # Calculate averages
-    average_positive = np.mean(positive_diff) if len(positive_diff) > 0 else 0
-    average_negative = np.mean(negative_diff) if len(negative_diff) > 0 else 0
+    average_positive = torch.mean(positive_diff) if positive_diff.numel() > 0 else torch.tensor(0.0).to(device)
+    average_negative = torch.mean(negative_diff) if negative_diff.numel() > 0 else torch.tensor(0.0).to(device)
 
     # Scale with 100 as best score
-    bleedness = 100 * 1 / (average_positive + 1)  # **0.5 # scaling modulation ratio if needed
-    fullness = 100 * 1 / (-average_negative + 1)  # **0.5
+    bleedless = 100 * 1 / (average_positive + 1)
+    fullness = 100 * 1 / (-average_negative + 1)
 
-    return bleedness, fullness
+    return bleedless.cpu().numpy(), fullness.cpu().numpy()
 
 
 def get_metrics(
