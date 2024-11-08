@@ -17,6 +17,8 @@ import shutil
 dataset_folder = "../data/MUSDB18"  # Change this to your dataset folder path
 model_choice = "htdemucs"  # Change this to "mdx23c", "bs_mamba2", "scnet", or "htdemucs"
 
+
+
 # Model configuration mappings
 models = {
     "mdx23c": {
@@ -59,6 +61,26 @@ current_directory = os.getcwd()
 # # Paths
 estimates_directory = os.path.join(current_directory, store_dir)
 output_directory = os.path.join(current_directory, "results", model_choice)
+
+# Print paths and files in each directory
+def print_files_in_directory(path, name):
+    abs_path = os.path.abspath(path)
+    print(f"{name} Path: {abs_path}")
+    if os.path.exists(abs_path) and os.path.isdir(abs_path):
+        files = os.listdir(abs_path)
+        if files:
+            print(f"Files in {name}:")
+            for f in files:
+                print(f"  - {f}")
+        else:
+            print(f"No files found in {name}.")
+    else:
+        print(f"{name} path does not exist or is not a directory.")
+
+print_files_in_directory(dataset_folder, "Dataset")
+print_files_in_directory(estimates_directory, "Estimates Directory")
+print_files_in_directory(output_directory, "Output Directory")
+
 
 
 # Run the separation command (assuming an inference script is available)
