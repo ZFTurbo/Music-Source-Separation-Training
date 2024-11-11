@@ -24,7 +24,7 @@ import torch.nn.functional as F
 
 from dataset import MSSDataset
 from utils import demix, sdr, get_model_from_config
-from valid import valid_multi_gpu
+from valid import valid_multi_gpu, valid
 
 import warnings
 
@@ -341,7 +341,10 @@ def train_model(args):
             store_path
         )
 
-        metrics_avg = valid_multi_gpu(model, args, config, args.device_ids, verbose=False)
+        if torch.cuda.is_available() and len(device_ids) > 1:
+            metrics_avg = valid_multi_gpu(model, args, config, args.device_ids, verbose=False)
+        else:
+            metrics_avg = valid(model, args, config, device, verbose=False)
         metric_avg = metrics_avg[args.metric_for_scheduler]
         if metric_avg > best_metric:
             store_path = args.results_path + '/model_{}_ep_{}_{}_{:.4f}.ckpt'.format(args.model_type, epoch, args.metric_for_scheduler, metric_avg)
@@ -353,7 +356,9 @@ def train_model(args):
             )
             best_metric = metric_avg
         scheduler.step(metric_avg)
-        wandb.log({'metric_avg': metric_avg, 'best_metric': best_metric})
+        wandb.log({'metric_main': metric_avg, 'best_metric': best_metric})
+        for metric_name in metrics_avg:
+            wandb.log({'metric_{}'.format(metric_name): metrics_avg[metric_name]})
 
 
 if __name__ == "__main__":
