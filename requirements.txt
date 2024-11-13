@@ -17,7 +17,8 @@ beartype
 rotary_embedding_torch
 einops==0.6.1
 librosa
-demucs==4.0.0
+#demucs==4.0.0
+demucs
 transformers~=4.35.0
 torchmetrics==0.11.4
 spafe==0.3.2
