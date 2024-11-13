@@ -26,7 +26,8 @@ spafe
 #protobuf==3.20.3
 protobuf
 torch_audiomentations
-asteroid==0.7.0
+#asteroid==0.7.0
+asteroid
 auraloss
 torchseg
 bitsandbytes
