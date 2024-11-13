@@ -7,7 +7,8 @@ ml_collections
 tqdm
 segmentation_models_pytorch==0.3.3
 timm==0.9.2
-audiomentations==0.24.0
+#audiomentations==0.24.0
+audiomentations
 pedalboard
 omegaconf==2.2.3
 beartype==0.14.1
