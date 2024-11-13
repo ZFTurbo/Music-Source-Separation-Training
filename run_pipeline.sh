@@ -8,7 +8,9 @@
 # source $SLURM_TMPDIR/env/bin/activate
 # pip install --no-index --upgrade pip
 
-pip install -r requirements.txt
+#pip install -r requirements.txt
+
+source separation_env/bin/activate
 
 echo 'running pipeline script'
 python run_pipeline.py
