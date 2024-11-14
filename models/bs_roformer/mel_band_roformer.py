@@ -533,7 +533,7 @@ class MelBandRoformer(Module):
         x = rearrange(x, 'b f t c -> b t (f c)')
 
         if self.use_torch_checkpoint:
-            x = checkpoint(self.band_split, x)
+            x = checkpoint(self.band_split, x, use_reentrant=False)
         else:
             x = self.band_split(x)
 
@@ -547,7 +547,7 @@ class MelBandRoformer(Module):
 
                 x, ft_ps = pack([x], 'b * d')
                 if self.use_torch_checkpoint:
-                    x = checkpoint(linear_transformer, x)
+                    x = checkpoint(linear_transformer, x, use_reentrant=False)
                 else:
                     x = linear_transformer(x)
                 x, = unpack(x, ft_ps, 'b * d')
@@ -563,7 +563,7 @@ class MelBandRoformer(Module):
             x, ps = pack([x], '* t d')
 
             if self.use_torch_checkpoint:
-                x = checkpoint(time_transformer, x)
+                x = checkpoint(time_transformer, x, use_reentrant=False)
             else:
                 x = time_transformer(x)
 
@@ -572,7 +572,7 @@ class MelBandRoformer(Module):
             x, ps = pack([x], '* f d')
 
             if self.use_torch_checkpoint:
-                x = checkpoint(freq_transformer, x)
+                x = checkpoint(freq_transformer, x, use_reentrant=False)
             else:
                 x = freq_transformer(x)
 
