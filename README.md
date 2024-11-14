@@ -37,8 +37,8 @@ To train model you need to:
 ### Training example
 
 ```bash
-python train.py \ 
-    --model_type mel_band_roformer \ 
+python train.py \
+    --model_type mel_band_roformer \
     --config_path configs/config_mel_band_roformer_vocals.yaml \
     --start_check_point results/model.ckpt \
     --results_path results/ \
@@ -55,7 +55,7 @@ All training parameters are [here](https://github.com/ZFTurbo/Music-Source-Separ
 ### Inference example
 
 ```bash
-python inference.py \  
+python inference.py \
     --model_type mdx23c \
     --config_path configs/config_mdx23c_musdb18.yaml \
     --start_check_point results/last_mdx23c.ckpt \
