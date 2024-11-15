@@ -4,7 +4,7 @@ __pycache__
 *$py.class
 separation_env/
 separated/
-
+test_env/
 
 # Distribution / packaging
 .Python
@@ -77,3 +77,4 @@ Scripts/
 
 results/
 wandb/
+test_env/bin/accelerate-launch

@@ -54,7 +54,7 @@ config_path = selected_model["config_path"]
 checkpoint = selected_model["checkpoint"]
 store_dir = selected_model["store_dir"]
 
-
+print("in pipeline script")
 
 current_directory = os.getcwd()
 #print(current_directory)
@@ -62,7 +62,7 @@ current_directory = os.getcwd()
 estimates_directory = os.path.join(current_directory, store_dir)
 output_directory = os.path.join(current_directory, "results", model_choice)
 
-# Print paths and files in each directory
+#Print paths and files in each directory
 def print_files_in_directory(path, name):
     abs_path = os.path.abspath(path)
     print(f"{name} Path: {abs_path}")
