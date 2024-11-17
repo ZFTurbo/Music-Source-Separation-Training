@@ -96,7 +96,7 @@ separation_command = [
     "--config_path", config_path,
     "--start_check_point", checkpoint,
     "--store_dir", estimates_directory,
-    "--force_cpu"
+    #"--force_cpu"
 ]
 subprocess.run(separation_command)
 
