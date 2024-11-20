@@ -1,0 +1,54 @@
+running training script
+Instruments: ['drums', 'bass', 'other', 'vocals']
+Metrics for training: ['sdr']. Metric for scheduler: sdr
+Use augmentation for training
+Dataset type: 1 Processes to use: 32 
+Collecting metadata for ['/home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train']
+Found metadata cache file: results/htdemucs_train/metadata_1.pkl
+  0%|          | 0/100 [00:00<?, ?it/s]  1%|          | 1/100 [01:23<2:18:27, 83.92s/it]  3%|▎         | 3/100 [02:00<57:09, 35.35s/it]   12%|█▏        | 12/100 [02:24<12:11,  8.32s/it] 19%|█▉        | 19/100 [02:24<05:52,  4.36s/it] 27%|██▋       | 27/100 [02:40<05:17,  4.36s/it] 28%|██▊       | 28/100 [03:02<05:08,  4.28s/it] 29%|██▉       | 29/100 [03:05<04:56,  4.17s/it] 36%|███▌      | 36/100 [03:09<02:53,  2.71s/it] 38%|███▊      | 38/100 [03:12<02:40,  2.58s/it] 75%|███████▌  | 75/100 [03:17<00:15,  1.59it/s] 82%|████████▏ | 82/100 [03:20<00:10,  1.66it/s] 86%|████████▌ | 86/100 [03:25<00:09,  1.45it/s]100%|██████████| 100/100 [03:25<00:00,  2.06s/it]
+Found tracks in dataset: 100
+Use single GPU: [0]
+Patience: 2 Reduce factor: 0.95 Batch size: 8 Grad accum steps: 1 Effective batch size: 8 Optimizer: adam
+Train for: 1000
+Train epoch: 0 Learning rate: 9e-05
+  0%|          | 0/1000 [00:00<?, ?it/s]  0%|          | 0/1000 [00:15<?, ?it/s]
+Traceback (most recent call last):
+  File "/project/6002780/kaim/Music-Source-Separation-Training/train.py", line 360, in <module>
+    train_model(None)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/train.py", line 289, in train_model
+    y_ = model(x)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/models/demucs4ht.py", line 638, in forward
+    x, pre = decode(x, skip, lengths.pop(-1))
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/demucs/hdemucs.py", line 320, in forward
+    y = self.dconv(y)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/demucs/demucs.py", line 153, in forward
+    x = x + layer(x)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/container.py", line 250, in forward
+    input = module(input)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 375, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 370, in _conv_forward
+    return F.conv1d(
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 356.00 MiB. GPU 0 has a total capacity of 31.73 GiB of which 162.69 MiB is free. Including non-PyTorch memory, this process has 31.57 GiB memory in use. Of the allocated memory 30.96 GiB is allocated by PyTorch, and 232.56 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+Running command: python train.py --model_type htdemucs --config_path configs/config_musdb18_htdemucs.yaml --results_path results/htdemucs_train --data_path /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train --valid_path ../data/MUSDB18/test --num_workers 4 --device_ids 0
+An error occurred: Command '['python', 'train.py', '--model_type', 'htdemucs', '--config_path', 'configs/config_musdb18_htdemucs.yaml', '--results_path', 'results/htdemucs_train', '--data_path', '/home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train', '--valid_path', '../data/MUSDB18/test', '--num_workers', '4', '--device_ids', '0']' returned non-zero exit status 1.
