@@ -1,13 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=my_gpu_job       # Job name
-#SBATCH --account=def-ichiro      # Account name (replace with your account)
-#SBATCH --nodes=1                   # Number of nodes
-#SBATCH --gpus-per-node=1           # Number of GPUs per node
-#SBATCH --cpus-per-task=4           # Number of CPU cores per task
-#SBATCH --mem=128000               # Memory per node in MiB (32GB = 32768M)
-#SBATCH --time=0-00:03              # Time (DD-HH:MM)
-#SBATCH --output=job_output.log     # Standard output log
-#SBATCH --error=job_error.log       # Standard error log
+#SBATCH --nodes=1
+#SBATCH --gpus-per-node=p100:4
+#SBATCH --ntasks-per-node=24
+#SBATCH --exclusive
+#SBATCH --mem=125G
+#SBATCH --time=3:00
+#SBATCH --account=def-ichiro
 
 module load python/3.10 cuda/12.2 cudnn/8.9.5.29
  
