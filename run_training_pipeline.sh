@@ -4,7 +4,7 @@
 #SBATCH --ntasks-per-node=24
 #SBATCH --exclusive
 #SBATCH --mem=125G
-#SBATCH --time=0:03
+#SBATCH --time=0-00:03
 #SBATCH --account=def-ichiro
 
 module load python/3.10 cuda/12.2 cudnn/8.9.5.29
