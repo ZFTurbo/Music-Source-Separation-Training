@@ -10,7 +10,7 @@ def main():
     parser.add_argument("--model_type", type=str, default="htdemucs", help="Type of model to train")
     parser.add_argument("--config_path", type=str, default="configs/config_musdb18_htdemucs.yaml", help="Path to the config file")
     parser.add_argument("--results_path", type=str, default="results/htdemucs_train", help="Path to save results")
-    parser.add_argument("--data_path", type=str, default="/Users/kaimikkelsen/canada_compute/data/MUSDB18/extracted_stems", help="Path to training data")
+    parser.add_argument("--data_path", type=str, default="/Users/kaimikkelsen/canada_compute/data/MUSDBHQ18", help="Path to training data")
     parser.add_argument("--valid_path", type=str, default="../data/MUSDB18/test", help="Path to validation data")
     parser.add_argument("--num_workers", type=int, default=4, help="Number of workers for data loading")
     parser.add_argument("--device_ids", type=int, nargs="+", default=[0], help="GPU device IDs to use")
