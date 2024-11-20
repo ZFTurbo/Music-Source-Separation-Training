@@ -1,8 +1,0 @@
-running training script
-Instruments: ['drums', 'bass', 'other', 'vocals']
-Metrics for training: ['sdr']. Metric for scheduler: sdr
-Use augmentation for training
-Dataset type: 1 Processes to use: 32 
-Collecting metadata for ['/home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train']
-Found metadata cache file: results/htdemucs_train/metadata_1.pkl
-  0%|          | 0/100 [00:00<?, ?it/s]  1%|          | 1/100 [01:15<2:04:16, 75.31s/it]slurmstepd: error: *** JOB 48804347 ON cdr2599 CANCELLED AT 2024-11-20T09:05:52 DUE TO TIME LIMIT ***
