@@ -5,7 +5,7 @@
 #SBATCH --gpus-per-node=1           # Number of GPUs per node
 #SBATCH --cpus-per-task=4           # Number of CPU cores per task
 #SBATCH --mem=128000               # Memory per node in MiB (32GB = 32768M)
-#SBATCH --time=0-03:00              # Time (DD-HH:MM)
+#SBATCH --time=0-00:03              # Time (DD-HH:MM)
 #SBATCH --output=job_output.log     # Standard output log
 #SBATCH --error=job_error.log       # Standard error log
 
