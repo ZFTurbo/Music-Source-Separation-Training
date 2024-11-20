@@ -6,6 +6,8 @@
 #SBATCH --mem=125G
 #SBATCH --time=0-00:03
 #SBATCH --account=def-ichiro
+#SBATCH --output=my_job_output.out  # Save the output to this file
+#SBATCH --error=my_job_error.err    # Save the error to this file
 
 module load python/3.10 cuda/12.2 cudnn/8.9.5.29
  
