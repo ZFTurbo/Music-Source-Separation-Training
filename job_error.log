@@ -1,0 +1,2 @@
+0it [00:00, ?it/s]0it [00:00, ?it/s]
+  0%|          | 0/1000 [00:00<?, ?it/s]slurmstepd: error: *** JOB 48812793 ON cdr2608 CANCELLED AT 2024-11-20T11:20:45 DUE TO TIME LIMIT ***
