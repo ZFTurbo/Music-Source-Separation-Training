@@ -28,7 +28,10 @@ def run_folder(model, args, config, device, verbose=False):
     model.eval()
     all_mixtures_path = glob.glob(args.input_folder + '/*.*')
     all_mixtures_path.sort()
-    print('Total files found: {}'.format(len(all_mixtures_path)))
+    sample_rate = 44100
+    if 'sample_rate' in config.audio:
+        sample_rate = config.audio['sample_rate']
+    print('Total files found: {} Use sample rate: {}'.format(len(all_mixtures_path), sample_rate))
 
     instruments = prefer_target_instrument(config)
 
@@ -47,7 +50,7 @@ def run_folder(model, args, config, device, verbose=False):
         if not verbose:
             all_mixtures_path.set_postfix({'track': os.path.basename(path)})
         try:
-            mix, sr = librosa.load(path, sr=44100, mono=False)
+            mix, sr = librosa.load(path, sr=sample_rate, mono=False)
         except Exception as e:
             print('Cannot read track: {}'.format(path))
             print('Error message: {}'.format(str(e)))

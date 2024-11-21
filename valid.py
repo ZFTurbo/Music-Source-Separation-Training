@@ -9,6 +9,7 @@ import os
 import glob
 import copy
 import torch
+import librosa
 import soundfile as sf
 import numpy as np
 import torch.nn as nn
@@ -59,6 +60,13 @@ def proc_list_of_files(
         start_time = time.time()
         mix, sr = sf.read(path)
         mix_orig = mix.copy()
+
+        if 'sample_rate' in config.audio:
+            if sr != config.audio['sample_rate']:
+                orig_length = mix.shape[0]
+                if verbose:
+                    print('Warning: sample rate is different. In config: {} in file {}: {}'.format(config.audio['sample_rate'], path, sr))
+                mix = librosa.resample(mix, orig_sr=sr, target_sr=config.audio['sample_rate'], res_type='kaiser_best')
 
         # Fix for mono
         if len(mix.shape) == 1:
@@ -123,6 +131,12 @@ def proc_list_of_files(
                 track = mix_orig - track
 
             estimates = waveforms[instr].T
+
+            if 'sample_rate' in config.audio:
+                if sr != config.audio['sample_rate']:
+                    estimates = librosa.resample(estimates, orig_sr=config.audio['sample_rate'], target_sr=sr, res_type='kaiser_best')
+                    estimates = librosa.util.fix_length(estimates, size=orig_length)
+
             # print(estimates.shape)
             if 'normalize' in config.inference:
                 if config.inference['normalize'] is True:
