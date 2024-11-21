@@ -14,6 +14,8 @@ def main():
     parser.add_argument("--valid_path", type=str, default="../data/MUSDB18/test", help="Path to validation data")
     parser.add_argument("--num_workers", type=int, default=4, help="Number of workers for data loading")
     parser.add_argument("--device_ids", type=int, nargs="+", default=[0], help="GPU device IDs to use")
+    parser.add_argument("--start_check_point", type=str, default="results/demucs_ckpt.th", help="modle checkpoiynt")
+
 
     # Parse the arguments
     args = parser.parse_args()
@@ -27,6 +29,7 @@ def main():
         "--data_path", args.data_path,
         "--valid_path", args.valid_path,
         "--num_workers", str(args.num_workers),
+        "--start_check_point", args.start_check_point,
         "--device_ids", ",".join(map(str, args.device_ids))
     ]
 
