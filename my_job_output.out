@@ -6,3 +6,10 @@ Dataset type: 1 Processes to use: 32
 Collecting metadata for ['/home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train']
 Found metadata cache file: results/htdemucs_train/metadata_1.pkl
 Old metadata was used for 100 tracks.
+Found tracks in dataset: 100
+Use single GPU: [0]
+Patience: 2 Reduce factor: 0.95 Batch size: 8 Grad accum steps: 1 Effective batch size: 8 Optimizer: adam
+Train for: 1000
+Train epoch: 0 Learning rate: 9e-05
+Running command: python train.py --model_type htdemucs --config_path configs/config_musdb18_htdemucs.yaml --results_path results/htdemucs_train --data_path /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train --valid_path ../data/MUSDB18/test --num_workers 4 --device_ids 0
+An error occurred: Command '['python', 'train.py', '--model_type', 'htdemucs', '--config_path', 'configs/config_musdb18_htdemucs.yaml', '--results_path', 'results/htdemucs_train', '--data_path', '/home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train', '--valid_path', '../data/MUSDB18/test', '--num_workers', '4', '--device_ids', '0']' returned non-zero exit status 1.
