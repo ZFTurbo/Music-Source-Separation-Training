@@ -130,7 +130,7 @@ def proc_list_of_files(
                 track, sr1 = sf.read(folder + '/{}.{}'.format('vocals', extension))
                 track = mix_orig - track
 
-            estimates = waveforms[instr].T
+            estimates = waveforms[instr]
 
             if 'sample_rate' in config.audio:
                 if sr != config.audio['sample_rate']:
@@ -144,12 +144,12 @@ def proc_list_of_files(
 
             if store_dir != "":
                 out_wav_name = "{}/{}_{}.wav".format(store_dir, os.path.basename(folder), instr)
-                sf.write(out_wav_name, estimates, sr, subtype='FLOAT')
+                sf.write(out_wav_name, estimates.T, sr, subtype='FLOAT')
 
             track_metrics = get_metrics(
                 args.metrics,
                 track.T,
-                estimates.T,
+                estimates,
                 mix_orig.T,
                 device=device,
             )
