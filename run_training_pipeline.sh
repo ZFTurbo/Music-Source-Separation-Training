@@ -16,4 +16,5 @@ export XLA_FLAGS=--xla_gpu_cuda_data_dir=$CUDA_HOME
 source separation_env/bin/activate
 
 echo 'running training script'
-python run_training.py --model_type "mdx23c" --config_path="configs/config_musdb18_mdx23c.yaml" --results_path="results/mdx23c" --start_check_point="results/mdx23c.ckpt"
+# python run_training.py --model_type "mdx23c" --config_path="configs/config_musdb18_mdx23c.yaml" --results_path="results/mdx23c" --start_check_point="results/mdx23c.ckpt"
+python run_training.py
