@@ -1,34 +1,2 @@
-  0%|          | 0/100 [00:00<?, ?it/s]  1%|          | 1/100 [01:20<2:12:43, 80.44s/it]  2%|▏         | 2/100 [01:54<1:26:59, 53.26s/it] 11%|█         | 11/100 [02:00<10:03,  6.78s/it]  12%|█▏        | 12/100 [02:06<09:49,  6.70s/it] 14%|█▍        | 14/100 [02:25<10:38,  7.42s/it] 18%|█▊        | 18/100 [03:21<13:54, 10.18s/it] 19%|█▉        | 19/100 [03:51<17:24, 12.89s/it] 24%|██▍       | 24/100 [03:54<08:44,  6.90s/it] 27%|██▋       | 27/100 [04:50<12:39, 10.40s/it] 73%|███████▎  | 73/100 [04:55<00:40,  1.49s/it] 75%|███████▌  | 75/100 [05:03<00:40,  1.61s/it]100%|██████████| 100/100 [05:03<00:00,  3.04s/it]
-  0%|          | 0/1000 [00:00<?, ?it/s]terminate called without an active exception
-terminate called without an active exception
-  0%|          | 0/1000 [01:04<?, ?it/s]
-Traceback (most recent call last):
-  File "/project/6002780/kaim/Music-Source-Separation-Training/train.py", line 360, in <module>
-    train_model(None)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/train.py", line 289, in train_model
-    y_ = model(x)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/models/mdx23c_tfc_tdf_v3.py", line 226, in forward
-    x = block.tfc_tdf(x)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/models/mdx23c_tfc_tdf_v3.py", line 135, in forward
-    x = x + block.tdf(x)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/container.py", line 250, in forward
-    input = module(input)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/activation.py", line 734, in forward
-    return F.gelu(input, approximate=self.approximate)
-torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 96.00 MiB. GPU 0 has a total capacity of 31.73 GiB of which 68.69 MiB is free. Including non-PyTorch memory, this process has 31.66 GiB memory in use. Of the allocated memory 31.17 GiB is allocated by PyTorch, and 120.14 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+0it [00:00, ?it/s]0it [00:00, ?it/s]
+slurmstepd: error: *** JOB 48935459 ON cdr2628 CANCELLED AT 2024-11-22T09:26:20 DUE TO TIME LIMIT ***
