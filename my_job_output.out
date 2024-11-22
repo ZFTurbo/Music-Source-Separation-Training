@@ -1,8 +1,0 @@
-running training script
-Instruments: ['drums', 'bass', 'other', 'vocals']
-Metrics for training: ['sdr']. Metric for scheduler: sdr
-Use augmentation for training
-Dataset type: 1 Processes to use: 32 
-Collecting metadata for ['/home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train']
-Found metadata cache file: results/htdemucs_train/metadata_1.pkl
-Old metadata was used for 100 tracks.
