@@ -327,7 +327,7 @@ def train_model(args):
             loss_val += li
             total += 1
             pbar.set_postfix({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1)})
-            wandb.log({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1), 'total': total, 'loss_val': loss_val, 'i': i })
+            wandb.log({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1), 'i': i})
             loss.detach()
 
         print('Training loss: {:.6f}'.format(loss_val / total))
