@@ -894,3 +894,12 @@ Instr vocals sdr: nan (Std: nan)
 Metric avg sdr        : nan
 Elapsed time: 30.50 sec
 Train epoch: 98 Learning rate: 1.743403360126508e-05
+Training loss: 0.007500
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 27.98 sec
+Train epoch: 99 Learning rate: 1.6562331921201826e-05
