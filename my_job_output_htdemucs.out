@@ -12,133 +12,178 @@ Use single GPU: [0]
 Patience: 2 Reduce factor: 0.95 Batch size: 4 Grad accum steps: 1 Effective batch size: 4 Optimizer: adam
 Train for: 1000
 Train epoch: 0 Learning rate: 9e-05
-Training loss: 0.009507
+Training loss: 0.009306
 Num overlap: 4
 Instr drums sdr: nan (Std: nan)
 Instr bass sdr: nan (Std: nan)
 Instr other sdr: nan (Std: nan)
 Instr vocals sdr: nan (Std: nan)
 Metric avg sdr        : nan
-Elapsed time: 63.12 sec
+Elapsed time: 46.78 sec
 Train epoch: 1 Learning rate: 9e-05
-Training loss: 0.009093
+Training loss: 0.009065
 Num overlap: 4
 Instr drums sdr: nan (Std: nan)
 Instr bass sdr: nan (Std: nan)
 Instr other sdr: nan (Std: nan)
 Instr vocals sdr: nan (Std: nan)
 Metric avg sdr        : nan
-Elapsed time: 28.91 sec
+Elapsed time: 27.71 sec
 Train epoch: 2 Learning rate: 9e-05
-Training loss: 0.009052
+Training loss: 0.008919
 Num overlap: 4
 Instr drums sdr: nan (Std: nan)
 Instr bass sdr: nan (Std: nan)
 Instr other sdr: nan (Std: nan)
 Instr vocals sdr: nan (Std: nan)
 Metric avg sdr        : nan
-Elapsed time: 47.94 sec
+Elapsed time: 27.18 sec
 Train epoch: 3 Learning rate: 8.55e-05
-Training loss: 0.008706
+Training loss: 0.008707
 Num overlap: 4
 Instr drums sdr: nan (Std: nan)
 Instr bass sdr: nan (Std: nan)
 Instr other sdr: nan (Std: nan)
 Instr vocals sdr: nan (Std: nan)
 Metric avg sdr        : nan
-Elapsed time: 30.14 sec
+Elapsed time: 30.26 sec
 Train epoch: 4 Learning rate: 8.55e-05
-Training loss: 0.008596
+Training loss: 0.008782
 Num overlap: 4
 Instr drums sdr: nan (Std: nan)
 Instr bass sdr: nan (Std: nan)
 Instr other sdr: nan (Std: nan)
 Instr vocals sdr: nan (Std: nan)
 Metric avg sdr        : nan
-Elapsed time: 25.02 sec
+Elapsed time: 31.74 sec
 Train epoch: 5 Learning rate: 8.55e-05
-Training loss: 0.008717
+Training loss: 0.008524
 Num overlap: 4
 Instr drums sdr: nan (Std: nan)
 Instr bass sdr: nan (Std: nan)
 Instr other sdr: nan (Std: nan)
 Instr vocals sdr: nan (Std: nan)
 Metric avg sdr        : nan
-Elapsed time: 22.18 sec
+Elapsed time: 92.89 sec
 Train epoch: 6 Learning rate: 8.1225e-05
-Training loss: 0.008609
+Training loss: 0.008416
 Num overlap: 4
 Instr drums sdr: nan (Std: nan)
 Instr bass sdr: nan (Std: nan)
 Instr other sdr: nan (Std: nan)
 Instr vocals sdr: nan (Std: nan)
 Metric avg sdr        : nan
-Elapsed time: 36.31 sec
+Elapsed time: 81.22 sec
 Train epoch: 7 Learning rate: 8.1225e-05
-Training loss: 0.008333
+Training loss: 0.008399
 Num overlap: 4
 Instr drums sdr: nan (Std: nan)
 Instr bass sdr: nan (Std: nan)
 Instr other sdr: nan (Std: nan)
 Instr vocals sdr: nan (Std: nan)
 Metric avg sdr        : nan
-Elapsed time: 43.43 sec
+Elapsed time: 1354.37 sec
 Train epoch: 8 Learning rate: 8.1225e-05
-Training loss: 0.008451
+Training loss: 0.008528
 Num overlap: 4
 Instr drums sdr: nan (Std: nan)
 Instr bass sdr: nan (Std: nan)
 Instr other sdr: nan (Std: nan)
 Instr vocals sdr: nan (Std: nan)
 Metric avg sdr        : nan
-Elapsed time: 51.12 sec
+Elapsed time: 72.54 sec
 Train epoch: 9 Learning rate: 7.716374999999999e-05
-Training loss: 0.008405
+Training loss: 0.008563
 Num overlap: 4
 Instr drums sdr: nan (Std: nan)
 Instr bass sdr: nan (Std: nan)
 Instr other sdr: nan (Std: nan)
 Instr vocals sdr: nan (Std: nan)
 Metric avg sdr        : nan
-Elapsed time: 29.48 sec
+Elapsed time: 35.27 sec
 Train epoch: 10 Learning rate: 7.716374999999999e-05
-Training loss: 0.008367
+Training loss: 0.008461
 Num overlap: 4
 Instr drums sdr: nan (Std: nan)
 Instr bass sdr: nan (Std: nan)
 Instr other sdr: nan (Std: nan)
 Instr vocals sdr: nan (Std: nan)
 Metric avg sdr        : nan
-Elapsed time: 49.30 sec
+Elapsed time: 23.56 sec
 Train epoch: 11 Learning rate: 7.716374999999999e-05
-Training loss: 0.008521
+Training loss: 0.008375
 Num overlap: 4
 Instr drums sdr: nan (Std: nan)
 Instr bass sdr: nan (Std: nan)
 Instr other sdr: nan (Std: nan)
 Instr vocals sdr: nan (Std: nan)
 Metric avg sdr        : nan
-Elapsed time: 63.20 sec
+Elapsed time: 25.71 sec
 Train epoch: 12 Learning rate: 7.330556249999999e-05
-Training loss: 0.008289
+Training loss: 0.008378
 Num overlap: 4
 Instr drums sdr: nan (Std: nan)
 Instr bass sdr: nan (Std: nan)
 Instr other sdr: nan (Std: nan)
 Instr vocals sdr: nan (Std: nan)
 Metric avg sdr        : nan
-Elapsed time: 39.09 sec
+Elapsed time: 127.69 sec
 Train epoch: 13 Learning rate: 7.330556249999999e-05
-Training loss: 0.008361
+Training loss: 0.008326
 Num overlap: 4
 Instr drums sdr: nan (Std: nan)
 Instr bass sdr: nan (Std: nan)
 Instr other sdr: nan (Std: nan)
 Instr vocals sdr: nan (Std: nan)
 Metric avg sdr        : nan
-Elapsed time: 24.60 sec
+Elapsed time: 46.01 sec
 Train epoch: 14 Learning rate: 7.330556249999999e-05
-Training loss: 0.008288
+Training loss: 0.008275
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 56.17 sec
+Train epoch: 15 Learning rate: 6.964028437499999e-05
+Training loss: 0.008314
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 30.32 sec
+Train epoch: 16 Learning rate: 6.964028437499999e-05
+Training loss: 0.008040
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 58.74 sec
+Train epoch: 17 Learning rate: 6.964028437499999e-05
+Training loss: 0.008249
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 49.99 sec
+Train epoch: 18 Learning rate: 6.615827015624999e-05
+Training loss: 0.008143
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 53.23 sec
+Train epoch: 19 Learning rate: 6.615827015624999e-05
+Training loss: 0.008148
 Num overlap: 4
 Instr drums sdr: nan (Std: nan)
 Instr bass sdr: nan (Std: nan)
@@ -146,78 +191,706 @@ Instr other sdr: nan (Std: nan)
 Instr vocals sdr: nan (Std: nan)
 Metric avg sdr        : nan
 Elapsed time: 22.33 sec
-Train epoch: 15 Learning rate: 6.964028437499999e-05
-Training loss: 0.008173
-Num overlap: 4
-Instr drums sdr: nan (Std: nan)
-Instr bass sdr: nan (Std: nan)
-Instr other sdr: nan (Std: nan)
-Instr vocals sdr: nan (Std: nan)
-Metric avg sdr        : nan
-Elapsed time: 37.08 sec
-Train epoch: 16 Learning rate: 6.964028437499999e-05
-Training loss: 0.008322
-Num overlap: 4
-Instr drums sdr: nan (Std: nan)
-Instr bass sdr: nan (Std: nan)
-Instr other sdr: nan (Std: nan)
-Instr vocals sdr: nan (Std: nan)
-Metric avg sdr        : nan
-Elapsed time: 55.05 sec
-Train epoch: 17 Learning rate: 6.964028437499999e-05
-Training loss: 0.008097
-Num overlap: 4
-Instr drums sdr: nan (Std: nan)
-Instr bass sdr: nan (Std: nan)
-Instr other sdr: nan (Std: nan)
-Instr vocals sdr: nan (Std: nan)
-Metric avg sdr        : nan
-Elapsed time: 25.54 sec
-Train epoch: 18 Learning rate: 6.615827015624999e-05
-Training loss: 0.008087
-Num overlap: 4
-Instr drums sdr: nan (Std: nan)
-Instr bass sdr: nan (Std: nan)
-Instr other sdr: nan (Std: nan)
-Instr vocals sdr: nan (Std: nan)
-Metric avg sdr        : nan
-Elapsed time: 20.33 sec
-Train epoch: 19 Learning rate: 6.615827015624999e-05
-Training loss: 0.008152
-Num overlap: 4
-Instr drums sdr: nan (Std: nan)
-Instr bass sdr: nan (Std: nan)
-Instr other sdr: nan (Std: nan)
-Instr vocals sdr: nan (Std: nan)
-Metric avg sdr        : nan
-Elapsed time: 28.16 sec
 Train epoch: 20 Learning rate: 6.615827015624999e-05
-Training loss: 0.008255
+Training loss: 0.007993
 Num overlap: 4
 Instr drums sdr: nan (Std: nan)
 Instr bass sdr: nan (Std: nan)
 Instr other sdr: nan (Std: nan)
 Instr vocals sdr: nan (Std: nan)
 Metric avg sdr        : nan
-Elapsed time: 31.95 sec
+Elapsed time: 18.81 sec
 Train epoch: 21 Learning rate: 6.285035664843749e-05
-Training loss: 0.008198
+Training loss: 0.008139
 Num overlap: 4
 Instr drums sdr: nan (Std: nan)
 Instr bass sdr: nan (Std: nan)
 Instr other sdr: nan (Std: nan)
 Instr vocals sdr: nan (Std: nan)
 Metric avg sdr        : nan
-Elapsed time: 36.69 sec
+Elapsed time: 30.77 sec
 Train epoch: 22 Learning rate: 6.285035664843749e-05
-Training loss: 0.008014
+Training loss: 0.008043
 Num overlap: 4
 Instr drums sdr: nan (Std: nan)
 Instr bass sdr: nan (Std: nan)
 Instr other sdr: nan (Std: nan)
 Instr vocals sdr: nan (Std: nan)
 Metric avg sdr        : nan
-Elapsed time: 29.92 sec
+Elapsed time: 26.84 sec
 Train epoch: 23 Learning rate: 6.285035664843749e-05
-Running command: python train.py --model_type htdemucs --config_path configs/config_musdb18_htdemucs.yaml --results_path results/htdemucs_train --data_path /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train --valid_path ../data/MUSDB18/test --num_workers 4 --start_check_point results/demucs_ckpt.th --device_ids 0
-An error occurred: Command '['python', 'train.py', '--model_type', 'htdemucs', '--config_path', 'configs/config_musdb18_htdemucs.yaml', '--results_path', 'results/htdemucs_train', '--data_path', '/home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train', '--valid_path', '../data/MUSDB18/test', '--num_workers', '4', '--start_check_point', 'results/demucs_ckpt.th', '--device_ids', '0']' died with <Signals.SIGBUS: 7>.
+Training loss: 0.008103
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 21.95 sec
+Train epoch: 24 Learning rate: 5.970783881601561e-05
+Training loss: 0.008012
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 19.11 sec
+Train epoch: 25 Learning rate: 5.970783881601561e-05
+Training loss: 0.008178
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 29.33 sec
+Train epoch: 26 Learning rate: 5.970783881601561e-05
+Training loss: 0.007947
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 22.88 sec
+Train epoch: 27 Learning rate: 5.672244687521483e-05
+Training loss: 0.008051
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 21.55 sec
+Train epoch: 28 Learning rate: 5.672244687521483e-05
+Training loss: 0.008037
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 22.50 sec
+Train epoch: 29 Learning rate: 5.672244687521483e-05
+Training loss: 0.008051
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 99.52 sec
+Train epoch: 30 Learning rate: 5.3886324531454084e-05
+Training loss: 0.007842
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 93.27 sec
+Train epoch: 31 Learning rate: 5.3886324531454084e-05
+Training loss: 0.007938
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 31.86 sec
+Train epoch: 32 Learning rate: 5.3886324531454084e-05
+Training loss: 0.007939
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 52.94 sec
+Train epoch: 33 Learning rate: 5.119200830488138e-05
+Training loss: 0.007876
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 32.80 sec
+Train epoch: 34 Learning rate: 5.119200830488138e-05
+Training loss: 0.007964
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 44.29 sec
+Train epoch: 35 Learning rate: 5.119200830488138e-05
+Training loss: 0.007914
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 148.63 sec
+Train epoch: 36 Learning rate: 4.8632407889637306e-05
+Training loss: 0.007848
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 28.39 sec
+Train epoch: 37 Learning rate: 4.8632407889637306e-05
+Training loss: 0.007984
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 23.16 sec
+Train epoch: 38 Learning rate: 4.8632407889637306e-05
+Training loss: 0.007820
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 32.67 sec
+Train epoch: 39 Learning rate: 4.620078749515544e-05
+Training loss: 0.007946
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 48.54 sec
+Train epoch: 40 Learning rate: 4.620078749515544e-05
+Training loss: 0.007887
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 67.51 sec
+Train epoch: 41 Learning rate: 4.620078749515544e-05
+Training loss: 0.007822
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 47.82 sec
+Train epoch: 42 Learning rate: 4.3890748120397664e-05
+Training loss: 0.007793
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 85.51 sec
+Train epoch: 43 Learning rate: 4.3890748120397664e-05
+Training loss: 0.007846
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 37.84 sec
+Train epoch: 44 Learning rate: 4.3890748120397664e-05
+Training loss: 0.007967
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 40.15 sec
+Train epoch: 45 Learning rate: 4.169621071437778e-05
+Training loss: 0.007974
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 29.20 sec
+Train epoch: 46 Learning rate: 4.169621071437778e-05
+Training loss: 0.007817
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 22.41 sec
+Train epoch: 47 Learning rate: 4.169621071437778e-05
+Training loss: 0.007858
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 33.85 sec
+Train epoch: 48 Learning rate: 3.961140017865889e-05
+Training loss: 0.007878
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 31.29 sec
+Train epoch: 49 Learning rate: 3.961140017865889e-05
+Training loss: 0.007737
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 88.44 sec
+Train epoch: 50 Learning rate: 3.961140017865889e-05
+Training loss: 0.007763
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 28.06 sec
+Train epoch: 51 Learning rate: 3.763083016972594e-05
+Training loss: 0.007807
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 68.94 sec
+Train epoch: 52 Learning rate: 3.763083016972594e-05
+Training loss: 0.007624
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 66.30 sec
+Train epoch: 53 Learning rate: 3.763083016972594e-05
+Training loss: 0.007805
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 60.67 sec
+Train epoch: 54 Learning rate: 3.5749288661239645e-05
+Training loss: 0.007846
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 56.58 sec
+Train epoch: 55 Learning rate: 3.5749288661239645e-05
+Training loss: 0.007726
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 106.81 sec
+Train epoch: 56 Learning rate: 3.5749288661239645e-05
+Training loss: 0.007861
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 77.42 sec
+Train epoch: 57 Learning rate: 3.396182422817766e-05
+Training loss: 0.007716
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 27.73 sec
+Train epoch: 58 Learning rate: 3.396182422817766e-05
+Training loss: 0.007684
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 23.08 sec
+Train epoch: 59 Learning rate: 3.396182422817766e-05
+Training loss: 0.007779
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 41.69 sec
+Train epoch: 60 Learning rate: 3.226373301676878e-05
+Training loss: 0.007813
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 100.15 sec
+Train epoch: 61 Learning rate: 3.226373301676878e-05
+Training loss: 0.007691
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 102.11 sec
+Train epoch: 62 Learning rate: 3.226373301676878e-05
+Training loss: 0.007834
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 65.29 sec
+Train epoch: 63 Learning rate: 3.0650546365930335e-05
+Training loss: 0.007646
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 40.57 sec
+Train epoch: 64 Learning rate: 3.0650546365930335e-05
+Training loss: 0.007772
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 31.23 sec
+Train epoch: 65 Learning rate: 3.0650546365930335e-05
+Training loss: 0.007757
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 22.91 sec
+Train epoch: 66 Learning rate: 2.9118019047633816e-05
+Training loss: 0.007630
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 34.14 sec
+Train epoch: 67 Learning rate: 2.9118019047633816e-05
+Training loss: 0.007767
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 62.97 sec
+Train epoch: 68 Learning rate: 2.9118019047633816e-05
+Training loss: 0.007824
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 72.91 sec
+Train epoch: 69 Learning rate: 2.7662118095252124e-05
+Training loss: 0.007568
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 67.76 sec
+Train epoch: 70 Learning rate: 2.7662118095252124e-05
+Training loss: 0.007672
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 40.15 sec
+Train epoch: 71 Learning rate: 2.7662118095252124e-05
+Training loss: 0.007826
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 53.25 sec
+Train epoch: 72 Learning rate: 2.6279012190489517e-05
+Training loss: 0.007686
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 91.22 sec
+Train epoch: 73 Learning rate: 2.6279012190489517e-05
+Training loss: 0.007731
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 70.67 sec
+Train epoch: 74 Learning rate: 2.6279012190489517e-05
+Training loss: 0.007793
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 23.29 sec
+Train epoch: 75 Learning rate: 2.496506158096504e-05
+Training loss: 0.007599
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 21.41 sec
+Train epoch: 76 Learning rate: 2.496506158096504e-05
+Training loss: 0.007719
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 33.74 sec
+Train epoch: 77 Learning rate: 2.496506158096504e-05
+Training loss: 0.007762
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 31.66 sec
+Train epoch: 78 Learning rate: 2.3716808501916788e-05
+Training loss: 0.007665
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 34.57 sec
+Train epoch: 79 Learning rate: 2.3716808501916788e-05
+Training loss: 0.007666
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 21.73 sec
+Train epoch: 80 Learning rate: 2.3716808501916788e-05
+Training loss: 0.007640
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 31.51 sec
+Train epoch: 81 Learning rate: 2.2530968076820946e-05
+Training loss: 0.007470
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 39.19 sec
+Train epoch: 82 Learning rate: 2.2530968076820946e-05
+Training loss: 0.007712
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 21.15 sec
+Train epoch: 83 Learning rate: 2.2530968076820946e-05
+Training loss: 0.007610
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 23.85 sec
+Train epoch: 84 Learning rate: 2.1404419672979897e-05
+Training loss: 0.007749
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 29.56 sec
+Train epoch: 85 Learning rate: 2.1404419672979897e-05
+Training loss: 0.007629
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 70.31 sec
+Train epoch: 86 Learning rate: 2.1404419672979897e-05
+Training loss: 0.007710
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 27.15 sec
+Train epoch: 87 Learning rate: 2.03341986893309e-05
+Training loss: 0.007577
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 24.40 sec
+Train epoch: 88 Learning rate: 2.03341986893309e-05
+Training loss: 0.007674
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 51.44 sec
+Train epoch: 89 Learning rate: 2.03341986893309e-05
+Training loss: 0.007677
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 119.75 sec
+Train epoch: 90 Learning rate: 1.9317488754864355e-05
+Training loss: 0.007684
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 41.12 sec
+Train epoch: 91 Learning rate: 1.9317488754864355e-05
+Training loss: 0.007591
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 46.15 sec
+Train epoch: 92 Learning rate: 1.9317488754864355e-05
+Training loss: 0.007622
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 21.04 sec
+Train epoch: 93 Learning rate: 1.8351614317121137e-05
+Training loss: 0.007605
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 29.28 sec
+Train epoch: 94 Learning rate: 1.8351614317121137e-05
+Training loss: 0.007589
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 23.02 sec
+Train epoch: 95 Learning rate: 1.8351614317121137e-05
+Training loss: 0.007715
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 35.42 sec
+Train epoch: 96 Learning rate: 1.743403360126508e-05
+Training loss: 0.007513
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 21.05 sec
+Train epoch: 97 Learning rate: 1.743403360126508e-05
+Training loss: 0.007602
+Num overlap: 4
+Instr drums sdr: nan (Std: nan)
+Instr bass sdr: nan (Std: nan)
+Instr other sdr: nan (Std: nan)
+Instr vocals sdr: nan (Std: nan)
+Metric avg sdr        : nan
+Elapsed time: 30.50 sec
+Train epoch: 98 Learning rate: 1.743403360126508e-05
