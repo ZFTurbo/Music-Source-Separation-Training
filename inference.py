@@ -12,6 +12,7 @@ import torch
 import numpy as np
 import soundfile as sf
 import torch.nn as nn
+from utils import prefer_target_instrument
 
 # Using the embedded version of Python can also correctly import the utils module.
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -27,11 +28,12 @@ def run_folder(model, args, config, device, verbose=False):
     model.eval()
     all_mixtures_path = glob.glob(args.input_folder + '/*.*')
     all_mixtures_path.sort()
-    print('Total files found: {}'.format(len(all_mixtures_path)))
+    sample_rate = 44100
+    if 'sample_rate' in config.audio:
+        sample_rate = config.audio['sample_rate']
+    print('Total files found: {} Use sample rate: {}'.format(len(all_mixtures_path), sample_rate))
 
-    instruments = config.training.instruments.copy()
-    if config.training.target_instrument is not None:
-        instruments = [config.training.target_instrument]
+    instruments = prefer_target_instrument(config)
 
     os.makedirs(args.store_dir, exist_ok=True)
 
@@ -48,7 +50,7 @@ def run_folder(model, args, config, device, verbose=False):
         if not verbose:
             all_mixtures_path.set_postfix({'track': os.path.basename(path)})
         try:
-            mix, sr = librosa.load(path, sr=44100, mono=False)
+            mix, sr = librosa.load(path, sr=sample_rate, mono=False)
         except Exception as e:
             print('Cannot read track: {}'.format(path))
             print('Error message: {}'.format(str(e)))

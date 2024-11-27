@@ -6,12 +6,13 @@ import numpy as np
 import torch
 import torch.nn as nn
 import yaml
+import librosa
 import torch.nn.functional as F
 from ml_collections import ConfigDict
 from omegaconf import OmegaConf
 from tqdm.auto import tqdm
 from numpy.typing import NDArray
-from typing import Dict
+from typing import Dict, List
 
 
 def get_model_from_config(model_type, config_path):
@@ -106,10 +107,7 @@ def demix_track(config, model, mix, device, pbar=False):
 
     with torch.cuda.amp.autocast(enabled=config.training.use_amp):
         with torch.inference_mode():
-            if config.training.target_instrument is not None:
-                req_shape = (1, ) + tuple(mix.shape)
-            else:
-                req_shape = (len(config.training.instruments),) + tuple(mix.shape)
+            req_shape = (len(prefer_target_instrument(config)),) + tuple(mix.shape)
 
             result = torch.zeros(req_shape, dtype=torch.float32)
             counter = torch.zeros(req_shape, dtype=torch.float32)
@@ -163,11 +161,7 @@ def demix_track(config, model, mix, device, pbar=False):
                 # Remove pad
                 estimated_sources = estimated_sources[..., border:-border]
 
-    if config.training.target_instrument is None:
-        return {k: v for k, v in zip(config.training.instruments, estimated_sources)}
-    else:
-        return {k: v for k, v in zip([config.training.target_instrument], estimated_sources)}
-
+    return {k: v for k, v in zip(prefer_target_instrument(config), estimated_sources)}
 
 def demix_track_demucs(config, model, mix, device, pbar=False):
     S = len(config.training.instruments)
@@ -323,6 +317,58 @@ def AuraMRSTFT_metric(
     return float(res.cpu().numpy())
 
 
+def bleed_full(
+    reference,
+    estimate,
+    sr=44100,
+    n_fft=4096,
+    hop_length=1024,
+    n_mels=512,
+    device='cpu',
+):
+    from torchaudio.transforms import AmplitudeToDB
+
+    # Move tensors to GPU if available
+    reference = torch.from_numpy(reference).float().to(device)
+    estimate = torch.from_numpy(estimate).float().to(device)
+
+    # Create a Hann window
+    window = torch.hann_window(n_fft).to(device)
+
+    # Compute STFTs with the Hann window
+    D1 = torch.abs(torch.stft(reference, n_fft=n_fft, hop_length=hop_length, window=window, return_complex=True, pad_mode="constant"))
+    D2 = torch.abs(torch.stft(estimate, n_fft=n_fft, hop_length=hop_length, window=window, return_complex=True, pad_mode="constant"))
+
+    # create mel filterbank
+    mel_basis = librosa.filters.mel(sr=sr, n_fft=n_fft, n_mels=n_mels)
+    mel_filter_bank = torch.from_numpy(mel_basis).to(device)  # (melbandroformer is doing it that way) edit: sent to right device now
+
+    # apply mel scale
+    S1_mel = torch.matmul(mel_filter_bank, D1)
+    S2_mel = torch.matmul(mel_filter_bank, D2)
+
+    # Convert to decibels
+    S1_db = AmplitudeToDB(stype="magnitude", top_db=80)(S1_mel)
+    S2_db = AmplitudeToDB(stype="magnitude", top_db=80)(S2_mel)
+
+    # Calculate difference
+    diff = S2_db - S1_db
+
+    # Separate positive and negative differences
+    positive_diff = diff[diff > 0]
+    negative_diff = diff[diff < 0]
+
+    # Calculate averages
+    average_positive = torch.mean(positive_diff) if positive_diff.numel() > 0 else torch.tensor(0.0).to(device)
+    average_negative = torch.mean(negative_diff) if negative_diff.numel() > 0 else torch.tensor(0.0).to(device)
+
+    # Scale with 100 as best score
+    bleedless = 100 * 1 / (average_positive + 1)
+    fullness = 100 * 1 / (-average_negative + 1)
+
+    return bleedless.cpu().numpy(), fullness.cpu().numpy()
+
+
 def get_metrics(
     metrics,
     reference, # (ch, length)
@@ -345,7 +391,12 @@ def get_metrics(
         result['aura_stft'] = AuraSTFT_metric(reference, estimate, device)
     if 'aura_mrstft' in metrics:
         result['aura_mrstft'] = AuraMRSTFT_metric(reference, estimate, device)
-    # print(result)
+    if 'bleedless' in metrics or 'fullness' in metrics:
+        bleedless, fullness = bleed_full(reference, estimate, device=device)
+        if 'bleedless' in metrics:
+            result['bleedless'] = bleedless
+        if 'fullness' in metrics:
+            result['fullness'] = fullness
     return result
 
 
@@ -355,3 +406,10 @@ def demix(config, model, mix: NDArray, device, pbar=False, model_type: str = Non
         return demix_track_demucs(config, model, mix, device, pbar=pbar)
     else:
         return demix_track(config, model, mix, device, pbar=pbar)
+
+
+def prefer_target_instrument(config: ConfigDict) -> List[str]:
+    if config.training.get('target_instrument'):
+        return [config.training.target_instrument]
+    else:
+        return config.training.instruments

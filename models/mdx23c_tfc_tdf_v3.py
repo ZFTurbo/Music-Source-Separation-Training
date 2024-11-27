@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from functools import partial
-
+from utils import prefer_target_instrument
 
 class STFT:
     def __init__(self, config):
@@ -146,7 +146,7 @@ class TFC_TDF_net(nn.Module):
         norm = get_norm(norm_type=config.model.norm)
         act = get_act(act_type=config.model.act)
 
-        self.num_target_instruments = 1 if config.training.target_instrument else len(config.training.instruments)
+        self.num_target_instruments = len(prefer_target_instrument(config))
         self.num_subbands = config.model.num_subbands
 
         dim_c = self.num_subbands * config.audio.num_channels * 2

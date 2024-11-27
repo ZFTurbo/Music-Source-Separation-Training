@@ -9,6 +9,7 @@ import os
 import glob
 import copy
 import torch
+import librosa
 import soundfile as sf
 import numpy as np
 import torch.nn as nn
@@ -17,7 +18,7 @@ import multiprocessing
 import warnings
 warnings.filterwarnings("ignore")
 
-from utils import demix, get_metrics, get_model_from_config
+from utils import demix, get_metrics, get_model_from_config, prefer_target_instrument
 
 def proc_list_of_files(
     mixture_paths,
@@ -28,9 +29,7 @@ def proc_list_of_files(
     verbose=False,
     is_tqdm=True
 ):
-    instruments = config.training.instruments
-    if config.training.target_instrument is not None:
-        instruments = [config.training.target_instrument]
+    instruments = prefer_target_instrument(config)
 
     store_dir = ''
     if hasattr(args, 'store_dir'):
@@ -41,6 +40,8 @@ def proc_list_of_files(
     extension = 'wav'
     if hasattr(args, 'extension'):
         extension = args.extension
+    if 'extension' in config['inference']:
+        extension = config['inference']['extension']
 
     if store_dir != '':
         os.makedirs(store_dir, exist_ok=True)
@@ -59,6 +60,13 @@ def proc_list_of_files(
         start_time = time.time()
         mix, sr = sf.read(path)
         mix_orig = mix.copy()
+
+        if 'sample_rate' in config.audio:
+            if sr != config.audio['sample_rate']:
+                orig_length = mix.shape[0]
+                if verbose:
+                    print('Warning: sample rate is different. In config: {} in file {}: {}'.format(config.audio['sample_rate'], path, sr))
+                mix = librosa.resample(mix, orig_sr=sr, target_sr=config.audio['sample_rate'], res_type='kaiser_best')
 
         # Fix for mono
         if len(mix.shape) == 1:
@@ -122,7 +130,13 @@ def proc_list_of_files(
                 track, sr1 = sf.read(folder + '/{}.{}'.format('vocals', extension))
                 track = mix_orig - track
 
-            estimates = waveforms[instr].T
+            estimates = waveforms[instr]
+
+            if 'sample_rate' in config.audio:
+                if sr != config.audio['sample_rate']:
+                    estimates = librosa.resample(estimates, orig_sr=config.audio['sample_rate'], target_sr=sr, res_type='kaiser_best')
+                    estimates = librosa.util.fix_length(estimates, size=orig_length)
+
             # print(estimates.shape)
             if 'normalize' in config.inference:
                 if config.inference['normalize'] is True:
@@ -130,12 +144,12 @@ def proc_list_of_files(
 
             if store_dir != "":
                 out_wav_name = "{}/{}_{}.wav".format(store_dir, os.path.basename(folder), instr)
-                sf.write(out_wav_name, estimates, sr, subtype='FLOAT')
+                sf.write(out_wav_name, estimates.T, sr, subtype='FLOAT')
 
             track_metrics = get_metrics(
                 args.metrics,
                 track.T,
-                estimates.T,
+                estimates,
                 mix_orig.T,
                 device=device,
             )
@@ -167,6 +181,8 @@ def valid(model, args, config, device, verbose=False):
     extension = 'wav'
     if hasattr(args, 'extension'):
         extension = args.extension
+    if 'extension' in config['inference']:
+        extension = config['inference']['extension']
 
     all_mixtures_path = []
     for valid_path in args.valid_path:
@@ -181,9 +197,7 @@ def valid(model, args, config, device, verbose=False):
 
     all_metrics = proc_list_of_files(all_mixtures_path, model, args, config, device, verbose, not verbose)
 
-    instruments = config.training.instruments
-    if config.training.target_instrument is not None:
-        instruments = [config.training.target_instrument]
+    instruments = prefer_target_instrument(config)
 
     if store_dir != "":
         out = open(store_dir + '/results.txt', 'w')
@@ -258,6 +272,8 @@ def valid_multi_gpu(model, args, config, device_ids, verbose=False):
     extension = 'wav'
     if hasattr(args, 'extension'):
         extension = args.extension
+    if 'extension' in config['inference']:
+        extension = config['inference']['extension']
 
     all_mixtures_path = []
     for valid_path in args.valid_path:
@@ -304,9 +320,7 @@ def valid_multi_gpu(model, args, config, device_ids, verbose=False):
             for i in range(len(device_ids)):
                 all_metrics[metric][instr] += return_dict[i][metric][instr]
 
-    instruments = config.training.instruments
-    if config.training.target_instrument is not None:
-        instruments = [config.training.target_instrument]
+    instruments = prefer_target_instrument(config)
 
     if store_dir != "":
         out = open(store_dir + '/results.txt', 'w')
@@ -353,7 +367,7 @@ def check_validation(args):
     parser.add_argument("--pin_memory", type=bool, default=False, help="dataloader pin_memory")
     parser.add_argument("--extension", type=str, default='wav', help="Choose extension for validation")
     parser.add_argument("--use_tta", action='store_true', help="Flag adds test time augmentation during inference (polarity and channel inverse). While this triples the runtime, it reduces noise and slightly improves prediction quality.")
-    parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"], choices=['sdr', 'l1_freq', 'si_sdr', 'log_wmse', 'aura_stft', 'aura_mrstft'], help='List of metrics to use.')
+    parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"], choices=['sdr', 'l1_freq', 'si_sdr', 'log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless', 'fullness'], help='List of metrics to use.')
     if args is None:
         args = parser.parse_args()
     else:

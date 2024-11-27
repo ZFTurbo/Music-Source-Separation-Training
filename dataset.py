@@ -28,6 +28,9 @@ def load_chunk(path, length, chunk_size, offset=None):
         x = sf.read(path, dtype='float32')[0]
         pad = np.zeros([chunk_size - length, 2])
         x = np.concatenate([x, pad])
+    # Mono fix
+    if len(x.shape) == 1:
+        x = np.expand_dims(x, axis=1)
     return x.T
 
 
