@@ -14,7 +14,7 @@ def main():
     parser.add_argument("--valid_path", type=str, default="/home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation", help="Path to validation data")
     parser.add_argument("--num_workers", type=int, default=4, help="Number of workers for data loading")
     parser.add_argument("--device_ids", type=int, nargs="+", default=[0], help="GPU device IDs to use")
-    parser.add_argument("--start_check_point", type=str, default="results/demucs_ckpt.th", help="modle checkpoiynt")
+    parser.add_argument("--start_check_point", type=str, default="", help="modle checkpoiynt")
 
 
     # Parse the arguments

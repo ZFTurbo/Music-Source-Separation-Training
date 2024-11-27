@@ -27,8 +27,8 @@ training:
   use_amp: true # enable or disable usage of mixed precision (float16) - usually it must be true
 
 augmentations:
-  enable: False # enable or disable all augmentations (to fast disable if needed)
-  loudness: False # randomly change loudness of each stem on the range (loudness_min; loudness_max)
+  enable: true # enable or disable all augmentations (to fast disable if needed)
+  loudness: true # randomly change loudness of each stem on the range (loudness_min; loudness_max)
   loudness_min: 0.5
   loudness_max: 1.5
 
@@ -40,7 +40,7 @@ model: htdemucs
 
 htdemucs:  # see demucs/htdemucs.py for a detailed description
   # Channels
-  channels: 16
+  channels: 48
   channels_time:
   growth: 2
   # STFT
@@ -90,7 +90,7 @@ htdemucs:  # see demucs/htdemucs.py for a detailed description
   t_max_period: 10000.0
   t_weight_pos_embed: 1.0
   t_cape_mean_normalize: True
-  t_cape_augment: False
+  t_cape_augment: True
   t_cape_glob_loc_scale: [5000.0, 1.0, 1.4]
   t_sin_random_shift: 0
   # ------------- norm before a transformer encoder
