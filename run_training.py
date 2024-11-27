@@ -11,7 +11,7 @@ def main():
     parser.add_argument("--config_path", type=str, default="configs/config_musdb18_htdemucs_cpu.yaml", help="Path to the config file")
     parser.add_argument("--results_path", type=str, default="results/htdemucs_train", help="Path to save results")
     parser.add_argument("--data_path", type=str, default="/home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train", help="Path to training data")
-    parser.add_argument("--valid_path", type=str, default="../data/MUSDB18/test", help="Path to validation data")
+    parser.add_argument("--valid_path", type=str, default="/home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation", help="Path to validation data")
     parser.add_argument("--num_workers", type=int, default=4, help="Number of workers for data loading")
     parser.add_argument("--device_ids", type=int, nargs="+", default=[0], help="GPU device IDs to use")
     parser.add_argument("--start_check_point", type=str, default="results/demucs_ckpt.th", help="modle checkpoiynt")

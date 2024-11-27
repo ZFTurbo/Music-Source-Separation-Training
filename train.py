@@ -344,7 +344,7 @@ def train_model(args):
         if torch.cuda.is_available() and len(device_ids) > 1:
             metrics_avg = valid_multi_gpu(model, args, config, args.device_ids, verbose=False)
         else:
-            metrics_avg = valid(model, args, config, device, verbose=False)
+            metrics_avg = valid(model, args, config, device, verbose=True)
         metric_avg = metrics_avg[args.metric_for_scheduler]
         if metric_avg > best_metric:
             store_path = args.results_path + '/model_{}_ep_{}_{}_{:.4f}.ckpt'.format(args.model_type, epoch, args.metric_for_scheduler, metric_avg)
