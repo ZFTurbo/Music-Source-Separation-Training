@@ -53,3 +53,7 @@ If you trained some good models, please, share them. You can post config and mod
 |                 TS BS Mamba2 ~~*~~                 |         bass / drums / vocals / other          |   MUSDB test avg: 6.87 (bass: 5.82, drums: 8.14 vocals: 8.35 other: 5.16) Multisong avg: 6.66 (bass: 7.87, drums: 7.92 vocals: 7.01 other: 3.85)   | [Config](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.9/config_musdb18_bs_mamba2.yaml) | [Weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.9/model_bs_mamba2_ep_11_sdr_6.8723.ckpt) |
 
 ~~*~~ **Note**: Model was trained only on MUSDB18HQ dataset (100 songs train data)
+
+### MelRoformer models
+
+[Table of Mel Band Roformers with different paramers](docs/mel_roformer_experiments.md)
