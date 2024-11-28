@@ -63,4 +63,4 @@ If you trained some good models, please, share them. You can post config and mod
 
 ### MelRoformer models
 
-[Table of Mel Band Roformers with different paramers](docs/mel_roformer_experiments.md)
+[Table of Mel Band Roformers with different paramers](mel_roformer_experiments.md)
