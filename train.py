@@ -331,7 +331,7 @@ def train_model(args):
             loss.detach()
 
         print('Training loss: {:.6f}'.format(loss_val / total))
-        wandb.log({'train_loss': loss_val / total, 'epoch': epoch})
+        wandb.log({'train_loss': loss_val / total, 'epoch': epoch, 'learning_rate': optimizer.param_groups[0]['lr']})
 
         # Save last
         store_path = args.results_path + '/last_{}.ckpt'.format(args.model_type)
