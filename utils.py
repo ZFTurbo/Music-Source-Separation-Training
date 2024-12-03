@@ -296,10 +296,12 @@ def demix(
     else:
         instruments = prefer_target_instrument(config)
 
-    return (
-        {k: v for k, v in zip(instruments, estimated_sources)} if num_instruments > 1
-        else estimated_sources
-    )
+    ret_data = {k: v for k, v in zip(instruments, estimated_sources)}
+
+    if mode == "demucs" and num_instruments <= 1:
+        return estimated_sources
+    else:
+        return ret_data
 
 
 def sdr(references: np.ndarray, estimates: np.ndarray) -> np.ndarray:
