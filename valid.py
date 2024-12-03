@@ -55,7 +55,6 @@ def proc_list_of_files(
     # dir to save files
     if hasattr(args, 'store_dir'):
         store_dir = args.store_dir
-        os.makedirs(store_dir, exist_ok=True)
     else:
         store_dir = ''
     # test-time augmentation
@@ -70,6 +69,9 @@ def proc_list_of_files(
         extension = args.extension
     else:
         extension = 'wav'
+
+    if store_dir != '':
+        os.makedirs(store_dir, exist_ok=True)
 
     # Initialize metrics dictionary
     all_metrics = dict()
