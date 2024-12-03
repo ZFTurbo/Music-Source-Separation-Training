@@ -688,9 +688,9 @@ def get_metrics(
 
     # Adjust the length to be the same across all inputs
     min_length = min(reference.shape[1], estimate.shape[1])
-    reference = reference[:, :min_length]
-    estimate = estimate[:, :min_length]
-    mix = mix[:, :min_length]
+    reference = reference[..., :min_length]
+    estimate = estimate[..., :min_length]
+    mix = mix[..., :min_length]
 
     if 'sdr' in metrics:
         references = np.expand_dims(reference, axis=0)
