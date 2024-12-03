@@ -9,16 +9,37 @@ import os
 import glob
 import copy
 import torch
-import librosa
 import soundfile as sf
 import numpy as np
 import torch.nn as nn
 import multiprocessing
-
+from utils import demix, get_metrics, get_model_from_config, prefer_target_instrument
+from typing import Tuple, Dict, List
 import warnings
 warnings.filterwarnings("ignore")
 
-from utils import demix, get_metrics, get_model_from_config, prefer_target_instrument
+
+def read_audio_transposed(path: str) -> Tuple[np.ndarray, int]:
+    """
+    Reads an audio file, ensuring mono audio is converted to two-dimensional format,
+    and transposes the data to have channels as the first dimension.
+    Parameters
+    ----------
+    path : str
+        Path to the audio file.
+    Returns
+    -------
+    Tuple[np.ndarray, int]
+        A tuple containing:
+        - Transposed audio data as a NumPy array with shape (channels, length).
+          For mono audio, the shape will be (1, length).
+        - Sampling rate (int), e.g., 44100.
+    """
+    mix, sr = sf.read(path)
+    if len(mix.shape) == 1:  # For mono audio
+        mix = np.expand_dims(mix, axis=-1)
+    return mix.T, sr
+
 
 def proc_list_of_files(
     mixture_paths,
@@ -31,20 +52,24 @@ def proc_list_of_files(
 ):
     instruments = prefer_target_instrument(config)
 
-    store_dir = ''
+    # dir to save files
     if hasattr(args, 'store_dir'):
         store_dir = args.store_dir
-    use_tta = False
+        os.makedirs(store_dir, exist_ok=True)
+    else:
+        store_dir = ''
+    # test-time augmentation
     if hasattr(args, 'use_tta'):
         use_tta = args.use_tta
-    extension = 'wav'
-    if hasattr(args, 'extension'):
-        extension = args.extension
+    else:
+        use_tta = False
+    #codec to save files
     if 'extension' in config['inference']:
         extension = config['inference']['extension']
-
-    if store_dir != '':
-        os.makedirs(store_dir, exist_ok=True)
+    elif hasattr(args, 'extension'):
+        extension = args.extension
+    else:
+        extension = 'wav'
 
     # Initialize metrics dictionary
     all_metrics = dict()
@@ -58,25 +83,13 @@ def proc_list_of_files(
 
     for path in mixture_paths:
         start_time = time.time()
-        mix, sr = sf.read(path)
+        mix, sr = read_audio_transposed(path)
         mix_orig = mix.copy()
 
-        if 'sample_rate' in config.audio:
-            if sr != config.audio['sample_rate']:
-                orig_length = mix.shape[0]
-                if verbose:
-                    print('Warning: sample rate is different. In config: {} in file {}: {}'.format(config.audio['sample_rate'], path, sr))
-                mix = librosa.resample(mix, orig_sr=sr, target_sr=config.audio['sample_rate'], res_type='kaiser_best')
-
-        # Fix for mono
-        if len(mix.shape) == 1:
-            mix = np.expand_dims(mix, axis=-1)
-
-        mix = mix.T # (channels, waveform)
         folder = os.path.dirname(path)
-        folder_name = os.path.abspath(folder)
         if verbose:
-            print('Song: {} Shape: {}'.format(folder_name, mix.shape))
+            folder_name = os.path.abspath(folder)
+            print(f'Song: {folder_name} Shape: {mix.shape}')
 
         if 'normalize' in config.inference:
             if config.inference['normalize'] is True:
@@ -113,61 +126,48 @@ def proc_list_of_files(
         pbar_dict = {}
         for instr in instruments:
             if verbose:
-                print("Instr: {}".format(instr))
+                print(f"Instr: {instr}")
             if instr != 'other' or config.training.other_fix is False:
                 try:
-                    track, sr1 = sf.read(folder + '/{}.{}'.format(instr, extension))
-
-                    # Fix for mono
-                    if len(track.shape) == 1:
-                        track = np.expand_dims(track, axis=-1)
-
+                    track, sr1 = read_audio_transposed(f"{folder}/{instr}.{extension}")
                 except Exception as e:
-                    print('No data for stem: {}. Skip!'.format(instr))
+                    print(f"No data for stem: {instr}. Skip!")
                     continue
             else:
                 # other is actually instrumental
-                track, sr1 = sf.read(folder + '/{}.{}'.format('vocals', extension))
+                track, sr1 = read_audio_transposed(f"{folder}/vocals.{extension}")
                 track = mix_orig - track
 
-            estimates = waveforms[instr]
-
-            if 'sample_rate' in config.audio:
-                if sr != config.audio['sample_rate']:
-                    estimates = librosa.resample(estimates, orig_sr=config.audio['sample_rate'], target_sr=sr, res_type='kaiser_best')
-                    estimates = librosa.util.fix_length(estimates, size=orig_length)
-
+            estimates = waveforms[instr].T
             # print(estimates.shape)
             if 'normalize' in config.inference:
                 if config.inference['normalize'] is True:
                     estimates = estimates * std + mean
 
             if store_dir != "":
-                out_wav_name = "{}/{}_{}.wav".format(store_dir, os.path.basename(folder), instr)
-                sf.write(out_wav_name, estimates.T, sr, subtype='FLOAT')
+                out_wav_name = f"{store_dir}/{os.path.basename(folder)}_{instr}.wav"
+                sf.write(out_wav_name, estimates, sr, subtype='FLOAT')
 
             track_metrics = get_metrics(
                 args.metrics,
-                track.T,
-                estimates,
-                mix_orig.T,
+                track,
+                estimates.T,
+                mix_orig,
                 device=device,
             )
 
             for metric_name in track_metrics:
                 metric_value = track_metrics[metric_name]
                 if verbose:
-                    print("Metric {:11s} value: {:.4f}".format(metric_name, metric_value))
+                    print(f"Metric {metric_name:11s} value: {metric_value:.4f}")
                 all_metrics[metric_name][instr].append(metric_value)
-                pbar_dict['{}_{}'.format(metric_name, instr)] = metric_value
-
+                pbar_dict[f'{metric_name}_{instr}'] = metric_value
             try:
                 mixture_paths.set_postfix(pbar_dict)
             except Exception as e:
                 pass
         if verbose:
-            print("Time for song: {:.2f} sec".format(time.time() - start_time))
-
+            print(f"Time for song: {time.time() - start_time:.2f} sec")
     return all_metrics
 
 
@@ -186,14 +186,14 @@ def valid(model, args, config, device, verbose=False):
 
     all_mixtures_path = []
     for valid_path in args.valid_path:
-        part = sorted(glob.glob(valid_path + '/*/mixture.{}'.format(extension)))
+        part = sorted(glob.glob(f"{valid_path}/*/mixture.{extension}"))
         if len(part) == 0:
             if verbose:
-                print('No validation data found in: {}'.format(valid_path))
+                print(f'No validation data found in: {valid_path}')
         all_mixtures_path += part
     if verbose:
-        print('Total mixtures: {}'.format(len(all_mixtures_path)))
-        print('Overlap: {} Batch size: {}'.format(config.inference.num_overlap, config.inference.batch_size))
+        print(f'Total mixtures: {len(all_mixtures_path)}')
+        print(f'Overlap: {config.inference.num_overlap} Batch size: {config.inference.batch_size}')
 
     all_metrics = proc_list_of_files(all_mixtures_path, model, args, config, device, verbose, not verbose)
 
@@ -202,7 +202,7 @@ def valid(model, args, config, device, verbose=False):
     if store_dir != "":
         out = open(store_dir + '/results.txt', 'w')
         out.write(str(args) + "\n")
-    print("Num overlap: {}".format(config.inference.num_overlap))
+    print(f"Num overlap: {config.inference.num_overlap}")
 
     metric_avg = {}
     for instr in instruments:
@@ -210,9 +210,9 @@ def valid(model, args, config, device, verbose=False):
             metric_values = np.array(all_metrics[metric_name][instr])
             mean_val = metric_values.mean()
             std_val = metric_values.std()
-            print("Instr {} {}: {:.4f} (Std: {:.4f})".format(instr, metric_name, mean_val, std_val))
+            print(f"Instr {instr} {metric_name}: {mean_val:.4f} (Std: {std_val:.4f})")
             if store_dir != "":
-                out.write("Instr {} {}: {:.4f} (Std: {:.4f})".format(instr, metric_name, mean_val, std_val) + "\n")
+                out.write(f"Instr {instr} {metric_name}: {mean_val:.4f} (Std: {std_val:.4f})\n")
             if metric_name not in metric_avg:
                 metric_avg[metric_name] = 0.0
             metric_avg[metric_name] += mean_val
@@ -221,12 +221,12 @@ def valid(model, args, config, device, verbose=False):
 
     if len(instruments) > 1:
         for metric_name in metric_avg:
-            print('Metric avg {:11s}: {:.4f}'.format(metric_name, metric_avg[metric_name]))
+            print(f'Metric avg {metric_name:11s}: {metric_avg[metric_name]:.4f}')
             if store_dir != "":
-                out.write('Metric avg {:11s}: {:.4f}'.format(metric_name, metric_avg[metric_name]) + "\n")
-    print("Elapsed time: {:.2f} sec".format(time.time() - start_time))
+                out.write(f'Metric avg {metric_name:11s}: {metric_avg[metric_name]:.4f}\n')
+    print(f"Elapsed time: {time.time() - start_time:.2f} sec")
     if store_dir != "":
-        out.write("Elapsed time: {:.2f} sec".format(time.time() - start_time) + "\n")
+        out.write(f"Elapsed time: {time.time() - start_time:.2f} sec\n")
         out.close()
 
     return metric_avg
@@ -254,7 +254,7 @@ def valid_mp(proc_id, queue, all_mixtures_path, model, args, config, device, ret
             for metric_name in all_metrics:
                 all_metrics[metric_name][instr] += single_metrics[metric_name][instr]
                 if len(single_metrics[metric_name][instr]) > 0:
-                    pbar_dict['{}_{}'.format(metric_name, instr)] = "{:.4f}".format(single_metrics[metric_name][instr][0])
+                    pbar_dict[f"{metric_name}_{instr}"] = f"{single_metrics[metric_name][instr][0]:.4f}"
         if proc_id == 0:
             progress_bar.update(current_step - progress_bar.n)
             progress_bar.set_postfix(pbar_dict)
@@ -277,15 +277,14 @@ def valid_multi_gpu(model, args, config, device_ids, verbose=False):
 
     all_mixtures_path = []
     for valid_path in args.valid_path:
-        part = sorted(glob.glob(valid_path + '/*/mixture.{}'.format(extension)))
+        part = sorted(glob.glob(f"{valid_path}/*/mixture.{extension}"))
         if len(part) == 0:
             if verbose:
-                print('No validation data found in: {}'.format(valid_path))
+                print(f'No validation data found in: {valid_path}')
         all_mixtures_path += part
     if verbose:
-        print('Total mixtures: {}'.format(len(all_mixtures_path)))
-        print('Overlap: {} Batch size: {}'.format(config.inference.num_overlap, config.inference.batch_size))
-
+        print(f'Total mixtures: {len(all_mixtures_path)}')
+        print(f'Overlap: {config.inference.num_overlap} Batch size: {config.inference.batch_size}')
     model = model.to('cpu')
     try:
         # For multiGPU training extract single model
@@ -299,7 +298,7 @@ def valid_multi_gpu(model, args, config, device_ids, verbose=False):
     return_dict = torch.multiprocessing.Manager().dict()
     for i, device in enumerate(device_ids):
         if torch.cuda.is_available():
-            device = 'cuda:{}'.format(device)
+            device = f'cuda:{device}'
         else:
             device = 'cpu'
         p = torch.multiprocessing.Process(target=valid_mp, args=(i, queue, all_mixtures_path, model, args, config, device, return_dict))
@@ -325,7 +324,7 @@ def valid_multi_gpu(model, args, config, device_ids, verbose=False):
     if store_dir != "":
         out = open(store_dir + '/results.txt', 'w')
         out.write(str(args) + "\n")
-    print("Num overlap: {}".format(config.inference.num_overlap))
+    print(f"Num overlap: {config.inference.num_overlap}")
 
     metric_avg = {}
     for instr in instruments:
@@ -333,9 +332,9 @@ def valid_multi_gpu(model, args, config, device_ids, verbose=False):
             metric_values = np.array(all_metrics[metric_name][instr])
             mean_val = metric_values.mean()
             std_val = metric_values.std()
-            print("Instr {} {}: {:.4f} (Std: {:.4f})".format(instr, metric_name, mean_val, std_val))
+            print(f"Instr {instr} {metric_name}: {mean_val:.4f} (Std: {std_val:.4f})")
             if store_dir != "":
-                out.write("Instr {} {}: {:.4f} (Std: {:.4f})".format(instr, metric_name, mean_val, std_val) + "\n")
+                out.write(f"Instr {instr} {metric_name}: {mean_val:.4f} (Std: {std_val:.4f})\n")
             if metric_name not in metric_avg:
                 metric_avg[metric_name] = 0.0
             metric_avg[metric_name] += mean_val
@@ -344,12 +343,12 @@ def valid_multi_gpu(model, args, config, device_ids, verbose=False):
 
     if len(instruments) > 1:
         for metric_name in metric_avg:
-            print('Metric avg {:11s}: {:.4f}'.format(metric_name, metric_avg[metric_name]))
+            print(f"Metric avg {metric_name:11s}: {metric_avg[metric_name]:.4f}")
             if store_dir != "":
-                out.write('Metric avg {:11s}: {:.4f}'.format(metric_name, metric_avg[metric_name]) + "\n")
-    print("Elapsed time: {:.2f} sec".format(time.time() - start_time))
+                out.write(f'Metric avg {metric_name:11s}: {metric_avg[metric_name]:.4f}\n')
+    print(f"Elapsed time: {time.time() - start_time:.2f} sec")
     if store_dir != "":
-        out.write("Elapsed time: {:.2f} sec".format(time.time() - start_time) + "\n")
+        out.write(f"Elapsed time: {time.time() - start_time:.2f} sec\n")
         out.close()
 
     return metric_avg
@@ -378,7 +377,7 @@ def check_validation(args):
 
     model, config = get_model_from_config(args.model_type, args.config_path)
     if args.start_check_point != '':
-        print('Start from checkpoint: {}'.format(args.start_check_point))
+        print(f'Start from checkpoint: {args.start_check_point}')
         state_dict = torch.load(args.start_check_point)
         if args.model_type in ['htdemucs', 'apollo']:
             # Fix for htdemucs pretrained models
@@ -389,7 +388,7 @@ def check_validation(args):
                 state_dict = state_dict['state_dict']
         model.load_state_dict(state_dict)
 
-    print("Instruments: {}".format(config.training.instruments))
+    print(f"Instruments: {config.training.instruments}")
 
     device_ids = args.device_ids
     if torch.cuda.is_available():
