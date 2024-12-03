@@ -9,6 +9,7 @@ import os
 import glob
 import copy
 import torch
+import librosa
 import soundfile as sf
 import numpy as np
 import torch.nn as nn
@@ -53,15 +54,11 @@ def proc_list_of_files(
     instruments = prefer_target_instrument(config)
 
     # dir to save files
-    if hasattr(args, 'store_dir'):
-        store_dir = args.store_dir
-    else:
-        store_dir = ''
+    store_dir = args.store_dir
     # test-time augmentation
+    use_tta = False
     if hasattr(args, 'use_tta'):
         use_tta = args.use_tta
-    else:
-        use_tta = False
     #codec to save files
     if 'extension' in config['inference']:
         extension = config['inference']['extension']
@@ -87,6 +84,13 @@ def proc_list_of_files(
         start_time = time.time()
         mix, sr = read_audio_transposed(path)
         mix_orig = mix.copy()
+
+        if 'sample_rate' in config.audio:
+            if sr != config.audio['sample_rate']:
+                orig_length = mix.shape[-1]
+                if verbose:
+                    print('Warning: sample rate is different. In config: {} in file {}: {}'.format(config.audio['sample_rate'], path, sr))
+                mix = librosa.resample(mix, orig_sr=sr, target_sr=config.audio['sample_rate'], res_type='kaiser_best')
 
         folder = os.path.dirname(path)
         if verbose:
@@ -141,6 +145,12 @@ def proc_list_of_files(
                 track = mix_orig - track
 
             estimates = waveforms[instr].T
+
+            if 'sample_rate' in config.audio:
+                if sr != config.audio['sample_rate']:
+                    estimates = librosa.resample(estimates.T, orig_sr=config.audio['sample_rate'], target_sr=sr, res_type='kaiser_best')
+                    estimates = librosa.util.fix_length(estimates, size=orig_length).T
+
             # print(estimates.shape)
             if 'normalize' in config.inference:
                 if config.inference['normalize'] is True:
@@ -268,9 +278,7 @@ def valid_mp(proc_id, queue, all_mixtures_path, model, args, config, device, ret
 def valid_multi_gpu(model, args, config, device_ids, verbose=False):
     start_time = time.time()
 
-    store_dir = ''
-    if hasattr(args, 'store_dir'):
-        store_dir = args.store_dir
+    store_dir = args.store_dir
     extension = 'wav'
     if hasattr(args, 'extension'):
         extension = args.extension
