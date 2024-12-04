@@ -15,12 +15,12 @@ import numpy as np
 import torch.nn as nn
 import multiprocessing
 from utils import demix, get_metrics, get_model_from_config, prefer_target_instrument
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict, List, Union
 import warnings
 warnings.filterwarnings("ignore")
 
 
-def read_audio_transposed(path: str) -> Tuple[np.ndarray, int]:
+def read_audio_transposed(path: str, instr: str = None, skip_err: bool = False) -> Tuple[np.ndarray, int]:
     """
     Reads an audio file, ensuring mono audio is converted to two-dimensional format,
     and transposes the data to have channels as the first dimension.
@@ -28,6 +28,10 @@ def read_audio_transposed(path: str) -> Tuple[np.ndarray, int]:
     ----------
     path : str
         Path to the audio file.
+    skip_err: bool
+        If true, not raise errors
+    instr:
+        name of instument
     Returns
     -------
     Tuple[np.ndarray, int]
@@ -36,29 +40,169 @@ def read_audio_transposed(path: str) -> Tuple[np.ndarray, int]:
           For mono audio, the shape will be (1, length).
         - Sampling rate (int), e.g., 44100.
     """
-    mix, sr = sf.read(path)
-    if len(mix.shape) == 1:  # For mono audio
-        mix = np.expand_dims(mix, axis=-1)
-    return mix.T, sr
+
+    try:
+        mix, sr = sf.read(path)
+    except Exception as e:
+        if skip_err:
+            print(f"No stem {instr}: skip!")
+            return None, None
+        else:
+            raise RuntimeError(f"Error reading the file at {path}: {e}")
+    else:
+        if len(mix.shape) == 1:  # For mono audio
+            mix = np.expand_dims(mix, axis=-1)
+        return mix.T, sr
+
+
+def normalize_audio(audio: np.ndarray) -> (np.ndarray, dict):
+    mono = audio.mean(0)
+    mean, std = mono.mean(), mono.std()
+    return (audio - mean) / std, {"mean": mean, "std": std}
+
+
+def denormalize_audio(audio: np.ndarray, norm_params: dict) -> np.ndarray:
+    return audio * norm_params["std"] + norm_params["mean"]
+
+
+def apply_tta(
+        config,
+        model: torch.nn.Module,
+        mix: torch.Tensor,
+        waveforms_orig: Dict[str, torch.Tensor],
+        device: torch.device,
+        model_type: str
+) -> Dict[str, torch.Tensor]:
+    """
+    Apply Test-Time Augmentation (TTA) for source separation.
+
+    This function processes the input mixture with test-time augmentations, including
+    channel inversion and polarity inversion, to enhance the separation results. The
+    results from all augmentations are averaged to produce the final output.
+
+    Parameters:
+    ----------
+    config : Any
+        Configuration object containing model and processing parameters.
+    model : torch.nn.Module
+        The trained model used for source separation.
+    mix : torch.Tensor
+        The mixed audio tensor with shape (channels, time).
+    waveforms_orig : Dict[str, torch.Tensor]
+        Dictionary of original separated waveforms (before TTA) for each instrument.
+    device : torch.device
+        Device (CPU or CUDA) on which the model will be executed.
+    model_type : str
+        Type of the model being used (e.g., "demucs", "custom_model").
+
+    Returns:
+    -------
+    Dict[str, torch.Tensor]
+        Updated dictionary of separated waveforms after applying TTA.
+    """
+    # Create augmentations: channel inversion and polarity inversion
+    track_proc_list = [mix[::-1].copy(), -1.0 * mix.copy()]
+
+    # Process each augmented mixture
+    for i, augmented_mix in enumerate(track_proc_list):
+        waveforms = demix(config, model, augmented_mix, device, model_type=model_type)
+        for el in waveforms:
+            if i == 0:
+                waveforms_orig[el] += waveforms[el][::-1].copy()
+            else:
+                waveforms_orig[el] -= waveforms[el]
+
+    # Average the results across augmentations
+    for el in waveforms_orig:
+        waveforms_orig[el] /= len(track_proc_list) + 1
+
+    return waveforms_orig
+
+
+def update_metrics_and_pbar(
+        track_metrics: dict,
+        all_metrics: dict,
+        instr: str,
+        pbar_dict: dict,
+        mixture_paths: Union[List[str], tqdm],
+        verbose: bool = False
+) -> None:
+    """
+    Update metrics dictionary and progress bar with new metric values.
+
+    Parameters:
+    ----------
+    track_metrics : dict
+        Dictionary with metric names as keys and their computed values as values.
+    all_metrics : dict
+        Dictionary to store all metrics, organized by metric name and instrument.
+    instr : str
+        Name of the instrument for which the metrics are being computed.
+    pbar_dict : dict
+        Dictionary for progress bar updates.
+    mixture_paths : tqdm, optional
+        Progress bar object, if available. Default is None.
+    verbose : bool, optional
+        If True, prints metric values to the console. Default is False.
+    """
+    for metric_name, metric_value in track_metrics.items():
+        if verbose:
+            print(f"Metric {metric_name:11s} value: {metric_value:.4f}")
+        all_metrics[metric_name][instr].append(metric_value)
+        pbar_dict[f'{metric_name}_{instr}'] = metric_value
+
+    if mixture_paths is not None:
+        try:
+            mixture_paths.set_postfix(pbar_dict)
+        except Exception:
+            pass
 
 
 def proc_list_of_files(
-    mixture_paths,
-    model,
+    mixture_paths: List[str],
+    model: torch.nn.Module,
     args,
     config,
-    device,
-    verbose=False,
-    is_tqdm=True
-):
+    device: torch.device,
+    verbose: bool = False,
+    is_tqdm: bool = True
+) -> Dict[str, Dict[str, List[float]]]:
+    """
+    Process a list of audio files, perform source separation, and evaluate metrics.
+
+    Parameters:
+    ----------
+    mixture_paths : List[str]
+        List of file paths to the audio mixtures.
+    model : torch.nn.Module
+        The trained model used for source separation.
+    args : Any
+        Argument object containing user-specified options like metrics, model type, etc.
+    config : Any
+        Configuration object containing model and processing parameters.
+    device : torch.device
+        Device (CPU or CUDA) on which the model will be executed.
+    verbose : bool, optional
+        If True, prints detailed logs for each processed file. Default is False.
+    is_tqdm : bool, optional
+        If True, displays a progress bar for file processing. Default is True.
+
+    Returns:
+    -------
+    Dict[str, Dict[str, List[float]]]
+        A nested dictionary where the outer keys are metric names,
+        the inner keys are instrument names, and the values are lists of metric scores.
+    """
     instruments = prefer_target_instrument(config)
 
-    # dir to save files
-    store_dir = args.store_dir
-    # test-time augmentation
+    store_dir = ''
+    if hasattr(args, 'store_dir'):
+        store_dir = args.store_dir
+
     use_tta = False
     if hasattr(args, 'use_tta'):
         use_tta = args.use_tta
+
     #codec to save files
     if 'extension' in config['inference']:
         extension = config['inference']['extension']
@@ -66,9 +210,6 @@ def proc_list_of_files(
         extension = args.extension
     else:
         extension = 'wav'
-
-    if store_dir != '':
-        os.makedirs(store_dir, exist_ok=True)
 
     # Initialize metrics dictionary
     all_metrics = dict()
@@ -84,102 +225,79 @@ def proc_list_of_files(
         start_time = time.time()
         mix, sr = read_audio_transposed(path)
         mix_orig = mix.copy()
+        folder = os.path.dirname(path)
 
         if 'sample_rate' in config.audio:
             if sr != config.audio['sample_rate']:
                 orig_length = mix.shape[-1]
                 if verbose:
-                    print('Warning: sample rate is different. In config: {} in file {}: {}'.format(config.audio['sample_rate'], path, sr))
+                    print(f'Warning: sample rate is different. In config: {config.audio["sample_rate"]} in file {path}: {sr}')
                 mix = librosa.resample(mix, orig_sr=sr, target_sr=config.audio['sample_rate'], res_type='kaiser_best')
 
-        folder = os.path.dirname(path)
         if verbose:
             folder_name = os.path.abspath(folder)
             print(f'Song: {folder_name} Shape: {mix.shape}')
 
         if 'normalize' in config.inference:
             if config.inference['normalize'] is True:
-                mono = mix.mean(0)
-                mean = mono.mean()
-                std = mono.std()
-                mix = (mix - mean) / std
+                mix, norm_params = normalize_audio(mix)
+
+        waveforms_orig = demix(config, model, mix.copy(), device, model_type=args.model_type)
 
         if use_tta:
-            # orig, channel inverse, polarity inverse
-            track_proc_list = [mix.copy(), mix[::-1].copy(), -1. * mix.copy()]
-        else:
-            track_proc_list = [mix.copy()]
-
-        full_result = []
-        for mix in track_proc_list:
-            waveforms = demix(config, model, mix, device, model_type=args.model_type)
-            full_result.append(waveforms)
-
-        # Average all values in single dict
-        waveforms = full_result[0]
-        for i in range(1, len(full_result)):
-            d = full_result[i]
-            for el in d:
-                if i == 2:
-                    waveforms[el] += -1.0 * d[el]
-                elif i == 1:
-                    waveforms[el] += d[el][::-1].copy()
-                else:
-                    waveforms[el] += d[el]
-        for el in waveforms:
-            waveforms[el] = waveforms[el] / len(full_result)
+            waveforms_orig = apply_tta(config, model, mix, waveforms_orig, device, args.model_type)
 
         pbar_dict = {}
+
         for instr in instruments:
             if verbose:
                 print(f"Instr: {instr}")
+
             if instr != 'other' or config.training.other_fix is False:
-                try:
-                    track, sr1 = read_audio_transposed(f"{folder}/{instr}.{extension}")
-                except Exception as e:
-                    print(f"No data for stem: {instr}. Skip!")
+                track, sr1 = read_audio_transposed(f"{folder}/{instr}.{extension}", instr, skip_err=True)
+                if track is None:
                     continue
             else:
-                # other is actually instrumental
+                # if track=vocal+other
                 track, sr1 = read_audio_transposed(f"{folder}/vocals.{extension}")
                 track = mix_orig - track
 
-            estimates = waveforms[instr].T
+            estimates = waveforms_orig[instr]
 
             if 'sample_rate' in config.audio:
                 if sr != config.audio['sample_rate']:
-                    estimates = librosa.resample(estimates.T, orig_sr=config.audio['sample_rate'], target_sr=sr, res_type='kaiser_best')
-                    estimates = librosa.util.fix_length(estimates, size=orig_length).T
+                    estimates = librosa.resample(estimates, orig_sr=config.audio['sample_rate'], target_sr=sr,
+                                                 res_type='kaiser_best')
+                    estimates = librosa.util.fix_length(estimates, size=orig_length)
 
-            # print(estimates.shape)
             if 'normalize' in config.inference:
                 if config.inference['normalize'] is True:
-                    estimates = estimates * std + mean
+                    estimates = denormalize_audio(estimates, norm_params)
 
             if store_dir != "":
+                os.makedirs(store_dir, exist_ok=True)
                 out_wav_name = f"{store_dir}/{os.path.basename(folder)}_{instr}.wav"
-                sf.write(out_wav_name, estimates, sr, subtype='FLOAT')
+                sf.write(out_wav_name, estimates.T, sr, subtype='FLOAT')
 
             track_metrics = get_metrics(
                 args.metrics,
                 track,
-                estimates.T,
+                estimates,
                 mix_orig,
                 device=device,
             )
 
-            for metric_name in track_metrics:
-                metric_value = track_metrics[metric_name]
-                if verbose:
-                    print(f"Metric {metric_name:11s} value: {metric_value:.4f}")
-                all_metrics[metric_name][instr].append(metric_value)
-                pbar_dict[f'{metric_name}_{instr}'] = metric_value
-            try:
-                mixture_paths.set_postfix(pbar_dict)
-            except Exception as e:
-                pass
+            update_metrics_and_pbar(
+                track_metrics,
+                all_metrics,
+                instr, pbar_dict,
+                mixture_paths=mixture_paths,
+                verbose=verbose
+            )
+
         if verbose:
             print(f"Time for song: {time.time() - start_time:.2f} sec")
+
     return all_metrics
 
 
@@ -190,11 +308,13 @@ def valid(model, args, config, device, verbose=False):
     store_dir = ''
     if hasattr(args, 'store_dir'):
         store_dir = args.store_dir
-    extension = 'wav'
-    if hasattr(args, 'extension'):
-        extension = args.extension
+    # codec to save files
     if 'extension' in config['inference']:
         extension = config['inference']['extension']
+    elif hasattr(args, 'extension'):
+        extension = args.extension
+    else:
+        extension = 'wav'
 
     all_mixtures_path = []
     for valid_path in args.valid_path:
@@ -278,12 +398,16 @@ def valid_mp(proc_id, queue, all_mixtures_path, model, args, config, device, ret
 def valid_multi_gpu(model, args, config, device_ids, verbose=False):
     start_time = time.time()
 
-    store_dir = args.store_dir
-    extension = 'wav'
-    if hasattr(args, 'extension'):
-        extension = args.extension
+    store_dir = ''
+    if hasattr(args, 'store_dir'):
+        store_dir = args.store_dir
+    # codec to save files
     if 'extension' in config['inference']:
         extension = config['inference']['extension']
+    elif hasattr(args, 'extension'):
+        extension = args.extension
+    else:
+        extension = 'wav'
 
     all_mixtures_path = []
     for valid_path in args.valid_path:
