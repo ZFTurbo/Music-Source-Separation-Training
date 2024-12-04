@@ -1,6 +1,6 @@
 torch>=2.0.1
 torchaudio
-numpy
+numpy==1.23.5
 pandas
 scipy
 soundfile
@@ -30,4 +30,3 @@ accelerate
 huggingface-hub>=0.23.0
 prodigyopt
 torch_log_wmse
-wxpython==4.2.2
