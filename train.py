@@ -66,7 +66,7 @@ def load_not_compatible_weights(model, weights, verbose=False):
     for el in new_model:
         if el in old_model:
             if verbose:
-                print('Match found for {}!'.format(el))
+                print(f'Match found for {el}!')
             if new_model[el].shape == old_model[el].shape:
                 if verbose:
                     print('Action: Just copy weights!')
@@ -77,7 +77,7 @@ def load_not_compatible_weights(model, weights, verbose=False):
                         print('Action: Different dimension! Too lazy to write the code... Skip it')
                 else:
                     if verbose:
-                        print('Shape is different: {} != {}'.format(tuple(new_model[el].shape), tuple(old_model[el].shape)))
+                        print(f'Shape is different: {tuple(new_model[el].shape)} != {tuple(old_model[el].shape)}')
                     ln = len(new_model[el].shape)
                     max_shape = []
                     slices_old = []
@@ -97,7 +97,7 @@ def load_not_compatible_weights(model, weights, verbose=False):
                     new_model[el] = max_matrix[slices_new]
         else:
             if verbose:
-                print('Match not found for {}!'.format(el))
+                print(f'Match not found for {el}!')
     model.load_state_dict(
         new_model
     )
@@ -134,19 +134,15 @@ def train_model(args):
     torch.multiprocessing.set_start_method('spawn')
 
     model, config = get_model_from_config(args.model_type, args.config_path)
-    print("Instruments: {}".format(config.training.instruments))
+    print(f"Instruments: {config.training.instruments}")
 
     if args.metric_for_scheduler not in args.metrics:
         args.metrics += [args.metric_for_scheduler]
-    print('Metrics for training: {}. Metric for scheduler: {}'.format(args.metrics, args.metric_for_scheduler))
+    print(f'Metrics for training: {args.metrics}. Metric for scheduler: {args.metric_for_scheduler}')
 
     os.makedirs(args.results_path, exist_ok=True)
 
-    use_amp = True
-    try:
-        use_amp = config.training.use_amp
-    except:
-        pass
+    use_amp = config.training.get(key='use_amp', default=True)
 
     device_ids = args.device_ids
     batch_size = config.training.batch_size * len(device_ids)
@@ -162,7 +158,7 @@ def train_model(args):
         config,
         args.data_path,
         batch_size=batch_size,
-        metadata_path=os.path.join(args.results_path, 'metadata_{}.pkl'.format(args.dataset_type)),
+        metadata_path = os.path.join(args.results_path, f'metadata_{args.dataset_type}.pkl'),
         dataset_type=args.dataset_type,
     )
 
@@ -174,22 +170,17 @@ def train_model(args):
         pin_memory=args.pin_memory
     )
 
-    if args.start_check_point != '':
-        print('Start from checkpoint: {}'.format(args.start_check_point))
-        if 1:
-            load_not_compatible_weights(model, args.start_check_point, verbose=False)
-        else:
-            model.load_state_dict(
-                torch.load(args.start_check_point)
-            )
+    if args.start_check_point:
+        print(f'Start from checkpoint: {args.start_check_point}')
+        load_not_compatible_weights(model, args.start_check_point, verbose=False)
 
     if torch.cuda.is_available():
         if len(device_ids) <= 1:
-            print('Use single GPU: {}'.format(device_ids))
+            print(f'Use single GPU: {device_ids}')
             device = torch.device(f'cuda:{device_ids[0]}')
             model = model.to(device)
         else:
-            print('Use multi GPU: {}'.format(device_ids))
+            print(f'Use multi GPU: {device_ids}')
             device = torch.device(f'cuda:{device_ids[0]}')
             model = nn.DataParallel(model, device_ids=device_ids).to(device)
     else:
@@ -198,12 +189,15 @@ def train_model(args):
         model = model.to(device)
 
     if args.pre_valid:
-        valid_multi_gpu(model, args, config, args.device_ids, verbose=True)
+        if torch.cuda.is_available() and len(device_ids) > 1:
+            valid_multi_gpu(model, args, config, args.device_ids, verbose=True)
+        else:
+            valid(model, args, config, device, verbose=True)
 
     optim_params = dict()
     if 'optimizer' in config:
         optim_params = dict(config['optimizer'])
-        print('Optimizer params from config:\n{}'.format(optim_params))
+        print(f'Optimizer params from config:\n{optim_params}')
 
     if config.training.optimizer == 'adam':
         optimizer = Adam(model.parameters(), lr=config.training.lr, **optim_params)
@@ -225,42 +219,35 @@ def train_model(args):
         print('Use SGD optimizer')
         optimizer = SGD(model.parameters(), lr=config.training.lr, **optim_params)
     else:
-        print('Unknown optimizer: {}'.format(config.training.optimizer))
+        print(f'Unknown optimizer: {config.training.optimizer}')
         exit()
 
-    gradient_accumulation_steps = 1
-    try:
-        gradient_accumulation_steps = int(config.training.gradient_accumulation_steps)
-    except:
-        pass
+    gradient_accumulation_steps = int(config.training.get(key='gradient_accumulation_steps', default=1))
 
-    print("Patience: {} Reduce factor: {} Batch size: {} Grad accum steps: {} Effective batch size: {} Optimizer: {}".format(
-        config.training.patience,
-        config.training.reduce_factor,
-        batch_size,
-        gradient_accumulation_steps,
-        batch_size * gradient_accumulation_steps,
-        config.training.optimizer,
-    ))
+    print(
+        f"Patience: {config.training.patience} "
+        f"Reduce factor: {config.training.reduce_factor} "
+        f"Batch size: {batch_size} "
+        f"Grad accum steps: {gradient_accumulation_steps} "
+        f"Effective batch size: {batch_size * gradient_accumulation_steps} "
+        f"Optimizer: {config.training.optimizer}"
+    )
     # Reduce LR if no metric improvements for several epochs
     scheduler = ReduceLROnPlateau(optimizer, 'max', patience=config.training.patience, factor=config.training.reduce_factor)
 
     if args.use_multistft_loss:
-        try:
-            loss_options = dict(config.loss_multistft)
-        except:
-            loss_options = dict()
-        print('Loss options: {}'.format(loss_options))
+        loss_options = dict(config.get(key='loss_multistft', default={}))
+        print(f'Loss options: {loss_options}')
         loss_multistft = auraloss.freq.MultiResolutionSTFTLoss(
             **loss_options
         )
 
     scaler = GradScaler()
-    print('Train for: {}'.format(config.training.num_epochs))
+    print(f'Train for: {config.training.num_epochs} epochs')
     best_metric = -10000
     for epoch in range(config.training.num_epochs):
         model.train().to(device)
-        print('Train epoch: {} Learning rate: {}'.format(epoch, optimizer.param_groups[0]['lr']))
+        print(f'Train epoch: {epoch} Learning rate: {optimizer.param_groups[0]["lr"]}')
         loss_val = 0.
         total = 0
 
@@ -330,11 +317,11 @@ def train_model(args):
             wandb.log({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1), 'i': i})
             loss.detach()
 
-        print('Training loss: {:.6f}'.format(loss_val / total))
+        print(f'Training loss: {loss_val / total:.6f}')
         wandb.log({'train_loss': loss_val / total, 'epoch': epoch, 'learning_rate': optimizer.param_groups[0]['lr']})
 
         # Save last
-        store_path = args.results_path + '/last_{}.ckpt'.format(args.model_type)
+        store_path = f'{args.results_path}/last_{args.model_type}.ckpt'
         state_dict = model.state_dict() if len(device_ids) <= 1 else model.module.state_dict()
         torch.save(
             state_dict,
@@ -347,8 +334,8 @@ def train_model(args):
             metrics_avg = valid(model, args, config, device, verbose=False)
         metric_avg = metrics_avg[args.metric_for_scheduler]
         if metric_avg > best_metric:
-            store_path = args.results_path + '/model_{}_ep_{}_{}_{:.4f}.ckpt'.format(args.model_type, epoch, args.metric_for_scheduler, metric_avg)
-            print('Store weights: {}'.format(store_path))
+            store_path = f'{args.results_path}/model_{args.model_type}_ep_{epoch}_{args.metric_for_scheduler}_{metric_avg:.4f}.ckpt'
+            print(f'Store weights: {store_path}')
             state_dict = model.state_dict() if len(device_ids) <= 1 else model.module.state_dict()
             torch.save(
                 state_dict,
@@ -358,7 +345,7 @@ def train_model(args):
         scheduler.step(metric_avg)
         wandb.log({'metric_main': metric_avg, 'best_metric': best_metric})
         for metric_name in metrics_avg:
-            wandb.log({'metric_{}'.format(metric_name): metrics_avg[metric_name]})
+            wandb.log({f'metric_{metric_name}': metrics_avg[metric_name]})
 
 
 if __name__ == "__main__":

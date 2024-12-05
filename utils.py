@@ -223,7 +223,9 @@ def demix(
 
     batch_size = config.inference.batch_size
 
-    with torch.cuda.amp.autocast(enabled=config.training.use_amp):
+    use_amp = config.training.get(key='use_amp', default=True)
+
+    with torch.cuda.amp.autocast(enabled=use_amp):
         with torch.inference_mode():
             # Initialize result and counter tensors
             req_shape = (num_instruments,) + mix.shape
