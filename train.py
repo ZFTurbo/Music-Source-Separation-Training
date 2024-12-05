@@ -170,9 +170,12 @@ def train_model(args):
         pin_memory=args.pin_memory
     )
 
-    if args.start_check_point:
+    if args.start_check_point != '':
         print(f'Start from checkpoint: {args.start_check_point}')
-        load_not_compatible_weights(model, args.start_check_point, verbose=False)
+        if 1:
+            load_not_compatible_weights(model, args.start_check_point, verbose=False)
+        else:
+            model.load_state_dict(torch.load(args.start_check_point))
 
     if torch.cuda.is_available():
         if len(device_ids) <= 1:
