@@ -457,7 +457,6 @@ def compute_metric_avg(
 
     logging(logs, text=f"Num overlap: {config.inference.num_overlap}", verbose_logging=verbose_logging)
 
-
     metric_avg = {}
     for instr in instruments:
         for metric_name in all_metrics:
@@ -522,8 +521,11 @@ def valid(
     # dir to save files, if empty no saving
     store_dir = getattr(args, 'store_dir', '')
     # codec to save files
-    extension = getattr(config['inference'], 'extension',
-                        getattr(args, 'extension', 'wav'))
+    extension = getattr(
+        config['inference'],
+        'extension',
+        getattr(args, 'extension', 'wav')
+    )
 
     all_mixtures_path = get_mixture_paths(args, verbose, config, extension)
     all_metrics = process_audio_files(all_mixtures_path, model, args, config, device, verbose, not verbose)
@@ -652,7 +654,10 @@ def run_parallel_validation(
             device = f'cuda:{device}'
         else:
             device = 'cpu'
-        p = torch.multiprocessing.Process(target=validate_in_subprocess, args=(i, queue, all_mixtures_path, model, args, config, device, return_dict))
+        p = torch.multiprocessing.Process(
+            target=validate_in_subprocess,
+            args=(i, queue, all_mixtures_path, model, args, config, device, return_dict)
+        )
         p.start()
         processes.append(p)
     for i, path in enumerate(all_mixtures_path):
@@ -700,8 +705,11 @@ def valid_multi_gpu(
     # dir to save files, if empty no saving
     store_dir = getattr(args, 'store_dir', '')
     # codec to save files
-    extension = getattr(config['inference'], 'extension',
-                        getattr(args, 'extension', 'wav'))
+    extension = getattr(
+        config['inference'],
+        'extension',
+        getattr(args, 'extension', 'wav')
+    )
 
     all_mixtures_path = get_mixture_paths(args, verbose, config, extension)
 
