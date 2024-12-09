@@ -635,10 +635,6 @@ def run_parallel_validation(
         A shared dictionary containing the validation metrics from all processes.
     """
 
-
-    if verbose:
-        print(f'Total mixtures: {len(all_mixtures_path)}')
-        print(f'Overlap: {config.inference.num_overlap} Batch size: {config.inference.batch_size}')
     model = model.to('cpu')
     try:
         # For multiGPU training extract single model
