@@ -714,8 +714,7 @@ def valid_multi_gpu(
     all_mixtures_path = get_mixture_paths(args, verbose, config, extension)
 
     return_dict = torch.multiprocessing.Manager().dict()
-
-    return_dict = run_parallel_validation(verbose, all_mixtures_path, config, model, device_ids, args, return_dict)
+    run_parallel_validation(verbose, all_mixtures_path, config, model, device_ids, args, return_dict)
 
     all_metrics = dict()
     for metric in args.metrics:
