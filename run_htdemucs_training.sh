@@ -4,8 +4,6 @@
 #SBATCH --mem=125G         # Memory proportional to GPUs: 32000 Cedar, 47000 Béluga, 64000 Graham.
 #SBATCH --time=1-00:60     # DD-HH:MM:SS
 #SBATCH --account=def-ichiro
-#SBATCH --output=my_job_output_htdemucs.out  # Save the output to this file
-#SBATCH --error=my_job_error_htdemucs.err    # Save the error to this file
 
 module load python/3.10 cuda/12.2 cudnn/8.9.5.29
 export XLA_FLAGS=--xla_gpu_cuda_data_dir=$CUDA_HOME
@@ -19,6 +17,10 @@ RESULTS_PATH="results/htdemucs_$CURRENT_DATE"
 mkdir -p "$RESULTS_PATH"
 
 echo "Results will be saved to $RESULTS_PATH"
+
+# Redirect SLURM output to the results folder
+#SBATCH --output=$RESULTS_PATH/my_job_output_htdemucs.out
+#SBATCH --error=$RESULTS_PATH/my_job_error_htdemucs.err
  
 
 source separation_env/bin/activate

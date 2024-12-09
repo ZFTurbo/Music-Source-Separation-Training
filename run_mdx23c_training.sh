@@ -21,7 +21,9 @@ mkdir -p "$RESULTS_PATH"
 
 echo "Results will be saved to $RESULTS_PATH"
 
- 
+# Redirect SLURM output to the results folder
+#SBATCH --output=$RESULTS_PATH/my_job_output_mdx23c.out
+#SBATCH --error=$RESULTS_PATH/my_job_error_mdx23c.err
 
 source separation_env/bin/activate
 
