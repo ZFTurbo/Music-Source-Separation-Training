@@ -75,7 +75,6 @@ Scripts/
 
 *.code-workspace
 
-results/
 wandb/
 test_env/bin/accelerate-launch
 checkpoints/
