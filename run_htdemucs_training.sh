@@ -4,6 +4,7 @@
 #SBATCH --mem=125G         # Memory proportional to GPUs: 32000 Cedar, 47000 Béluga, 64000 Graham.
 #SBATCH --time=0-00:10     # DD-HH:MM:SS
 #SBATCH --account=def-ichiro
+#SBATCH --output=tester.out
 
 module load python/3.10 cuda/12.2 cudnn/8.9.5.29
 export XLA_FLAGS=--xla_gpu_cuda_data_dir=$CUDA_HOME
@@ -22,8 +23,10 @@ mkdir -p "$CHECKPOINTS_PATH"
 
 echo "Results will be saved to $OUTPUT_PATH"
 
+
 # Redirect SLURM output to the results folder
 #SBATCH --output=slurm_logs/htdemucs_$CURRENT_DATE.out  # Use a static or explicitly created folder for SLURM logs
+
  
 
 source separation_env/bin/activate
