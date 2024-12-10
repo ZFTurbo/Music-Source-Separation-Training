@@ -11,17 +11,16 @@ export XLA_FLAGS=--xla_gpu_cuda_data_dir=$CUDA_HOME
 CURRENT_DATE=$(date +"%Y-%m-%d_%H-%M-%S")
 
 # Create a dynamic results folder
-RESULTS_PATH="results/htdemucs_$CURRENT_DATE"
+OUTPUT_PATH="results/htdemucs_$CURRENT_DATE"
 CHECKPOINTS_PATH="checkpoints/htdemucs_$CURRENT_DATE"
 
 # Ensure the results directory exists
-mkdir -p "$RESULTS_PATH"
+#mkdir -p "$RESULTS_PATH"
 
-echo "Results will be saved to $RESULTS_PATH"
+echo "Results will be saved to $OUTPUT_PATH"
 
 # Redirect SLURM output to the results folder
 #SBATCH --output=$RESULTS_PATH/my_job_output_htdemucs.out
-#SBATCH --error=$RESULTS_PATH/my_job_error_htdemucs.err
  
 
 source separation_env/bin/activate
