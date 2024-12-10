@@ -14,13 +14,16 @@ CURRENT_DATE=$(date +"%Y-%m-%d_%H-%M-%S")
 OUTPUT_PATH="results/htdemucs_$CURRENT_DATE"
 CHECKPOINTS_PATH="checkpoints/htdemucs_$CURRENT_DATE"
 
+mkdir -p "$OUTPUT_PATH"  # Fixed path creation
+mkdir -p "$CHECKPOINTS_PATH"
+
 # Ensure the results directory exists
 #mkdir -p "$RESULTS_PATH"
 
 echo "Results will be saved to $OUTPUT_PATH"
 
 # Redirect SLURM output to the results folder
-#SBATCH --output=$RESULTS_PATH/my_job_output_htdemucs.out
+#SBATCH --output=slurm_logs/htdemucs_$CURRENT_DATE.out  # Use a static or explicitly created folder for SLURM logs
  
 
 source separation_env/bin/activate
