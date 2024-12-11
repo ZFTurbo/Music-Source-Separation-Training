@@ -635,6 +635,10 @@ def run_parallel_validation(
         A shared dictionary containing the validation metrics from all processes.
     """
 
+
+    if verbose:
+        print(f'Total mixtures: {len(all_mixtures_path)}')
+        print(f'Overlap: {config.inference.num_overlap} Batch size: {config.inference.batch_size}')
     model = model.to('cpu')
     try:
         # For multiGPU training extract single model
@@ -710,7 +714,8 @@ def valid_multi_gpu(
     all_mixtures_path = get_mixture_paths(args, verbose, config, extension)
 
     return_dict = torch.multiprocessing.Manager().dict()
-    run_parallel_validation(verbose, all_mixtures_path, config, model, device_ids, args, return_dict)
+
+    return_dict = run_parallel_validation(verbose, all_mixtures_path, config, model, device_ids, args, return_dict)
 
     all_metrics = dict()
     for metric in args.metrics:
@@ -737,7 +742,7 @@ def check_validation(args):
     parser.add_argument("--pin_memory", type=bool, default=False, help="dataloader pin_memory")
     parser.add_argument("--extension", type=str, default='wav', help="Choose extension for validation")
     parser.add_argument("--use_tta", action='store_true', help="Flag adds test time augmentation during inference (polarity and channel inverse). While this triples the runtime, it reduces noise and slightly improves prediction quality.")
-    parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"], choices=['sdr', 'l1_freq', 'si_sdr', 'log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless', 'fullness'], help='List of metrics to use.')
+    parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"], choices=['sdr', 'l1_freq', 'si_sdr', 'neg_log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless', 'fullness'], help='List of metrics to use.')
     if args is None:
         args = parser.parse_args()
     else:
