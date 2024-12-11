@@ -635,10 +635,6 @@ def run_parallel_validation(
         A shared dictionary containing the validation metrics from all processes.
     """
 
-
-    if verbose:
-        print(f'Total mixtures: {len(all_mixtures_path)}')
-        print(f'Overlap: {config.inference.num_overlap} Batch size: {config.inference.batch_size}')
     model = model.to('cpu')
     try:
         # For multiGPU training extract single model
@@ -715,7 +711,7 @@ def valid_multi_gpu(
 
     return_dict = torch.multiprocessing.Manager().dict()
 
-    return_dict = run_parallel_validation(verbose, all_mixtures_path, config, model, device_ids, args, return_dict)
+    run_parallel_validation(verbose, all_mixtures_path, config, model, device_ids, args, return_dict)
 
     all_metrics = dict()
     for metric in args.metrics:
