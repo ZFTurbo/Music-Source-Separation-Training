@@ -602,7 +602,7 @@ def train_model(args: argparse.Namespace) -> None:
 
     multi_loss = choice_loss(args, config)
     scaler = GradScaler()
-    best_metric = float('inf')
+    best_metric = float('-inf')
 
     print(
         f"Instruments: {config.training.instruments}\n"
