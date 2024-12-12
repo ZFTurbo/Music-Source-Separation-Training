@@ -78,7 +78,6 @@ def parse_args(args: List[str] | None) -> argparse.Namespace:
     if args.metric_for_scheduler not in args.metrics:
         args.metrics += [args.metric_for_scheduler]
 
-    print(f'Type args:{type(args)}')
     return args
 
 
