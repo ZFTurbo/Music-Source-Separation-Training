@@ -10,10 +10,10 @@ import torch.nn.functional as F
 from ml_collections import ConfigDict
 from omegaconf import OmegaConf
 from tqdm.auto import tqdm
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Union
 
 
-def load_config(model_type: str, config_path: str) -> Any:
+def load_config(model_type: str, config_path: str) -> Union[ConfigDict, OmegaConf]:
     """
     Load the configuration from the specified path based on the model type.
 
@@ -420,7 +420,7 @@ def L1Freq_metric(
     return ret
 
 
-def LogWMSE_metric(
+def NegLogWMSE_metric(
         reference: np.ndarray,
         estimate: np.ndarray,
         mixture: np.ndarray,
@@ -466,8 +466,7 @@ def LogWMSE_metric(
     mixture = torch.from_numpy(mixture).unsqueeze(0).to(device)
 
     res = log_wmse(mixture, reference, estimate)
-
-    return float(res.cpu().numpy())
+    return -float(res.cpu().numpy())
 
 
 def AuraSTFT_metric(
@@ -705,8 +704,8 @@ def get_metrics(
     if 'l1_freq' in metrics:
         result['l1_freq'] = L1Freq_metric(reference, estimate, device=device)
 
-    if 'log_wmse' in metrics:
-        result['log_wmse'] = LogWMSE_metric(reference, estimate, mix, device)
+    if 'neg_log_wmse' in metrics:
+        result['neg_log_wmse'] = NegLogWMSE_metric(reference, estimate, mix, device)
 
     if 'aura_stft' in metrics:
         result['aura_stft'] = AuraSTFT_metric(reference, estimate, device)
