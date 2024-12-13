@@ -319,6 +319,7 @@ if __name__ == "__main__":
     parser.add_argument("--optuna_trials", type=int, default=10, help="Number of Optuna trials")
 
     args = parser.parse_args()
+    print("training using optuna")
 
     # Load initial config
     model, base_config = get_model_from_config(args.model_type, args.config_path)
