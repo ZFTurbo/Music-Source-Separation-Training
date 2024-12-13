@@ -22,7 +22,7 @@ def main():
 
     # Build the command
     command = [
-        "python", "train.py",
+        "python", "train_optuna.py",
         "--model_type", args.model_type,
         "--config_path", args.config_path,
         "--results_path", args.results_path,
