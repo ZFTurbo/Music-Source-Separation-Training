@@ -42,3 +42,5 @@ wxpython==4.2.2
 #wxpython
 musdb
 museval
+tensorboard
+optuna-dashboard
