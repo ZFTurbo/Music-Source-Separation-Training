@@ -1,0 +1,14 @@
+Results will be saved to results/htdemucs_2024-12-11_08-38-51
+Running training script
+Instruments: ['drums', 'bass', 'other', 'vocals']
+Metrics for training: ['sdr']. Metric for scheduler: sdr
+Use augmentation for training
+Dataset type: 1 Processes to use: 32 
+Collecting metadata for ['/home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train']
+  0%|          | 0/86 [00:00<?, ?it/s]  1%|          | 1/86 [01:24<1:59:52, 84.62s/it]  2%|▏         | 2/86 [02:28<1:41:39, 72.62s/it] 10%|█         | 9/86 [03:02<18:48, 14.66s/it]   19%|█▊        | 16/86 [03:10<08:27,  7.25s/it] 23%|██▎       | 20/86 [03:13<05:42,  5.19s/it] 26%|██▌       | 22/86 [03:35<06:40,  6.26s/it] 27%|██▋       | 23/86 [03:52<07:50,  7.46s/it] 31%|███▏      | 27/86 [03:55<04:46,  4.85s/it] 71%|███████   | 61/86 [04:07<00:27,  1.12s/it] 73%|███████▎  | 63/86 [04:13<00:29,  1.26s/it] 76%|███████▌  | 65/86 [04:20<00:30,  1.44s/it] 88%|████████▊ | 76/86 [04:20<00:08,  1.13it/s]100%|██████████| 86/86 [04:20<00:00,  3.03s/it]
+Found tracks in dataset: 86
+Use single GPU: [0]
+Patience: 2 Reduce factor: 0.95 Batch size: 4 Grad accum steps: 4 Effective batch size: 16 Optimizer: adam
+Train for: 50
+Train epoch: 0 Learning rate: 9e-05
+  0%|          | 0/100 [00:00<?, ?it/s]slurmstepd: error: *** JOB 50467884 ON cdr2647 CANCELLED AT 2024-12-11T08:49:14 DUE TO TIME LIMIT ***
