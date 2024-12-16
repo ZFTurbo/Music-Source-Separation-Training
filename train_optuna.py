@@ -81,6 +81,48 @@ def load_not_compatible_weights(model, weights, verbose=False):
                 print('No match found for {}!'.format(el))
     model.load_state_dict(new_model)
 
+def suggest_hyperparams_for_model(trial, config, model_type):
+    # Common parameters for all models
+    config.training.lr = trial.suggest_float("lr", 1e-5, 5e-4, log=True)
+    config.training.reduce_factor = trial.suggest_float("reduce_factor", 0.8, 0.99)
+    config.training.ema_momentum = trial.suggest_float("ema_momentum", 0.9, 0.9999, log=True)
+    config.training.q = trial.suggest_float("q", 0.7, 0.99)
+
+    if model_type == 'htdemucs':
+        # Tune htdemucs-specific parameters
+        config.htdemucs.channels = trial.suggest_int("channels", 32, 64, step=8)
+        config.htdemucs.depth = trial.suggest_int("depth", 2, 6)
+        config.htdemucs.t_layers = trial.suggest_int("t_layers", 2, 8)
+        config.htdemucs.t_hidden_scale = trial.suggest_float("t_hidden_scale", 1.0, 6.0)
+        config.htdemucs.t_heads = trial.suggest_int("t_heads", 4, 12, step=4)
+        config.htdemucs.t_dropout = trial.suggest_float("t_dropout", 0.0, 0.3)
+
+    elif model_type == 'scnet':
+        # For scnet, we don't have a "scnet" section in config, but we have model section.
+        # Tune a few parameters from model and training:
+        # We'll assume we can modify them directly in config.model if needed.
+        # Tune compress, num_dplayer, conv_kernel, and dims_last (replacing last dimension)
+        
+        # dims is [4, 32, 64, 128]. Let's replace the last dimension based on a suggestion
+        dims_last = trial.suggest_categorical("dims_last", [64, 128, 256])
+        config.model.dims[-1] = dims_last
+
+        config.model.compress = trial.suggest_int("compress", 2, 8)
+        config.model.num_dplayer = trial.suggest_int("num_dplayer", 4, 10)
+        config.model.conv_kernel = trial.suggest_int("conv_kernel", 2, 5)
+
+    elif model_type == 'mdx23c':
+        # For mdx23c, tune bottleneck_factor, growth, num_channels, num_scales
+        config.model.bottleneck_factor = trial.suggest_int("bottleneck_factor", 2, 8)
+        config.model.growth = trial.suggest_int("growth", 64, 256, step=64)
+        config.model.num_channels = trial.suggest_int("num_channels", 64, 256, step=64)
+        config.model.num_scales = trial.suggest_int("num_scales", 3, 8)
+    else:
+        # If model_type not recognized, no model-specific suggestions
+        pass
+
+    return config
+
 
 def train_model(args, config, writer=None):  ### CHANGED: Add optional writer for tensorboard
     manual_seed(args.seed + int(time.time()))
@@ -352,20 +394,8 @@ if __name__ == "__main__":
     def objective(trial):
         # Copy the base config to not modify it permanently
         config = copy.deepcopy(base_config)
-
-        # Suggest hyperparameters
-        config.training.lr = trial.suggest_float("lr", 1e-5, 5e-4, log=True)
-        config.training.reduce_factor = trial.suggest_float("reduce_factor", 0.8, 0.99)
-        config.training.ema_momentum = trial.suggest_float("ema_momentum", 0.9, 0.9999)
-        config.training.q = trial.suggest_float("q", 0.7, 0.99)
-        # Model complexity parameters
-        config.htdemucs.channels = trial.suggest_int("channels", 32, 64, step=8)
-        config.htdemucs.depth = trial.suggest_int("depth", 2, 6)
-        config.htdemucs.t_layers = trial.suggest_int("t_layers", 2, 8)
-        config.htdemucs.t_hidden_scale = trial.suggest_float("t_hidden_scale", 1.0, 6.0)
-        config.htdemucs.t_heads = trial.suggest_int("t_heads", 4, 12, step=4)
-        config.htdemucs.t_dropout = trial.suggest_float("t_dropout", 0.0, 0.3)
-
+        print(f"model type is {args.model_type}")
+        config = suggest_hyperparams_for_model(trial, config, args.model_type)
         best_metric = train_model(args, config, writer=writer)
         return best_metric
 
