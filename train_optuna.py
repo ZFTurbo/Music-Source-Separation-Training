@@ -30,6 +30,8 @@ from dataset import MSSDataset
 from utils import demix, sdr, get_model_from_config
 from valid import valid_multi_gpu, valid
 
+### ADDED FOR TENSORBOARD ###
+from torch.utils.tensorboard import SummaryWriter
 
 def masked_loss(y_, y, q, coarse=True):
     # shape = [num_sources, batch_size, num_channels, chunk_size]
@@ -74,17 +76,15 @@ def load_not_compatible_weights(model, weights, verbose=False):
             else:
                 if verbose:
                     print('Shape mismatch for {}: {} != {}'.format(el, new_model[el].shape, old_model[el].shape))
-                # If needed, implement partial loading logic here.
         else:
             if verbose:
                 print('No match found for {}!'.format(el))
     model.load_state_dict(new_model)
 
 
-def train_model(args, config):
+def train_model(args, config, writer=None):  ### CHANGED: Add optional writer for tensorboard
     manual_seed(args.seed + int(time.time()))
     torch.backends.cudnn.deterministic = False
-    
 
     # Model initialization
     model, _ = get_model_from_config(args.model_type, args.config_path)
@@ -266,10 +266,21 @@ def train_model(args, config):
             total += 1
             pbar.set_postfix({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1)})
             wandb.log({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1), 'i': i})
+            
+            ### ADDED FOR TENSORBOARD: log training step loss
+            if writer is not None:
+                global_step = epoch * len(train_loader) + i
+                writer.add_scalar('train/step_loss', li, global_step)
+            
             loss.detach()
 
-        print('Training loss: {:.6f}'.format(loss_val / total))
-        wandb.log({'train_loss': loss_val / total, 'epoch': epoch})
+        epoch_loss = loss_val / total
+        print('Training loss: {:.6f}'.format(epoch_loss))
+        wandb.log({'train_loss': epoch_loss, 'epoch': epoch})
+
+        ### ADDED FOR TENSORBOARD: log epoch training loss
+        if writer is not None:
+            writer.add_scalar('train/epoch_loss', epoch_loss, epoch)
 
         # Save last
         store_path = args.results_path + '/last_{}.ckpt'.format(args.model_type)
@@ -291,6 +302,10 @@ def train_model(args, config):
         wandb.log({'metric_main': metric_avg, 'best_metric': best_metric})
         for metric_name in metrics_avg:
             wandb.log({'metric_{}'.format(metric_name): metrics_avg[metric_name]})
+
+            ### ADDED FOR TENSORBOARD: log validation metrics
+            if writer is not None:
+                writer.add_scalar('valid/{}'.format(metric_name), metrics_avg[metric_name], epoch)
 
     return best_metric
 
@@ -325,6 +340,15 @@ if __name__ == "__main__":
     model, base_config = get_model_from_config(args.model_type, args.config_path)
     torch.multiprocessing.set_start_method('spawn')
 
+    ### ADDED FOR TENSORBOARD: create a summary writer
+    writer = SummaryWriter(log_dir="runs/{}".format(args.model_type))
+
+    # For Optuna, we will use a storage to enable the dashboard
+    # Make sure to install: pip install optuna-dashboard
+    # Then, run in a separate terminal: optuna-dashboard sqlite:///example.db
+    # This will allow you to view the optimization process.
+    storage_url = "sqlite:///example.db"  ### ADDED FOR OPTUNA DASHBOARD
+
     def objective(trial):
         # Copy the base config to not modify it permanently
         config = copy.deepcopy(base_config)
@@ -342,13 +366,17 @@ if __name__ == "__main__":
         config.htdemucs.t_heads = trial.suggest_int("t_heads", 4, 12, step=4)
         config.htdemucs.t_dropout = trial.suggest_float("t_dropout", 0.0, 0.3)
 
-        best_metric = train_model(args, config)
+        best_metric = train_model(args, config, writer=writer)
         return best_metric
 
-    study = optuna.create_study(direction="maximize")
+    ### CHANGED: Provide the storage to the study for the Optuna dashboard
+    study = optuna.create_study(direction="maximize", storage=storage_url, load_if_exists=True)
     study.optimize(objective, n_trials=args.optuna_trials)
 
     print("Best trial:")
     trial = study.best_trial
     print(trial.values)
     print(trial.params)
+
+    # Close TensorBoard writer
+    writer.close()
