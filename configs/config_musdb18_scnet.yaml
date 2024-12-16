@@ -54,8 +54,8 @@ training:
   patience: 2
   reduce_factor: 0.95
   target_instrument: null
-  num_epochs: 1000
-  num_steps: 1000
+  num_epochs: 50
+  num_steps: 100
   q: 0.95
   coarse_loss_clip: true
   ema_momentum: 0.999
