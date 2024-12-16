@@ -3525,3 +3525,459 @@ Elapsed time: 401.34 sec
 Store weights: checkpoints/htdemucs_2024-12-16_10-23-54/model_htdemucs_ep_22_sdr_3.3283.ckpt
 Train epoch: 23 Learning rate: 0.00030346871313849475
   0%|          | 0/100 [00:00<?, ?it/s]  0%|          | 0/100 [00:32<?, ?it/s, loss=5.71, avg_loss=5.71]  1%|          | 1/100 [00:32<53:26, 32.39s/it, loss=5.71, avg_loss=5.71]  1%|          | 1/100 [00:33<53:26, 32.39s/it, loss=4.28, avg_loss=4.99]  2%|▏         | 2/100 [00:33<22:32, 13.80s/it, loss=4.28, avg_loss=4.99]  2%|▏         | 2/100 [00:33<22:32, 13.80s/it, loss=4.95, avg_loss=4.98]  3%|▎         | 3/100 [00:33<12:40,  7.84s/it, loss=4.95, avg_loss=4.98]  3%|▎         | 3/100 [00:34<12:40,  7.84s/it, loss=4.32, avg_loss=4.82]  4%|▍         | 4/100 [00:34<08:05,  5.06s/it, loss=4.32, avg_loss=4.82]  4%|▍         | 4/100 [00:35<08:05,  5.06s/it, loss=5.28, avg_loss=4.91]  5%|▌         | 5/100 [00:35<05:32,  3.50s/it, loss=5.28, avg_loss=4.91]  5%|▌         | 5/100 [00:37<05:32,  3.50s/it, loss=3.27, avg_loss=4.63]  6%|▌         | 6/100 [00:37<04:30,  2.88s/it, loss=3.27, avg_loss=4.63]  6%|▌         | 6/100 [00:37<04:30,  2.88s/it, loss=3.59, avg_loss=4.48]  7%|▋         | 7/100 [00:37<03:22,  2.17s/it, loss=3.59, avg_loss=4.48]  7%|▋         | 7/100 [00:38<03:22,  2.17s/it, loss=3.51, avg_loss=4.36]  8%|▊         | 8/100 [00:38<02:37,  1.71s/it, loss=3.51, avg_loss=4.36]  8%|▊         | 8/100 [00:39<02:37,  1.71s/it, loss=4.29, avg_loss=4.35]  9%|▉         | 9/100 [00:39<02:07,  1.40s/it, loss=4.29, avg_loss=4.35]  9%|▉         | 9/100 [00:40<02:07,  1.40s/it, loss=4.63, avg_loss=4.38] 10%|█         | 10/100 [00:40<01:47,  1.19s/it, loss=4.63, avg_loss=4.38] 10%|█         | 10/100 [00:40<01:47,  1.19s/it, loss=5.76, avg_loss=4.51] 11%|█         | 11/100 [00:40<01:33,  1.05s/it, loss=5.76, avg_loss=4.51] 11%|█         | 11/100 [00:41<01:33,  1.05s/it, loss=4.07, avg_loss=4.47] 12%|█▏        | 12/100 [00:41<01:23,  1.05it/s, loss=4.07, avg_loss=4.47] 12%|█▏        | 12/100 [00:42<01:23,  1.05it/s, loss=6.45, avg_loss=4.62] 13%|█▎        | 13/100 [00:42<01:16,  1.14it/s, loss=6.45, avg_loss=4.62] 13%|█▎        | 13/100 [00:42<01:16,  1.14it/s, loss=6.27, avg_loss=4.74] 14%|█▍        | 14/100 [00:42<01:11,  1.20it/s, loss=6.27, avg_loss=4.74] 14%|█▍        | 14/100 [00:43<01:11,  1.20it/s, loss=4.84, avg_loss=4.75] 15%|█▌        | 15/100 [00:43<01:07,  1.26it/s, loss=4.84, avg_loss=4.75] 15%|█▌        | 15/100 [00:44<01:07,  1.26it/s, loss=4.66, avg_loss=4.74] 16%|█▌        | 16/100 [00:44<01:05,  1.29it/s, loss=4.66, avg_loss=4.74] 16%|█▌        | 16/100 [00:45<01:05,  1.29it/s, loss=3.24, avg_loss=4.65] 17%|█▋        | 17/100 [00:45<01:02,  1.32it/s, loss=3.24, avg_loss=4.65] 17%|█▋        | 17/100 [00:45<01:02,  1.32it/s, loss=3.29, avg_loss=4.58] 18%|█▊        | 18/100 [00:45<01:01,  1.34it/s, loss=3.29, avg_loss=4.58] 18%|█▊        | 18/100 [00:46<01:01,  1.34it/s, loss=6.27, avg_loss=4.67] 19%|█▉        | 19/100 [00:46<00:59,  1.36it/s, loss=6.27, avg_loss=4.67] 19%|█▉        | 19/100 [00:47<00:59,  1.36it/s, loss=7.15, avg_loss=4.79] 20%|██        | 20/100 [00:47<00:58,  1.36it/s, loss=7.15, avg_loss=4.79] 20%|██        | 20/100 [00:47<00:58,  1.36it/s, loss=5.57, avg_loss=4.83] 21%|██        | 21/100 [00:47<00:57,  1.37it/s, loss=5.57, avg_loss=4.83] 21%|██        | 21/100 [00:48<00:57,  1.37it/s, loss=6.45, avg_loss=4.9]  22%|██▏       | 22/100 [00:48<00:56,  1.38it/s, loss=6.45, avg_loss=4.9] 22%|██▏       | 22/100 [00:49<00:56,  1.38it/s, loss=7.85, avg_loss=5.03] 23%|██▎       | 23/100 [00:49<00:55,  1.38it/s, loss=7.85, avg_loss=5.03] 23%|██▎       | 23/100 [00:50<00:55,  1.38it/s, loss=4.72, avg_loss=5.02] 24%|██▍       | 24/100 [00:50<00:55,  1.38it/s, loss=4.72, avg_loss=5.02] 24%|██▍       | 24/100 [00:50<00:55,  1.38it/s, loss=5.62, avg_loss=5.04] 25%|██▌       | 25/100 [00:50<00:54,  1.38it/s, loss=5.62, avg_loss=5.04] 25%|██▌       | 25/100 [00:51<00:54,  1.38it/s, loss=6.65, avg_loss=5.1]  26%|██▌       | 26/100 [00:51<00:53,  1.39it/s, loss=6.65, avg_loss=5.1] 26%|██▌       | 26/100 [00:52<00:53,  1.39it/s, loss=6.66, avg_loss=5.16] 27%|██▋       | 27/100 [00:52<00:52,  1.39it/s, loss=6.66, avg_loss=5.16] 27%|██▋       | 27/100 [00:52<00:52,  1.39it/s, loss=6.48, avg_loss=5.21] 28%|██▊       | 28/100 [00:52<00:52,  1.38it/s, loss=6.48, avg_loss=5.21] 28%|██▊       | 28/100 [00:53<00:52,  1.38it/s, loss=6.37, avg_loss=5.25] 29%|██▉       | 29/100 [00:53<00:51,  1.39it/s, loss=6.37, avg_loss=5.25] 29%|██▉       | 29/100 [00:54<00:51,  1.39it/s, loss=5.75, avg_loss=5.26] 30%|███       | 30/100 [00:54<00:50,  1.39it/s, loss=5.75, avg_loss=5.26] 30%|███       | 30/100 [00:55<00:50,  1.39it/s, loss=5.95, avg_loss=5.29] 31%|███       | 31/100 [00:55<00:49,  1.39it/s, loss=5.95, avg_loss=5.29] 31%|███       | 31/100 [00:55<00:49,  1.39it/s, loss=5.01, avg_loss=5.28] 32%|███▏      | 32/100 [00:55<00:49,  1.38it/s, loss=5.01, avg_loss=5.28] 32%|███▏      | 32/100 [00:56<00:49,  1.38it/s, loss=4.05, avg_loss=5.24] 33%|███▎      | 33/100 [00:56<00:48,  1.39it/s, loss=4.05, avg_loss=5.24] 33%|███▎      | 33/100 [00:57<00:48,  1.39it/s, loss=5, avg_loss=5.23]    34%|███▍      | 34/100 [00:57<00:47,  1.39it/s, loss=5, avg_loss=5.23] 34%|███▍      | 34/100 [00:58<00:47,  1.39it/s, loss=4.63, avg_loss=5.22] 35%|███▌      | 35/100 [00:58<00:46,  1.39it/s, loss=4.63, avg_loss=5.22] 35%|███▌      | 35/100 [00:58<00:46,  1.39it/s, loss=6.86, avg_loss=5.26] 36%|███▌      | 36/100 [00:58<00:46,  1.38it/s, loss=6.86, avg_loss=5.26] 36%|███▌      | 36/100 [00:59<00:46,  1.38it/s, loss=3.44, avg_loss=5.21] 37%|███▋      | 37/100 [00:59<00:45,  1.39it/s, loss=3.44, avg_loss=5.21] 37%|███▋      | 37/100 [01:00<00:45,  1.39it/s, loss=5.11, avg_loss=5.21] 38%|███▊      | 38/100 [01:00<00:44,  1.39it/s, loss=5.11, avg_loss=5.21] 38%|███▊      | 38/100 [01:00<00:44,  1.39it/s, loss=7.94, avg_loss=5.28] 39%|███▉      | 39/100 [01:00<00:43,  1.39it/s, loss=7.94, avg_loss=5.28] 39%|███▉      | 39/100 [01:01<00:43,  1.39it/s, loss=6.45, avg_loss=5.31] 40%|████      | 40/100 [01:01<00:43,  1.38it/s, loss=6.45, avg_loss=5.31] 40%|████      | 40/100 [01:02<00:43,  1.38it/s, loss=3.21, avg_loss=5.26] 41%|████      | 41/100 [01:02<00:42,  1.39it/s, loss=3.21, avg_loss=5.26] 41%|████      | 41/100 [01:03<00:42,  1.39it/s, loss=5.81, avg_loss=5.27] 42%|████▏     | 42/100 [01:03<00:41,  1.39it/s, loss=5.81, avg_loss=5.27] 42%|████▏     | 42/100 [01:03<00:41,  1.39it/s, loss=6.12, avg_loss=5.29] 43%|████▎     | 43/100 [01:03<00:41,  1.39it/s, loss=6.12, avg_loss=5.29] 43%|████▎     | 43/100 [01:04<00:41,  1.39it/s, loss=3.3, avg_loss=5.25]  44%|████▍     | 44/100 [01:04<00:40,  1.38it/s, loss=3.3, avg_loss=5.25] 44%|████▍     | 44/100 [01:05<00:40,  1.38it/s, loss=4.67, avg_loss=5.23] 45%|████▌     | 45/100 [01:05<00:39,  1.39it/s, loss=4.67, avg_loss=5.23] 45%|████▌     | 45/100 [01:05<00:39,  1.39it/s, loss=6.16, avg_loss=5.25] 46%|████▌     | 46/100 [01:05<00:38,  1.39it/s, loss=6.16, avg_loss=5.25] 46%|████▌     | 46/100 [01:06<00:38,  1.39it/s, loss=4.96, avg_loss=5.25] 47%|████▋     | 47/100 [01:06<00:38,  1.39it/s, loss=4.96, avg_loss=5.25] 47%|████▋     | 47/100 [01:07<00:38,  1.39it/s, loss=6.08, avg_loss=5.26] 48%|████▊     | 48/100 [01:07<00:37,  1.38it/s, loss=6.08, avg_loss=5.26] 48%|████▊     | 48/100 [01:08<00:37,  1.38it/s, loss=6.24, avg_loss=5.28] 49%|████▉     | 49/100 [01:08<00:36,  1.39it/s, loss=6.24, avg_loss=5.28] 49%|████▉     | 49/100 [01:08<00:36,  1.39it/s, loss=5.05, avg_loss=5.28] 50%|█████     | 50/100 [01:08<00:36,  1.39it/s, loss=5.05, avg_loss=5.28] 50%|█████     | 50/100 [01:09<00:36,  1.39it/s, loss=4.83, avg_loss=5.27] 51%|█████     | 51/100 [01:09<00:35,  1.39it/s, loss=4.83, avg_loss=5.27] 51%|█████     | 51/100 [01:10<00:35,  1.39it/s, loss=3.54, avg_loss=5.24] 52%|█████▏    | 52/100 [01:10<00:34,  1.38it/s, loss=3.54, avg_loss=5.24] 52%|█████▏    | 52/100 [01:11<00:34,  1.38it/s, loss=4.08, avg_loss=5.22] 53%|█████▎    | 53/100 [01:11<00:33,  1.39it/s, loss=4.08, avg_loss=5.22] 53%|█████▎    | 53/100 [01:11<00:33,  1.39it/s, loss=4.4, avg_loss=5.2]   54%|█████▍    | 54/100 [01:11<00:33,  1.39it/s, loss=4.4, avg_loss=5.2] 54%|█████▍    | 54/100 [01:12<00:33,  1.39it/s, loss=4.88, avg_loss=5.19] 55%|█████▌    | 55/100 [01:12<00:32,  1.39it/s, loss=4.88, avg_loss=5.19] 55%|█████▌    | 55/100 [01:13<00:32,  1.39it/s, loss=4.01, avg_loss=5.17] 56%|█████▌    | 56/100 [01:13<00:31,  1.38it/s, loss=4.01, avg_loss=5.17] 56%|█████▌    | 56/100 [01:13<00:31,  1.38it/s, loss=5.88, avg_loss=5.19] 57%|█████▋    | 57/100 [01:13<00:30,  1.39it/s, loss=5.88, avg_loss=5.19] 57%|█████▋    | 57/100 [01:14<00:30,  1.39it/s, loss=6.97, avg_loss=5.22] 58%|█████▊    | 58/100 [01:14<00:30,  1.39it/s, loss=6.97, avg_loss=5.22] 58%|█████▊    | 58/100 [01:15<00:30,  1.39it/s, loss=4.97, avg_loss=5.21] 59%|█████▉    | 59/100 [01:15<00:29,  1.39it/s, loss=4.97, avg_loss=5.21] 59%|█████▉    | 59/100 [01:16<00:29,  1.39it/s, loss=3.61, avg_loss=5.19] 60%|██████    | 60/100 [01:16<00:28,  1.38it/s, loss=3.61, avg_loss=5.19] 60%|██████    | 60/100 [01:16<00:28,  1.38it/s, loss=6.52, avg_loss=5.21] 61%|██████    | 61/100 [01:16<00:28,  1.39it/s, loss=6.52, avg_loss=5.21] 61%|██████    | 61/100 [01:17<00:28,  1.39it/s, loss=6.3, avg_loss=5.23]  62%|██████▏   | 62/100 [01:17<00:27,  1.39it/s, loss=6.3, avg_loss=5.23] 62%|██████▏   | 62/100 [01:18<00:27,  1.39it/s, loss=5.98, avg_loss=5.24] 63%|██████▎   | 63/100 [01:18<00:26,  1.39it/s, loss=5.98, avg_loss=5.24] 63%|██████▎   | 63/100 [01:18<00:26,  1.39it/s, loss=6.71, avg_loss=5.26] 64%|██████▍   | 64/100 [01:18<00:25,  1.39it/s, loss=6.71, avg_loss=5.26] 64%|██████▍   | 64/100 [01:19<00:25,  1.39it/s, loss=4.22, avg_loss=5.24] 65%|██████▌   | 65/100 [01:19<00:25,  1.39it/s, loss=4.22, avg_loss=5.24] 65%|██████▌   | 65/100 [01:20<00:25,  1.39it/s, loss=5.9, avg_loss=5.25]  66%|██████▌   | 66/100 [01:20<00:24,  1.39it/s, loss=5.9, avg_loss=5.25] 66%|██████▌   | 66/100 [01:21<00:24,  1.39it/s, loss=6.54, avg_loss=5.27] 67%|██████▋   | 67/100 [01:21<00:23,  1.39it/s, loss=6.54, avg_loss=5.27] 67%|██████▋   | 67/100 [01:21<00:23,  1.39it/s, loss=6.41, avg_loss=5.29] 68%|██████▊   | 68/100 [01:21<00:23,  1.39it/s, loss=6.41, avg_loss=5.29] 68%|██████▊   | 68/100 [01:22<00:23,  1.39it/s, loss=5.45, avg_loss=5.29] 69%|██████▉   | 69/100 [01:22<00:22,  1.39it/s, loss=5.45, avg_loss=5.29] 69%|██████▉   | 69/100 [01:23<00:22,  1.39it/s, loss=3.84, avg_loss=5.27] 70%|███████   | 70/100 [01:23<00:21,  1.39it/s, loss=3.84, avg_loss=5.27] 70%|███████   | 70/100 [01:23<00:21,  1.39it/s, loss=5, avg_loss=5.27]    71%|███████   | 71/100 [01:23<00:20,  1.39it/s, loss=5, avg_loss=5.27] 71%|███████   | 71/100 [01:24<00:20,  1.39it/s, loss=4.62, avg_loss=5.26] 72%|███████▏  | 72/100 [01:24<00:20,  1.39it/s, loss=4.62, avg_loss=5.26] 72%|███████▏  | 72/100 [01:25<00:20,  1.39it/s, loss=5.58, avg_loss=5.26] 73%|███████▎  | 73/100 [01:25<00:19,  1.39it/s, loss=5.58, avg_loss=5.26] 73%|███████▎  | 73/100 [01:26<00:19,  1.39it/s, loss=4.83, avg_loss=5.26] 74%|███████▍  | 74/100 [01:26<00:18,  1.39it/s, loss=4.83, avg_loss=5.26] 74%|███████▍  | 74/100 [01:26<00:18,  1.39it/s, loss=6.34, avg_loss=5.27] 75%|███████▌  | 75/100 [01:26<00:17,  1.39it/s, loss=6.34, avg_loss=5.27] 75%|███████▌  | 75/100 [01:27<00:17,  1.39it/s, loss=6.36, avg_loss=5.29] 76%|███████▌  | 76/100 [01:27<00:17,  1.38it/s, loss=6.36, avg_loss=5.29] 76%|███████▌  | 76/100 [01:28<00:17,  1.38it/s, loss=5.07, avg_loss=5.28] 77%|███████▋  | 77/100 [01:28<00:16,  1.39it/s, loss=5.07, avg_loss=5.28] 77%|███████▋  | 77/100 [01:29<00:16,  1.39it/s, loss=5.5, avg_loss=5.29]  78%|███████▊  | 78/100 [01:29<00:15,  1.39it/s, loss=5.5, avg_loss=5.29] 78%|███████▊  | 78/100 [01:29<00:15,  1.39it/s, loss=6.78, avg_loss=5.31] 79%|███████▉  | 79/100 [01:29<00:15,  1.39it/s, loss=6.78, avg_loss=5.31] 79%|███████▉  | 79/100 [01:30<00:15,  1.39it/s, loss=4.41, avg_loss=5.29] 80%|████████  | 80/100 [01:30<00:14,  1.38it/s, loss=4.41, avg_loss=5.29] 80%|████████  | 80/100 [01:31<00:14,  1.38it/s, loss=5.4, avg_loss=5.3]   81%|████████  | 81/100 [01:31<00:13,  1.39it/s, loss=5.4, avg_loss=5.3] 81%|████████  | 81/100 [01:31<00:13,  1.39it/s, loss=6.62, avg_loss=5.31] 82%|████████▏ | 82/100 [01:31<00:12,  1.39it/s, loss=6.62, avg_loss=5.31] 82%|████████▏ | 82/100 [01:32<00:12,  1.39it/s, loss=6.11, avg_loss=5.32] 83%|████████▎ | 83/100 [01:32<00:12,  1.39it/s, loss=6.11, avg_loss=5.32] 83%|████████▎ | 83/100 [01:33<00:12,  1.39it/s, loss=7.84, avg_loss=5.35] 84%|████████▍ | 84/100 [01:33<00:11,  1.39it/s, loss=7.84, avg_loss=5.35] 84%|████████▍ | 84/100 [01:34<00:11,  1.39it/s, loss=4.97, avg_loss=5.35] 85%|████████▌ | 85/100 [01:34<00:10,  1.39it/s, loss=4.97, avg_loss=5.35] 85%|████████▌ | 85/100 [01:34<00:10,  1.39it/s, loss=4.27, avg_loss=5.33] 86%|████████▌ | 86/100 [01:34<00:10,  1.39it/s, loss=4.27, avg_loss=5.33] 86%|████████▌ | 86/100 [01:35<00:10,  1.39it/s, loss=5.08, avg_loss=5.33] 87%|████████▋ | 87/100 [01:35<00:09,  1.39it/s, loss=5.08, avg_loss=5.33] 87%|████████▋ | 87/100 [01:36<00:09,  1.39it/s, loss=4, avg_loss=5.32]    88%|████████▊ | 88/100 [01:36<00:08,  1.38it/s, loss=4, avg_loss=5.32] 88%|████████▊ | 88/100 [01:36<00:08,  1.38it/s, loss=4.78, avg_loss=5.31] 89%|████████▉ | 89/100 [01:36<00:07,  1.39it/s, loss=4.78, avg_loss=5.31] 89%|████████▉ | 89/100 [01:37<00:07,  1.39it/s, loss=7.11, avg_loss=5.33] 90%|█████████ | 90/100 [01:37<00:07,  1.39it/s, loss=7.11, avg_loss=5.33] 90%|█████████ | 90/100 [01:38<00:07,  1.39it/s, loss=5.15, avg_loss=5.33] 91%|█████████ | 91/100 [01:38<00:06,  1.39it/s, loss=5.15, avg_loss=5.33] 91%|█████████ | 91/100 [01:39<00:06,  1.39it/s, loss=5.76, avg_loss=5.33] 92%|█████████▏| 92/100 [01:39<00:05,  1.38it/s, loss=5.76, avg_loss=5.33] 92%|█████████▏| 92/100 [01:39<00:05,  1.38it/s, loss=4.65, avg_loss=5.33] 93%|█████████▎| 93/100 [01:39<00:05,  1.39it/s, loss=4.65, avg_loss=5.33] 93%|█████████▎| 93/100 [01:40<00:05,  1.39it/s, loss=3.95, avg_loss=5.31] 94%|█████████▍| 94/100 [01:40<00:04,  1.39it/s, loss=3.95, avg_loss=5.31] 94%|█████████▍| 94/100 [01:41<00:04,  1.39it/s, loss=4.73, avg_loss=5.3]  95%|█████████▌| 95/100 [01:41<00:03,  1.39it/s, loss=4.73, avg_loss=5.3] 95%|█████████▌| 95/100 [01:41<00:03,  1.39it/s, loss=4.71, avg_loss=5.3] 96%|█████████▌| 96/100 [01:41<00:02,  1.39it/s, loss=4.71, avg_loss=5.3] 96%|█████████▌| 96/100 [01:42<00:02,  1.39it/s, loss=4.92, avg_loss=5.29] 97%|█████████▋| 97/100 [01:42<00:02,  1.39it/s, loss=4.92, avg_loss=5.29] 97%|█████████▋| 97/100 [01:43<00:02,  1.39it/s, loss=3.43, avg_loss=5.28] 98%|█████████▊| 98/100 [01:43<00:01,  1.39it/s, loss=3.43, avg_loss=5.28] 98%|█████████▊| 98/100 [01:44<00:01,  1.39it/s, loss=3.76, avg_loss=5.26] 99%|█████████▉| 99/100 [01:44<00:00,  1.40it/s, loss=3.76, avg_loss=5.26] 99%|█████████▉| 99/100 [01:44<00:00,  1.40it/s, loss=3.22, avg_loss=5.24]100%|██████████| 100/100 [01:44<00:00,  1.39it/s, loss=3.22, avg_loss=5.24]100%|██████████| 100/100 [01:45<00:00,  1.06s/it, loss=3.22, avg_loss=5.24]
+Training loss: 0.052400
+Total mixtures: 14
+Overlap: 4 Batch size: 8
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/ANiMAL - Rockshow Shape: (2, 7307212)
+Instr: drums
+Metric sdr         value: 5.1990
+Instr: bass
+Metric sdr         value: 4.7570
+Instr: other
+Metric sdr         value: 1.3200
+Instr: vocals
+Metric sdr         value: 3.4103
+Time for song: 16.23 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Actions - One Minute Smile Shape: (2, 7213530)
+Instr: drums
+Metric sdr         value: 1.7096
+Instr: bass
+Metric sdr         value: -0.6545
+Instr: other
+Metric sdr         value: 1.4904
+Instr: vocals
+Metric sdr         value: 3.1672
+Time for song: 16.07 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Alexander Ross - Goodbye Bolero Shape: (2, 18469819)
+Instr: drums
+Metric sdr         value: 1.8979
+Instr: bass
+Metric sdr         value: -0.1762
+Instr: other
+Metric sdr         value: 2.5300
+Instr: vocals
+Metric sdr         value: 3.7683
+Time for song: 13.23 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Clara Berry And Wooldog - Waltz For My Victims Shape: (2, 7736477)
+Instr: drums
+Metric sdr         value: 3.8373
+Instr: bass
+Metric sdr         value: 4.6892
+Instr: other
+Metric sdr         value: 2.2805
+Instr: vocals
+Metric sdr         value: -3.5262
+Time for song: 18.47 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Fergessen - Nos Palpitants Shape: (2, 8749912)
+Instr: drums
+Metric sdr         value: 4.4505
+Instr: bass
+Metric sdr         value: 2.3917
+Instr: other
+Metric sdr         value: 3.5728
+Instr: vocals
+Metric sdr         value: 7.9169
+Time for song: 22.10 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/James May - On The Line Shape: (2, 11301609)
+Instr: drums
+Metric sdr         value: 2.6042
+Instr: bass
+Metric sdr         value: 0.6555
+Instr: other
+Metric sdr         value: 1.5579
+Instr: vocals
+Metric sdr         value: 4.9564
+Time for song: 34.47 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Johnny Lokke - Promises & Lies Shape: (2, 12612600)
+Instr: drums
+Metric sdr         value: 3.8221
+Instr: bass
+Metric sdr         value: -1.1246
+Instr: other
+Metric sdr         value: 3.2061
+Instr: vocals
+Metric sdr         value: 6.0089
+Time for song: 43.73 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Leaf - Summerghost Shape: (2, 10231200)
+Instr: drums
+Metric sdr         value: 5.3131
+Instr: bass
+Metric sdr         value: 7.5487
+Instr: other
+Metric sdr         value: 1.6358
+Instr: vocals
+Metric sdr         value: 5.6314
+Time for song: 30.03 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Meaxic - Take A Step Shape: (2, 12467701)
+Instr: drums
+Metric sdr         value: 2.5949
+Instr: bass
+Metric sdr         value: 4.5497
+Instr: other
+Metric sdr         value: 1.2562
+Instr: vocals
+Metric sdr         value: 2.5798
+Time for song: 40.94 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Patrick Talbot - A Reason To Leave Shape: (2, 11454778)
+Instr: drums
+Metric sdr         value: 5.9662
+Instr: bass
+Metric sdr         value: 3.0480
+Instr: other
+Metric sdr         value: 3.1686
+Instr: vocals
+Metric sdr         value: 5.5900
+Time for song: 37.64 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Skelpolu - Human Mistakes Shape: (2, 14318640)
+Instr: drums
+Metric sdr         value: 1.3237
+Instr: bass
+Metric sdr         value: 3.9909
+Instr: other
+Metric sdr         value: 1.5282
+Instr: vocals
+Metric sdr         value: 1.1692
+Time for song: 54.48 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Traffic Experiment - Sirens Shape: (2, 18586361)
+Instr: drums
+Metric sdr         value: 3.0359
+Instr: bass
+Metric sdr         value: -0.4438
+Instr: other
+Metric sdr         value: 3.4756
+Instr: vocals
+Metric sdr         value: 1.5716
+Time for song: 13.31 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Triviul - Angelsaint Shape: (2, 10447256)
+Instr: drums
+Metric sdr         value: 5.5778
+Instr: bass
+Metric sdr         value: 5.4120
+Instr: other
+Metric sdr         value: 1.9472
+Instr: vocals
+Metric sdr         value: 4.6323
+Time for song: 30.43 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Young Griffo - Pennies Shape: (2, 12259556)
+Instr: drums
+Metric sdr         value: 2.9450
+Instr: bass
+Metric sdr         value: 5.2801
+Instr: other
+Metric sdr         value: 2.4234
+Instr: vocals
+Metric sdr         value: 4.8946
+Time for song: 39.96 sec
+Num overlap: 4
+Instr drums sdr: 3.5912 (Std: 1.4695)
+Instr bass sdr: 2.8517 (Std: 2.6580)
+Instr other sdr: 2.2423 (Std: 0.8025)
+Instr vocals sdr: 3.6979 (Std: 2.6602)
+Metric avg sdr        : 3.0958
+Elapsed time: 411.22 sec
+Train epoch: 24 Learning rate: 0.00030346871313849475
+  0%|          | 0/100 [00:00<?, ?it/s]  0%|          | 0/100 [01:10<?, ?it/s, loss=3.17, avg_loss=3.17]  1%|          | 1/100 [01:10<1:56:31, 70.62s/it, loss=3.17, avg_loss=3.17]  1%|          | 1/100 [01:11<1:56:31, 70.62s/it, loss=5.15, avg_loss=4.16]  2%|▏         | 2/100 [01:11<48:14, 29.54s/it, loss=5.15, avg_loss=4.16]    2%|▏         | 2/100 [01:12<48:14, 29.54s/it, loss=4.38, avg_loss=4.23]  3%|▎         | 3/100 [01:12<26:29, 16.38s/it, loss=4.38, avg_loss=4.23]  3%|▎         | 3/100 [01:13<26:29, 16.38s/it, loss=5.89, avg_loss=4.65]  4%|▍         | 4/100 [01:13<16:27, 10.28s/it, loss=5.89, avg_loss=4.65]  4%|▍         | 4/100 [01:14<16:27, 10.28s/it, loss=4.75, avg_loss=4.67]  5%|▌         | 5/100 [01:14<11:02,  6.97s/it, loss=4.75, avg_loss=4.67]  5%|▌         | 5/100 [01:14<11:02,  6.97s/it, loss=5.05, avg_loss=4.73]  6%|▌         | 6/100 [01:14<07:35,  4.85s/it, loss=5.05, avg_loss=4.73]  6%|▌         | 6/100 [01:15<07:35,  4.85s/it, loss=5.38, avg_loss=4.82]  7%|▋         | 7/100 [01:15<05:25,  3.50s/it, loss=5.38, avg_loss=4.82]  7%|▋         | 7/100 [01:16<05:25,  3.50s/it, loss=4.07, avg_loss=4.73]  8%|▊         | 8/100 [01:16<04:00,  2.62s/it, loss=4.07, avg_loss=4.73]  8%|▊         | 8/100 [01:17<04:00,  2.62s/it, loss=4, avg_loss=4.65]     9%|▉         | 9/100 [01:17<03:04,  2.02s/it, loss=4, avg_loss=4.65]  9%|▉         | 9/100 [01:17<03:04,  2.02s/it, loss=7.11, avg_loss=4.9] 10%|█         | 10/100 [01:17<02:25,  1.62s/it, loss=7.11, avg_loss=4.9] 10%|█         | 10/100 [01:18<02:25,  1.62s/it, loss=3.53, avg_loss=4.77] 11%|█         | 11/100 [01:18<01:59,  1.34s/it, loss=3.53, avg_loss=4.77] 11%|█         | 11/100 [01:19<01:59,  1.34s/it, loss=5.43, avg_loss=4.83] 12%|█▏        | 12/100 [01:19<01:41,  1.16s/it, loss=5.43, avg_loss=4.83] 12%|█▏        | 12/100 [01:19<01:41,  1.16s/it, loss=7.11, avg_loss=5]    13%|█▎        | 13/100 [01:19<01:29,  1.02s/it, loss=7.11, avg_loss=5] 13%|█▎        | 13/100 [01:20<01:29,  1.02s/it, loss=4.95, avg_loss=5] 14%|█▍        | 14/100 [01:20<01:20,  1.07it/s, loss=4.95, avg_loss=5] 14%|█▍        | 14/100 [01:21<01:20,  1.07it/s, loss=3.96, avg_loss=4.93] 15%|█▌        | 15/100 [01:21<01:13,  1.15it/s, loss=3.96, avg_loss=4.93] 15%|█▌        | 15/100 [01:22<01:13,  1.15it/s, loss=5.16, avg_loss=4.94] 16%|█▌        | 16/100 [01:22<01:09,  1.21it/s, loss=5.16, avg_loss=4.94] 16%|█▌        | 16/100 [01:22<01:09,  1.21it/s, loss=3.34, avg_loss=4.85] 17%|█▋        | 17/100 [01:22<01:05,  1.26it/s, loss=3.34, avg_loss=4.85] 17%|█▋        | 17/100 [01:23<01:05,  1.26it/s, loss=5.07, avg_loss=4.86] 18%|█▊        | 18/100 [01:23<01:03,  1.30it/s, loss=5.07, avg_loss=4.86] 18%|█▊        | 18/100 [01:24<01:03,  1.30it/s, loss=6.04, avg_loss=4.92] 19%|█▉        | 19/100 [01:24<01:01,  1.33it/s, loss=6.04, avg_loss=4.92] 19%|█▉        | 19/100 [01:24<01:01,  1.33it/s, loss=6.29, avg_loss=4.99] 20%|██        | 20/100 [01:24<00:59,  1.34it/s, loss=6.29, avg_loss=4.99] 20%|██        | 20/100 [01:25<00:59,  1.34it/s, loss=5.38, avg_loss=5.01] 21%|██        | 21/100 [01:25<00:58,  1.36it/s, loss=5.38, avg_loss=5.01] 21%|██        | 21/100 [01:26<00:58,  1.36it/s, loss=5.74, avg_loss=5.04] 22%|██▏       | 22/100 [01:26<00:57,  1.37it/s, loss=5.74, avg_loss=5.04] 22%|██▏       | 22/100 [01:27<00:57,  1.37it/s, loss=3.87, avg_loss=4.99] 23%|██▎       | 23/100 [01:27<00:55,  1.38it/s, loss=3.87, avg_loss=4.99] 23%|██▎       | 23/100 [01:27<00:55,  1.38it/s, loss=5.08, avg_loss=5]    24%|██▍       | 24/100 [01:27<00:55,  1.37it/s, loss=5.08, avg_loss=5] 24%|██▍       | 24/100 [01:28<00:55,  1.37it/s, loss=3.44, avg_loss=4.93] 25%|██▌       | 25/100 [01:28<00:54,  1.38it/s, loss=3.44, avg_loss=4.93] 25%|██▌       | 25/100 [01:29<00:54,  1.38it/s, loss=3.4, avg_loss=4.87]  26%|██▌       | 26/100 [01:29<00:53,  1.38it/s, loss=3.4, avg_loss=4.87] 26%|██▌       | 26/100 [01:30<00:53,  1.38it/s, loss=6.19, avg_loss=4.92] 27%|██▋       | 27/100 [01:30<00:52,  1.39it/s, loss=6.19, avg_loss=4.92] 27%|██▋       | 27/100 [01:30<00:52,  1.39it/s, loss=3.27, avg_loss=4.86] 28%|██▊       | 28/100 [01:30<00:52,  1.38it/s, loss=3.27, avg_loss=4.86] 28%|██▊       | 28/100 [01:31<00:52,  1.38it/s, loss=4.28, avg_loss=4.84] 29%|██▉       | 29/100 [01:31<00:51,  1.39it/s, loss=4.28, avg_loss=4.84] 29%|██▉       | 29/100 [01:32<00:51,  1.39it/s, loss=4.81, avg_loss=4.84] 30%|███       | 30/100 [01:32<00:50,  1.39it/s, loss=4.81, avg_loss=4.84] 30%|███       | 30/100 [01:32<00:50,  1.39it/s, loss=3.84, avg_loss=4.81] 31%|███       | 31/100 [01:32<00:49,  1.39it/s, loss=3.84, avg_loss=4.81] 31%|███       | 31/100 [01:33<00:49,  1.39it/s, loss=4.29, avg_loss=4.79] 32%|███▏      | 32/100 [01:33<00:49,  1.38it/s, loss=4.29, avg_loss=4.79] 32%|███▏      | 32/100 [01:34<00:49,  1.38it/s, loss=5.07, avg_loss=4.8]  33%|███▎      | 33/100 [01:34<00:48,  1.39it/s, loss=5.07, avg_loss=4.8] 33%|███▎      | 33/100 [01:35<00:48,  1.39it/s, loss=5.66, avg_loss=4.83] 34%|███▍      | 34/100 [01:35<00:47,  1.39it/s, loss=5.66, avg_loss=4.83] 34%|███▍      | 34/100 [01:35<00:47,  1.39it/s, loss=5.12, avg_loss=4.84] 35%|███▌      | 35/100 [01:35<00:46,  1.39it/s, loss=5.12, avg_loss=4.84] 35%|███▌      | 35/100 [01:36<00:46,  1.39it/s, loss=6.36, avg_loss=4.88] 36%|███▌      | 36/100 [01:36<00:46,  1.38it/s, loss=6.36, avg_loss=4.88] 36%|███▌      | 36/100 [01:37<00:46,  1.38it/s, loss=4.23, avg_loss=4.86] 37%|███▋      | 37/100 [01:37<00:45,  1.39it/s, loss=4.23, avg_loss=4.86] 37%|███▋      | 37/100 [01:37<00:45,  1.39it/s, loss=4.16, avg_loss=4.84] 38%|███▊      | 38/100 [01:37<00:44,  1.39it/s, loss=4.16, avg_loss=4.84] 38%|███▊      | 38/100 [01:38<00:44,  1.39it/s, loss=5.73, avg_loss=4.87] 39%|███▉      | 39/100 [01:38<00:43,  1.39it/s, loss=5.73, avg_loss=4.87] 39%|███▉      | 39/100 [01:39<00:43,  1.39it/s, loss=7.5, avg_loss=4.93]  40%|████      | 40/100 [01:39<00:43,  1.38it/s, loss=7.5, avg_loss=4.93] 40%|████      | 40/100 [01:40<00:43,  1.38it/s, loss=5.9, avg_loss=4.96] 41%|████      | 41/100 [01:40<00:42,  1.39it/s, loss=5.9, avg_loss=4.96] 41%|████      | 41/100 [01:40<00:42,  1.39it/s, loss=4.92, avg_loss=4.95] 42%|████▏     | 42/100 [01:40<00:41,  1.39it/s, loss=4.92, avg_loss=4.95] 42%|████▏     | 42/100 [01:41<00:41,  1.39it/s, loss=6.3, avg_loss=4.99]  43%|████▎     | 43/100 [01:41<00:40,  1.39it/s, loss=6.3, avg_loss=4.99] 43%|████▎     | 43/100 [01:42<00:40,  1.39it/s, loss=7.4, avg_loss=5.04] 44%|████▍     | 44/100 [01:42<00:40,  1.39it/s, loss=7.4, avg_loss=5.04] 44%|████▍     | 44/100 [01:42<00:40,  1.39it/s, loss=2.83, avg_loss=4.99] 45%|████▌     | 45/100 [01:42<00:39,  1.39it/s, loss=2.83, avg_loss=4.99] 45%|████▌     | 45/100 [01:43<00:39,  1.39it/s, loss=5.36, avg_loss=5]    46%|████▌     | 46/100 [01:43<00:38,  1.39it/s, loss=5.36, avg_loss=5] 46%|████▌     | 46/100 [01:44<00:38,  1.39it/s, loss=4.97, avg_loss=5] 47%|████▋     | 47/100 [01:44<00:38,  1.39it/s, loss=4.97, avg_loss=5] 47%|████▋     | 47/100 [01:45<00:38,  1.39it/s, loss=3.21, avg_loss=4.96] 48%|████▊     | 48/100 [01:45<00:37,  1.39it/s, loss=3.21, avg_loss=4.96] 48%|████▊     | 48/100 [01:45<00:37,  1.39it/s, loss=5.09, avg_loss=4.96] 49%|████▉     | 49/100 [01:45<00:36,  1.39it/s, loss=5.09, avg_loss=4.96] 49%|████▉     | 49/100 [01:46<00:36,  1.39it/s, loss=5.55, avg_loss=4.98] 50%|█████     | 50/100 [01:46<00:35,  1.39it/s, loss=5.55, avg_loss=4.98] 50%|█████     | 50/100 [01:47<00:35,  1.39it/s, loss=4.55, avg_loss=4.97] 51%|█████     | 51/100 [01:47<00:35,  1.39it/s, loss=4.55, avg_loss=4.97] 51%|█████     | 51/100 [01:48<00:35,  1.39it/s, loss=4.59, avg_loss=4.96] 52%|█████▏    | 52/100 [01:48<00:34,  1.39it/s, loss=4.59, avg_loss=4.96] 52%|█████▏    | 52/100 [01:48<00:34,  1.39it/s, loss=5.83, avg_loss=4.98] 53%|█████▎    | 53/100 [01:48<00:33,  1.39it/s, loss=5.83, avg_loss=4.98] 53%|█████▎    | 53/100 [01:49<00:33,  1.39it/s, loss=4.93, avg_loss=4.98] 54%|█████▍    | 54/100 [01:49<00:33,  1.39it/s, loss=4.93, avg_loss=4.98] 54%|█████▍    | 54/100 [01:50<00:33,  1.39it/s, loss=6.21, avg_loss=5]    55%|█████▌    | 55/100 [01:50<00:32,  1.39it/s, loss=6.21, avg_loss=5] 55%|█████▌    | 55/100 [01:50<00:32,  1.39it/s, loss=3.85, avg_loss=4.98] 56%|█████▌    | 56/100 [01:50<00:31,  1.39it/s, loss=3.85, avg_loss=4.98] 56%|█████▌    | 56/100 [01:51<00:31,  1.39it/s, loss=4.75, avg_loss=4.97] 57%|█████▋    | 57/100 [01:51<00:30,  1.39it/s, loss=4.75, avg_loss=4.97] 57%|█████▋    | 57/100 [01:52<00:30,  1.39it/s, loss=5.45, avg_loss=4.98] 58%|█████▊    | 58/100 [01:52<00:30,  1.39it/s, loss=5.45, avg_loss=4.98] 58%|█████▊    | 58/100 [01:53<00:30,  1.39it/s, loss=5.55, avg_loss=4.99] 59%|█████▉    | 59/100 [01:53<00:29,  1.39it/s, loss=5.55, avg_loss=4.99] 59%|█████▉    | 59/100 [01:53<00:29,  1.39it/s, loss=4.22, avg_loss=4.98] 60%|██████    | 60/100 [01:53<00:28,  1.39it/s, loss=4.22, avg_loss=4.98] 60%|██████    | 60/100 [01:54<00:28,  1.39it/s, loss=5.06, avg_loss=4.98] 61%|██████    | 61/100 [01:54<00:28,  1.39it/s, loss=5.06, avg_loss=4.98] 61%|██████    | 61/100 [01:55<00:28,  1.39it/s, loss=2.85, avg_loss=4.95] 62%|██████▏   | 62/100 [01:55<00:27,  1.39it/s, loss=2.85, avg_loss=4.95] 62%|██████▏   | 62/100 [01:55<00:27,  1.39it/s, loss=5.74, avg_loss=4.96] 63%|██████▎   | 63/100 [01:55<00:26,  1.39it/s, loss=5.74, avg_loss=4.96] 63%|██████▎   | 63/100 [01:56<00:26,  1.39it/s, loss=4.33, avg_loss=4.95] 64%|██████▍   | 64/100 [01:56<00:25,  1.39it/s, loss=4.33, avg_loss=4.95] 64%|██████▍   | 64/100 [01:57<00:25,  1.39it/s, loss=4.39, avg_loss=4.94] 65%|██████▌   | 65/100 [01:57<00:25,  1.39it/s, loss=4.39, avg_loss=4.94] 65%|██████▌   | 65/100 [01:58<00:25,  1.39it/s, loss=3.6, avg_loss=4.92]  66%|██████▌   | 66/100 [01:58<00:24,  1.39it/s, loss=3.6, avg_loss=4.92] 66%|██████▌   | 66/100 [01:58<00:24,  1.39it/s, loss=6.67, avg_loss=4.95] 67%|██████▋   | 67/100 [01:58<00:23,  1.39it/s, loss=6.67, avg_loss=4.95] 67%|██████▋   | 67/100 [01:59<00:23,  1.39it/s, loss=4.98, avg_loss=4.95] 68%|██████▊   | 68/100 [01:59<00:23,  1.38it/s, loss=4.98, avg_loss=4.95] 68%|██████▊   | 68/100 [02:00<00:23,  1.38it/s, loss=3.71, avg_loss=4.93] 69%|██████▉   | 69/100 [02:00<00:22,  1.39it/s, loss=3.71, avg_loss=4.93] 69%|██████▉   | 69/100 [02:00<00:22,  1.39it/s, loss=3.98, avg_loss=4.91] 70%|███████   | 70/100 [02:00<00:21,  1.39it/s, loss=3.98, avg_loss=4.91] 70%|███████   | 70/100 [02:01<00:21,  1.39it/s, loss=4.07, avg_loss=4.9]  71%|███████   | 71/100 [02:01<00:20,  1.39it/s, loss=4.07, avg_loss=4.9] 71%|███████   | 71/100 [02:02<00:20,  1.39it/s, loss=4.22, avg_loss=4.89] 72%|███████▏  | 72/100 [02:02<00:20,  1.38it/s, loss=4.22, avg_loss=4.89] 72%|███████▏  | 72/100 [02:03<00:20,  1.38it/s, loss=4.48, avg_loss=4.89] 73%|███████▎  | 73/100 [02:03<00:19,  1.39it/s, loss=4.48, avg_loss=4.89] 73%|███████▎  | 73/100 [02:03<00:19,  1.39it/s, loss=6.07, avg_loss=4.9]  74%|███████▍  | 74/100 [02:03<00:18,  1.39it/s, loss=6.07, avg_loss=4.9] 74%|███████▍  | 74/100 [02:04<00:18,  1.39it/s, loss=6.43, avg_loss=4.92] 75%|███████▌  | 75/100 [02:04<00:17,  1.39it/s, loss=6.43, avg_loss=4.92] 75%|███████▌  | 75/100 [02:05<00:17,  1.39it/s, loss=6.23, avg_loss=4.94] 76%|███████▌  | 76/100 [02:05<00:17,  1.39it/s, loss=6.23, avg_loss=4.94] 76%|███████▌  | 76/100 [02:06<00:17,  1.39it/s, loss=5.71, avg_loss=4.95] 77%|███████▋  | 77/100 [02:06<00:16,  1.39it/s, loss=5.71, avg_loss=4.95] 77%|███████▋  | 77/100 [02:06<00:16,  1.39it/s, loss=5.05, avg_loss=4.95] 78%|███████▊  | 78/100 [02:06<00:15,  1.39it/s, loss=5.05, avg_loss=4.95] 78%|███████▊  | 78/100 [02:07<00:15,  1.39it/s, loss=5.92, avg_loss=4.96] 79%|███████▉  | 79/100 [02:07<00:15,  1.39it/s, loss=5.92, avg_loss=4.96] 79%|███████▉  | 79/100 [02:08<00:15,  1.39it/s, loss=5.43, avg_loss=4.97] 80%|████████  | 80/100 [02:08<00:14,  1.39it/s, loss=5.43, avg_loss=4.97] 80%|████████  | 80/100 [02:08<00:14,  1.39it/s, loss=4.01, avg_loss=4.96] 81%|████████  | 81/100 [02:08<00:13,  1.39it/s, loss=4.01, avg_loss=4.96] 81%|████████  | 81/100 [02:09<00:13,  1.39it/s, loss=5.51, avg_loss=4.97] 82%|████████▏ | 82/100 [02:09<00:12,  1.39it/s, loss=5.51, avg_loss=4.97] 82%|████████▏ | 82/100 [02:10<00:12,  1.39it/s, loss=4.44, avg_loss=4.96] 83%|████████▎ | 83/100 [02:10<00:12,  1.39it/s, loss=4.44, avg_loss=4.96] 83%|████████▎ | 83/100 [02:11<00:12,  1.39it/s, loss=4.52, avg_loss=4.95] 84%|████████▍ | 84/100 [02:11<00:11,  1.39it/s, loss=4.52, avg_loss=4.95] 84%|████████▍ | 84/100 [02:11<00:11,  1.39it/s, loss=4.36, avg_loss=4.95] 85%|████████▌ | 85/100 [02:11<00:10,  1.39it/s, loss=4.36, avg_loss=4.95] 85%|████████▌ | 85/100 [02:12<00:10,  1.39it/s, loss=3.65, avg_loss=4.93] 86%|████████▌ | 86/100 [02:12<00:10,  1.39it/s, loss=3.65, avg_loss=4.93] 86%|████████▌ | 86/100 [02:13<00:10,  1.39it/s, loss=5.08, avg_loss=4.93] 87%|████████▋ | 87/100 [02:13<00:09,  1.39it/s, loss=5.08, avg_loss=4.93] 87%|████████▋ | 87/100 [02:13<00:09,  1.39it/s, loss=4.48, avg_loss=4.93] 88%|████████▊ | 88/100 [02:13<00:08,  1.39it/s, loss=4.48, avg_loss=4.93] 88%|████████▊ | 88/100 [02:14<00:08,  1.39it/s, loss=4.57, avg_loss=4.92] 89%|████████▉ | 89/100 [02:14<00:07,  1.39it/s, loss=4.57, avg_loss=4.92] 89%|████████▉ | 89/100 [02:15<00:07,  1.39it/s, loss=3.63, avg_loss=4.91] 90%|█████████ | 90/100 [02:15<00:07,  1.39it/s, loss=3.63, avg_loss=4.91] 90%|█████████ | 90/100 [02:16<00:07,  1.39it/s, loss=4.14, avg_loss=4.9]  91%|█████████ | 91/100 [02:16<00:06,  1.39it/s, loss=4.14, avg_loss=4.9] 91%|█████████ | 91/100 [02:16<00:06,  1.39it/s, loss=6.73, avg_loss=4.92] 92%|█████████▏| 92/100 [02:16<00:05,  1.39it/s, loss=6.73, avg_loss=4.92] 92%|█████████▏| 92/100 [02:17<00:05,  1.39it/s, loss=6.19, avg_loss=4.93] 93%|█████████▎| 93/100 [02:17<00:05,  1.39it/s, loss=6.19, avg_loss=4.93] 93%|█████████▎| 93/100 [02:18<00:05,  1.39it/s, loss=5.56, avg_loss=4.94] 94%|█████████▍| 94/100 [02:18<00:04,  1.39it/s, loss=5.56, avg_loss=4.94] 94%|█████████▍| 94/100 [02:18<00:04,  1.39it/s, loss=5.42, avg_loss=4.95] 95%|█████████▌| 95/100 [02:18<00:03,  1.39it/s, loss=5.42, avg_loss=4.95] 95%|█████████▌| 95/100 [02:19<00:03,  1.39it/s, loss=3.6, avg_loss=4.93]  96%|█████████▌| 96/100 [02:19<00:02,  1.39it/s, loss=3.6, avg_loss=4.93] 96%|█████████▌| 96/100 [02:20<00:02,  1.39it/s, loss=4.94, avg_loss=4.93] 97%|█████████▋| 97/100 [02:20<00:02,  1.39it/s, loss=4.94, avg_loss=4.93] 97%|█████████▋| 97/100 [02:21<00:02,  1.39it/s, loss=3.78, avg_loss=4.92] 98%|█████████▊| 98/100 [02:21<00:01,  1.39it/s, loss=3.78, avg_loss=4.92] 98%|█████████▊| 98/100 [02:21<00:01,  1.39it/s, loss=4.47, avg_loss=4.92] 99%|█████████▉| 99/100 [02:21<00:00,  1.40it/s, loss=4.47, avg_loss=4.92] 99%|█████████▉| 99/100 [02:22<00:00,  1.40it/s, loss=4.21, avg_loss=4.91]100%|██████████| 100/100 [02:22<00:00,  1.39it/s, loss=4.21, avg_loss=4.91]100%|██████████| 100/100 [02:23<00:00,  1.43s/it, loss=4.21, avg_loss=4.91]
+Training loss: 0.049092
+Total mixtures: 14
+Overlap: 4 Batch size: 8
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/ANiMAL - Rockshow Shape: (2, 7307212)
+Instr: drums
+Metric sdr         value: 5.2120
+Instr: bass
+Metric sdr         value: 4.7910
+Instr: other
+Metric sdr         value: 1.7442
+Instr: vocals
+Metric sdr         value: 3.7939
+Time for song: 16.90 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Actions - One Minute Smile Shape: (2, 7213530)
+Instr: drums
+Metric sdr         value: 1.5856
+Instr: bass
+Metric sdr         value: -1.6369
+Instr: other
+Metric sdr         value: 1.3838
+Instr: vocals
+Metric sdr         value: 2.5401
+Time for song: 15.97 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Alexander Ross - Goodbye Bolero Shape: (2, 18469819)
+Instr: drums
+Metric sdr         value: 2.2434
+Instr: bass
+Metric sdr         value: -0.4017
+Instr: other
+Metric sdr         value: 2.7827
+Instr: vocals
+Metric sdr         value: 4.6842
+Time for song: 13.13 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Clara Berry And Wooldog - Waltz For My Victims Shape: (2, 7736477)
+Instr: drums
+Metric sdr         value: 3.7602
+Instr: bass
+Metric sdr         value: 4.6389
+Instr: other
+Metric sdr         value: 2.7621
+Instr: vocals
+Metric sdr         value: -2.9480
+Time for song: 18.18 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Fergessen - Nos Palpitants Shape: (2, 8749912)
+Instr: drums
+Metric sdr         value: 4.6059
+Instr: bass
+Metric sdr         value: 2.0128
+Instr: other
+Metric sdr         value: 3.7934
+Instr: vocals
+Metric sdr         value: 8.1827
+Time for song: 22.79 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/James May - On The Line Shape: (2, 11301609)
+Instr: drums
+Metric sdr         value: 3.8921
+Instr: bass
+Metric sdr         value: 1.7829
+Instr: other
+Metric sdr         value: 1.6664
+Instr: vocals
+Metric sdr         value: 4.9819
+Time for song: 35.64 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Johnny Lokke - Promises & Lies Shape: (2, 12612600)
+Instr: drums
+Metric sdr         value: 6.3419
+Instr: bass
+Metric sdr         value: 1.2635
+Instr: other
+Metric sdr         value: 3.3383
+Instr: vocals
+Metric sdr         value: 5.9519
+Time for song: 43.30 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Leaf - Summerghost Shape: (2, 10231200)
+Instr: drums
+Metric sdr         value: 5.3633
+Instr: bass
+Metric sdr         value: 8.2878
+Instr: other
+Metric sdr         value: 1.5336
+Instr: vocals
+Metric sdr         value: 5.2429
+Time for song: 29.18 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Meaxic - Take A Step Shape: (2, 12467701)
+Instr: drums
+Metric sdr         value: 2.7612
+Instr: bass
+Metric sdr         value: 4.8145
+Instr: other
+Metric sdr         value: 1.1827
+Instr: vocals
+Metric sdr         value: 2.4087
+Time for song: 41.07 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Patrick Talbot - A Reason To Leave Shape: (2, 11454778)
+Instr: drums
+Metric sdr         value: 6.0730
+Instr: bass
+Metric sdr         value: 3.3120
+Instr: other
+Metric sdr         value: 3.6704
+Instr: vocals
+Metric sdr         value: 5.9997
+Time for song: 37.84 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Skelpolu - Human Mistakes Shape: (2, 14318640)
+Instr: drums
+Metric sdr         value: 1.3207
+Instr: bass
+Metric sdr         value: 4.0179
+Instr: other
+Metric sdr         value: 1.6210
+Instr: vocals
+Metric sdr         value: 1.0636
+Time for song: 44.25 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Traffic Experiment - Sirens Shape: (2, 18586361)
+Instr: drums
+Metric sdr         value: 2.7826
+Instr: bass
+Metric sdr         value: -1.3336
+Instr: other
+Metric sdr         value: 3.4910
+Instr: vocals
+Metric sdr         value: 1.4168
+Time for song: 41.37 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Triviul - Angelsaint Shape: (2, 10447256)
+Instr: drums
+Metric sdr         value: 5.6612
+Instr: bass
+Metric sdr         value: 5.3391
+Instr: other
+Metric sdr         value: 2.0755
+Instr: vocals
+Metric sdr         value: 4.5233
+Time for song: 30.86 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Young Griffo - Pennies Shape: (2, 12259556)
+Instr: drums
+Metric sdr         value: 3.3817
+Instr: bass
+Metric sdr         value: 6.1883
+Instr: other
+Metric sdr         value: 2.6019
+Instr: vocals
+Metric sdr         value: 4.5597
+Time for song: 40.48 sec
+Num overlap: 4
+Instr drums sdr: 3.9275 (Std: 1.5974)
+Instr bass sdr: 3.0769 (Std: 2.8178)
+Instr other sdr: 2.4033 (Std: 0.8819)
+Instr vocals sdr: 3.7429 (Std: 2.6216)
+Metric avg sdr        : 3.2877
+Elapsed time: 430.98 sec
+Train epoch: 25 Learning rate: 0.00030346871313849475
+  0%|          | 0/100 [00:00<?, ?it/s]  0%|          | 0/100 [01:20<?, ?it/s, loss=5.32, avg_loss=5.32]  1%|          | 1/100 [01:20<2:12:19, 80.20s/it, loss=5.32, avg_loss=5.32]  1%|          | 1/100 [01:20<2:12:19, 80.20s/it, loss=3.47, avg_loss=4.39]  2%|▏         | 2/100 [01:20<54:38, 33.45s/it, loss=3.47, avg_loss=4.39]    2%|▏         | 2/100 [01:21<54:38, 33.45s/it, loss=4.19, avg_loss=4.33]  3%|▎         | 3/100 [01:21<29:54, 18.50s/it, loss=4.19, avg_loss=4.33]  3%|▎         | 3/100 [01:22<29:54, 18.50s/it, loss=4.18, avg_loss=4.29]  4%|▍         | 4/100 [01:22<18:28, 11.55s/it, loss=4.18, avg_loss=4.29]  4%|▍         | 4/100 [01:23<18:28, 11.55s/it, loss=6.17, avg_loss=4.67]  5%|▌         | 5/100 [01:23<12:05,  7.64s/it, loss=6.17, avg_loss=4.67]  5%|▌         | 5/100 [01:23<12:05,  7.64s/it, loss=5.32, avg_loss=4.77]  6%|▌         | 6/100 [01:23<08:16,  5.29s/it, loss=5.32, avg_loss=4.77]  6%|▌         | 6/100 [01:24<08:16,  5.29s/it, loss=4.55, avg_loss=4.74]  7%|▋         | 7/100 [01:24<05:52,  3.79s/it, loss=4.55, avg_loss=4.74]  7%|▋         | 7/100 [01:25<05:52,  3.79s/it, loss=5.44, avg_loss=4.83]  8%|▊         | 8/100 [01:25<04:19,  2.82s/it, loss=5.44, avg_loss=4.83]  8%|▊         | 8/100 [01:26<04:19,  2.82s/it, loss=4.8, avg_loss=4.83]   9%|▉         | 9/100 [01:26<03:16,  2.16s/it, loss=4.8, avg_loss=4.83]  9%|▉         | 9/100 [01:26<03:16,  2.16s/it, loss=4.7, avg_loss=4.81] 10%|█         | 10/100 [01:26<02:34,  1.71s/it, loss=4.7, avg_loss=4.81] 10%|█         | 10/100 [01:27<02:34,  1.71s/it, loss=4.05, avg_loss=4.74] 11%|█         | 11/100 [01:27<02:05,  1.41s/it, loss=4.05, avg_loss=4.74] 11%|█         | 11/100 [01:28<02:05,  1.41s/it, loss=2.79, avg_loss=4.58] 12%|█▏        | 12/100 [01:28<01:46,  1.21s/it, loss=2.79, avg_loss=4.58] 12%|█▏        | 12/100 [01:29<01:46,  1.21s/it, loss=4.91, avg_loss=4.61] 13%|█▎        | 13/100 [01:29<01:31,  1.06s/it, loss=4.91, avg_loss=4.61] 13%|█▎        | 13/100 [01:29<01:31,  1.06s/it, loss=4.31, avg_loss=4.59] 14%|█▍        | 14/100 [01:29<01:22,  1.05it/s, loss=4.31, avg_loss=4.59] 14%|█▍        | 14/100 [01:30<01:22,  1.05it/s, loss=4.22, avg_loss=4.56] 15%|█▌        | 15/100 [01:30<01:14,  1.13it/s, loss=4.22, avg_loss=4.56] 15%|█▌        | 15/100 [01:31<01:14,  1.13it/s, loss=3.81, avg_loss=4.51] 16%|█▌        | 16/100 [01:31<01:10,  1.20it/s, loss=3.81, avg_loss=4.51] 16%|█▌        | 16/100 [01:31<01:10,  1.20it/s, loss=4.58, avg_loss=4.52] 17%|█▋        | 17/100 [01:31<01:06,  1.25it/s, loss=4.58, avg_loss=4.52] 17%|█▋        | 17/100 [01:32<01:06,  1.25it/s, loss=3.89, avg_loss=4.48] 18%|█▊        | 18/100 [01:32<01:03,  1.29it/s, loss=3.89, avg_loss=4.48] 18%|█▊        | 18/100 [01:33<01:03,  1.29it/s, loss=5.07, avg_loss=4.51] 19%|█▉        | 19/100 [01:33<01:01,  1.32it/s, loss=5.07, avg_loss=4.51] 19%|█▉        | 19/100 [01:34<01:01,  1.32it/s, loss=5.16, avg_loss=4.55] 20%|██        | 20/100 [01:34<00:59,  1.34it/s, loss=5.16, avg_loss=4.55] 20%|██        | 20/100 [01:34<00:59,  1.34it/s, loss=6.48, avg_loss=4.64] 21%|██        | 21/100 [01:34<00:58,  1.35it/s, loss=6.48, avg_loss=4.64] 21%|██        | 21/100 [01:35<00:58,  1.35it/s, loss=4.16, avg_loss=4.62] 22%|██▏       | 22/100 [01:35<00:57,  1.37it/s, loss=4.16, avg_loss=4.62] 22%|██▏       | 22/100 [01:36<00:57,  1.37it/s, loss=4.61, avg_loss=4.62] 23%|██▎       | 23/100 [01:36<00:56,  1.37it/s, loss=4.61, avg_loss=4.62] 23%|██▎       | 23/100 [01:36<00:56,  1.37it/s, loss=5.43, avg_loss=4.65] 24%|██▍       | 24/100 [01:36<00:55,  1.37it/s, loss=5.43, avg_loss=4.65] 24%|██▍       | 24/100 [01:37<00:55,  1.37it/s, loss=5.58, avg_loss=4.69] 25%|██▌       | 25/100 [01:37<00:54,  1.38it/s, loss=5.58, avg_loss=4.69] 25%|██▌       | 25/100 [01:38<00:54,  1.38it/s, loss=3.81, avg_loss=4.65] 26%|██▌       | 26/100 [01:38<00:53,  1.38it/s, loss=3.81, avg_loss=4.65] 26%|██▌       | 26/100 [01:39<00:53,  1.38it/s, loss=4.85, avg_loss=4.66] 27%|██▋       | 27/100 [01:39<00:52,  1.39it/s, loss=4.85, avg_loss=4.66] 27%|██▋       | 27/100 [01:39<00:52,  1.39it/s, loss=4.8, avg_loss=4.67]  28%|██▊       | 28/100 [01:39<00:52,  1.38it/s, loss=4.8, avg_loss=4.67] 28%|██▊       | 28/100 [01:40<00:52,  1.38it/s, loss=4.21, avg_loss=4.65] 29%|██▉       | 29/100 [01:40<00:51,  1.39it/s, loss=4.21, avg_loss=4.65] 29%|██▉       | 29/100 [01:41<00:51,  1.39it/s, loss=7.09, avg_loss=4.73] 30%|███       | 30/100 [01:41<00:50,  1.39it/s, loss=7.09, avg_loss=4.73] 30%|███       | 30/100 [01:41<00:50,  1.39it/s, loss=4.96, avg_loss=4.74] 31%|███       | 31/100 [01:41<00:49,  1.39it/s, loss=4.96, avg_loss=4.74] 31%|███       | 31/100 [01:42<00:49,  1.39it/s, loss=5.73, avg_loss=4.77] 32%|███▏      | 32/100 [01:42<00:49,  1.38it/s, loss=5.73, avg_loss=4.77] 32%|███▏      | 32/100 [01:43<00:49,  1.38it/s, loss=6.92, avg_loss=4.83] 33%|███▎      | 33/100 [01:43<00:48,  1.39it/s, loss=6.92, avg_loss=4.83] 33%|███▎      | 33/100 [01:44<00:48,  1.39it/s, loss=4.98, avg_loss=4.84] 34%|███▍      | 34/100 [01:44<00:47,  1.39it/s, loss=4.98, avg_loss=4.84] 34%|███▍      | 34/100 [01:44<00:47,  1.39it/s, loss=5.8, avg_loss=4.87]  35%|███▌      | 35/100 [01:44<00:46,  1.39it/s, loss=5.8, avg_loss=4.87] 35%|███▌      | 35/100 [01:45<00:46,  1.39it/s, loss=4.47, avg_loss=4.86] 36%|███▌      | 36/100 [01:45<00:46,  1.39it/s, loss=4.47, avg_loss=4.86] 36%|███▌      | 36/100 [01:46<00:46,  1.39it/s, loss=5.18, avg_loss=4.86] 37%|███▋      | 37/100 [01:46<00:45,  1.39it/s, loss=5.18, avg_loss=4.86] 37%|███▋      | 37/100 [01:47<00:45,  1.39it/s, loss=6.87, avg_loss=4.92] 38%|███▊      | 38/100 [01:47<00:44,  1.39it/s, loss=6.87, avg_loss=4.92] 38%|███▊      | 38/100 [01:47<00:44,  1.39it/s, loss=3.65, avg_loss=4.88] 39%|███▉      | 39/100 [01:47<00:43,  1.39it/s, loss=3.65, avg_loss=4.88] 39%|███▉      | 39/100 [01:48<00:43,  1.39it/s, loss=4.53, avg_loss=4.88] 40%|████      | 40/100 [01:48<00:43,  1.39it/s, loss=4.53, avg_loss=4.88] 40%|████      | 40/100 [01:49<00:43,  1.39it/s, loss=3.66, avg_loss=4.85] 41%|████      | 41/100 [01:49<00:42,  1.39it/s, loss=3.66, avg_loss=4.85] 41%|████      | 41/100 [01:49<00:42,  1.39it/s, loss=5.54, avg_loss=4.86] 42%|████▏     | 42/100 [01:49<00:41,  1.39it/s, loss=5.54, avg_loss=4.86] 42%|████▏     | 42/100 [01:50<00:41,  1.39it/s, loss=5.51, avg_loss=4.88] 43%|████▎     | 43/100 [01:50<00:40,  1.39it/s, loss=5.51, avg_loss=4.88] 43%|████▎     | 43/100 [01:51<00:40,  1.39it/s, loss=5.08, avg_loss=4.88] 44%|████▍     | 44/100 [01:51<00:40,  1.39it/s, loss=5.08, avg_loss=4.88] 44%|████▍     | 44/100 [01:52<00:40,  1.39it/s, loss=5.57, avg_loss=4.9]  45%|████▌     | 45/100 [01:52<00:39,  1.39it/s, loss=5.57, avg_loss=4.9] 45%|████▌     | 45/100 [01:52<00:39,  1.39it/s, loss=4.68, avg_loss=4.89] 46%|████▌     | 46/100 [01:52<00:38,  1.39it/s, loss=4.68, avg_loss=4.89] 46%|████▌     | 46/100 [01:53<00:38,  1.39it/s, loss=5.98, avg_loss=4.92] 47%|████▋     | 47/100 [01:53<00:38,  1.39it/s, loss=5.98, avg_loss=4.92] 47%|████▋     | 47/100 [01:54<00:38,  1.39it/s, loss=4.33, avg_loss=4.9]  48%|████▊     | 48/100 [01:54<00:37,  1.39it/s, loss=4.33, avg_loss=4.9] 48%|████▊     | 48/100 [01:54<00:37,  1.39it/s, loss=4.92, avg_loss=4.9] 49%|████▉     | 49/100 [01:54<00:36,  1.39it/s, loss=4.92, avg_loss=4.9] 49%|████▉     | 49/100 [01:55<00:36,  1.39it/s, loss=4.66, avg_loss=4.9] 50%|█████     | 50/100 [01:55<00:35,  1.39it/s, loss=4.66, avg_loss=4.9] 50%|█████     | 50/100 [01:56<00:35,  1.39it/s, loss=3.91, avg_loss=4.88] 51%|█████     | 51/100 [01:56<00:35,  1.39it/s, loss=3.91, avg_loss=4.88] 51%|█████     | 51/100 [01:57<00:35,  1.39it/s, loss=4.19, avg_loss=4.87] 52%|█████▏    | 52/100 [01:57<00:34,  1.39it/s, loss=4.19, avg_loss=4.87] 52%|█████▏    | 52/100 [01:57<00:34,  1.39it/s, loss=2.74, avg_loss=4.83] 53%|█████▎    | 53/100 [01:57<00:33,  1.39it/s, loss=2.74, avg_loss=4.83] 53%|█████▎    | 53/100 [01:58<00:33,  1.39it/s, loss=3.49, avg_loss=4.8]  54%|█████▍    | 54/100 [01:58<00:33,  1.39it/s, loss=3.49, avg_loss=4.8] 54%|█████▍    | 54/100 [01:59<00:33,  1.39it/s, loss=3.78, avg_loss=4.78] 55%|█████▌    | 55/100 [01:59<00:32,  1.39it/s, loss=3.78, avg_loss=4.78] 55%|█████▌    | 55/100 [01:59<00:32,  1.39it/s, loss=3.61, avg_loss=4.76] 56%|█████▌    | 56/100 [01:59<00:31,  1.38it/s, loss=3.61, avg_loss=4.76] 56%|█████▌    | 56/100 [02:00<00:31,  1.38it/s, loss=5.39, avg_loss=4.77] 57%|█████▋    | 57/100 [02:00<00:30,  1.39it/s, loss=5.39, avg_loss=4.77] 57%|█████▋    | 57/100 [02:01<00:30,  1.39it/s, loss=6.96, avg_loss=4.81] 58%|█████▊    | 58/100 [02:01<00:30,  1.39it/s, loss=6.96, avg_loss=4.81] 58%|█████▊    | 58/100 [02:02<00:30,  1.39it/s, loss=6.09, avg_loss=4.83] 59%|█████▉    | 59/100 [02:02<00:29,  1.39it/s, loss=6.09, avg_loss=4.83] 59%|█████▉    | 59/100 [02:02<00:29,  1.39it/s, loss=7.39, avg_loss=4.87] 60%|██████    | 60/100 [02:02<00:28,  1.39it/s, loss=7.39, avg_loss=4.87] 60%|██████    | 60/100 [02:03<00:28,  1.39it/s, loss=5.83, avg_loss=4.89] 61%|██████    | 61/100 [02:03<00:28,  1.39it/s, loss=5.83, avg_loss=4.89] 61%|██████    | 61/100 [02:04<00:28,  1.39it/s, loss=4.77, avg_loss=4.89] 62%|██████▏   | 62/100 [02:04<00:27,  1.39it/s, loss=4.77, avg_loss=4.89] 62%|██████▏   | 62/100 [02:04<00:27,  1.39it/s, loss=3.73, avg_loss=4.87] 63%|██████▎   | 63/100 [02:04<00:26,  1.39it/s, loss=3.73, avg_loss=4.87] 63%|██████▎   | 63/100 [02:05<00:26,  1.39it/s, loss=6.12, avg_loss=4.89] 64%|██████▍   | 64/100 [02:05<00:25,  1.39it/s, loss=6.12, avg_loss=4.89] 64%|██████▍   | 64/100 [02:06<00:25,  1.39it/s, loss=5.09, avg_loss=4.89] 65%|██████▌   | 65/100 [02:06<00:25,  1.39it/s, loss=5.09, avg_loss=4.89] 65%|██████▌   | 65/100 [02:07<00:25,  1.39it/s, loss=4.34, avg_loss=4.88] 66%|██████▌   | 66/100 [02:07<00:24,  1.39it/s, loss=4.34, avg_loss=4.88] 66%|██████▌   | 66/100 [02:07<00:24,  1.39it/s, loss=6.39, avg_loss=4.91] 67%|██████▋   | 67/100 [02:07<00:23,  1.39it/s, loss=6.39, avg_loss=4.91] 67%|██████▋   | 67/100 [02:08<00:23,  1.39it/s, loss=6.36, avg_loss=4.93] 68%|██████▊   | 68/100 [02:08<00:23,  1.38it/s, loss=6.36, avg_loss=4.93] 68%|██████▊   | 68/100 [02:09<00:23,  1.38it/s, loss=4.01, avg_loss=4.91] 69%|██████▉   | 69/100 [02:09<00:22,  1.39it/s, loss=4.01, avg_loss=4.91] 69%|██████▉   | 69/100 [02:10<00:22,  1.39it/s, loss=4.31, avg_loss=4.91] 70%|███████   | 70/100 [02:10<00:21,  1.39it/s, loss=4.31, avg_loss=4.91] 70%|███████   | 70/100 [02:10<00:21,  1.39it/s, loss=4.99, avg_loss=4.91] 71%|███████   | 71/100 [02:10<00:20,  1.39it/s, loss=4.99, avg_loss=4.91] 71%|███████   | 71/100 [02:11<00:20,  1.39it/s, loss=4.76, avg_loss=4.91] 72%|███████▏  | 72/100 [02:11<00:20,  1.38it/s, loss=4.76, avg_loss=4.91] 72%|███████▏  | 72/100 [02:12<00:20,  1.38it/s, loss=4.68, avg_loss=4.9]  73%|███████▎  | 73/100 [02:12<00:19,  1.39it/s, loss=4.68, avg_loss=4.9] 73%|███████▎  | 73/100 [02:12<00:19,  1.39it/s, loss=6.7, avg_loss=4.93] 74%|███████▍  | 74/100 [02:12<00:18,  1.39it/s, loss=6.7, avg_loss=4.93] 74%|███████▍  | 74/100 [02:13<00:18,  1.39it/s, loss=7.38, avg_loss=4.96] 75%|███████▌  | 75/100 [02:13<00:17,  1.39it/s, loss=7.38, avg_loss=4.96] 75%|███████▌  | 75/100 [02:14<00:17,  1.39it/s, loss=4.65, avg_loss=4.96] 76%|███████▌  | 76/100 [02:14<00:17,  1.38it/s, loss=4.65, avg_loss=4.96] 76%|███████▌  | 76/100 [02:15<00:17,  1.38it/s, loss=4.69, avg_loss=4.95] 77%|███████▋  | 77/100 [02:15<00:16,  1.39it/s, loss=4.69, avg_loss=4.95] 77%|███████▋  | 77/100 [02:15<00:16,  1.39it/s, loss=3.46, avg_loss=4.93] 78%|███████▊  | 78/100 [02:15<00:15,  1.39it/s, loss=3.46, avg_loss=4.93] 78%|███████▊  | 78/100 [02:16<00:15,  1.39it/s, loss=2.88, avg_loss=4.91] 79%|███████▉  | 79/100 [02:16<00:15,  1.39it/s, loss=2.88, avg_loss=4.91] 79%|███████▉  | 79/100 [02:17<00:15,  1.39it/s, loss=4.69, avg_loss=4.9]  80%|████████  | 80/100 [02:17<00:14,  1.38it/s, loss=4.69, avg_loss=4.9] 80%|████████  | 80/100 [02:17<00:14,  1.38it/s, loss=4.61, avg_loss=4.9] 81%|████████  | 81/100 [02:17<00:13,  1.39it/s, loss=4.61, avg_loss=4.9] 81%|████████  | 81/100 [02:18<00:13,  1.39it/s, loss=5.23, avg_loss=4.9] 82%|████████▏ | 82/100 [02:18<00:12,  1.39it/s, loss=5.23, avg_loss=4.9] 82%|████████▏ | 82/100 [02:19<00:12,  1.39it/s, loss=5.84, avg_loss=4.92] 83%|████████▎ | 83/100 [02:19<00:12,  1.39it/s, loss=5.84, avg_loss=4.92] 83%|████████▎ | 83/100 [02:20<00:12,  1.39it/s, loss=5.76, avg_loss=4.93] 84%|████████▍ | 84/100 [02:20<00:11,  1.38it/s, loss=5.76, avg_loss=4.93] 84%|████████▍ | 84/100 [02:20<00:11,  1.38it/s, loss=4.53, avg_loss=4.92] 85%|████████▌ | 85/100 [02:20<00:10,  1.39it/s, loss=4.53, avg_loss=4.92] 85%|████████▌ | 85/100 [02:21<00:10,  1.39it/s, loss=4.07, avg_loss=4.91] 86%|████████▌ | 86/100 [02:21<00:10,  1.39it/s, loss=4.07, avg_loss=4.91] 86%|████████▌ | 86/100 [02:22<00:10,  1.39it/s, loss=7.34, avg_loss=4.94] 87%|████████▋ | 87/100 [02:22<00:09,  1.39it/s, loss=7.34, avg_loss=4.94] 87%|████████▋ | 87/100 [02:23<00:09,  1.39it/s, loss=4.04, avg_loss=4.93] 88%|████████▊ | 88/100 [02:23<00:08,  1.38it/s, loss=4.04, avg_loss=4.93] 88%|████████▊ | 88/100 [02:23<00:08,  1.38it/s, loss=4.75, avg_loss=4.93] 89%|████████▉ | 89/100 [02:23<00:07,  1.39it/s, loss=4.75, avg_loss=4.93] 89%|████████▉ | 89/100 [02:24<00:07,  1.39it/s, loss=3.55, avg_loss=4.91] 90%|█████████ | 90/100 [02:24<00:07,  1.39it/s, loss=3.55, avg_loss=4.91] 90%|█████████ | 90/100 [02:25<00:07,  1.39it/s, loss=7.65, avg_loss=4.94] 91%|█████████ | 91/100 [02:25<00:06,  1.39it/s, loss=7.65, avg_loss=4.94] 91%|█████████ | 91/100 [02:25<00:06,  1.39it/s, loss=3.79, avg_loss=4.93] 92%|█████████▏| 92/100 [02:25<00:05,  1.39it/s, loss=3.79, avg_loss=4.93] 92%|█████████▏| 92/100 [02:26<00:05,  1.39it/s, loss=4.91, avg_loss=4.93] 93%|█████████▎| 93/100 [02:26<00:05,  1.39it/s, loss=4.91, avg_loss=4.93] 93%|█████████▎| 93/100 [02:27<00:05,  1.39it/s, loss=2.86, avg_loss=4.91] 94%|█████████▍| 94/100 [02:27<00:04,  1.39it/s, loss=2.86, avg_loss=4.91] 94%|█████████▍| 94/100 [02:28<00:04,  1.39it/s, loss=3.79, avg_loss=4.9]  95%|█████████▌| 95/100 [02:28<00:03,  1.39it/s, loss=3.79, avg_loss=4.9] 95%|█████████▌| 95/100 [02:28<00:03,  1.39it/s, loss=5.28, avg_loss=4.9] 96%|█████████▌| 96/100 [02:28<00:02,  1.39it/s, loss=5.28, avg_loss=4.9] 96%|█████████▌| 96/100 [02:29<00:02,  1.39it/s, loss=6.23, avg_loss=4.91] 97%|█████████▋| 97/100 [02:29<00:02,  1.39it/s, loss=6.23, avg_loss=4.91] 97%|█████████▋| 97/100 [02:30<00:02,  1.39it/s, loss=4.01, avg_loss=4.9]  98%|█████████▊| 98/100 [02:30<00:01,  1.39it/s, loss=4.01, avg_loss=4.9] 98%|█████████▊| 98/100 [02:30<00:01,  1.39it/s, loss=5.57, avg_loss=4.91] 99%|█████████▉| 99/100 [02:30<00:00,  1.39it/s, loss=5.57, avg_loss=4.91] 99%|█████████▉| 99/100 [02:31<00:00,  1.39it/s, loss=4.67, avg_loss=4.91]100%|██████████| 100/100 [02:31<00:00,  1.39it/s, loss=4.67, avg_loss=4.91]100%|██████████| 100/100 [02:32<00:00,  1.53s/it, loss=4.67, avg_loss=4.91]
+Training loss: 0.049081
+Total mixtures: 14
+Overlap: 4 Batch size: 8
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/ANiMAL - Rockshow Shape: (2, 7307212)
+Instr: drums
+Metric sdr         value: 4.8196
+Instr: bass
+Metric sdr         value: 4.0575
+Instr: other
+Metric sdr         value: 1.4586
+Instr: vocals
+Metric sdr         value: 3.8175
+Time for song: 16.41 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Actions - One Minute Smile Shape: (2, 7213530)
+Instr: drums
+Metric sdr         value: 2.0103
+Instr: bass
+Metric sdr         value: 0.1109
+Instr: other
+Metric sdr         value: 1.4317
+Instr: vocals
+Metric sdr         value: 2.5356
+Time for song: 16.34 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Alexander Ross - Goodbye Bolero Shape: (2, 18469819)
+Instr: drums
+Metric sdr         value: 1.1942
+Instr: bass
+Metric sdr         value: 1.1338
+Instr: other
+Metric sdr         value: 3.2453
+Instr: vocals
+Metric sdr         value: 4.9656
+Time for song: 13.48 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Clara Berry And Wooldog - Waltz For My Victims Shape: (2, 7736477)
+Instr: drums
+Metric sdr         value: 3.2902
+Instr: bass
+Metric sdr         value: 4.4558
+Instr: other
+Metric sdr         value: 3.4191
+Instr: vocals
+Metric sdr         value: -2.6127
+Time for song: 17.80 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Fergessen - Nos Palpitants Shape: (2, 8749912)
+Instr: drums
+Metric sdr         value: 4.5182
+Instr: bass
+Metric sdr         value: 2.6271
+Instr: other
+Metric sdr         value: 3.8957
+Instr: vocals
+Metric sdr         value: 7.9332
+Time for song: 22.28 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/James May - On The Line Shape: (2, 11301609)
+Instr: drums
+Metric sdr         value: 3.0162
+Instr: bass
+Metric sdr         value: 1.7362
+Instr: other
+Metric sdr         value: 1.9782
+Instr: vocals
+Metric sdr         value: 5.0247
+Time for song: 35.86 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Johnny Lokke - Promises & Lies Shape: (2, 12612600)
+Instr: drums
+Metric sdr         value: 4.9549
+Instr: bass
+Metric sdr         value: 0.7175
+Instr: other
+Metric sdr         value: 3.4304
+Instr: vocals
+Metric sdr         value: 6.0057
+Time for song: 42.06 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Leaf - Summerghost Shape: (2, 10231200)
+Instr: drums
+Metric sdr         value: 5.5510
+Instr: bass
+Metric sdr         value: 7.9103
+Instr: other
+Metric sdr         value: 1.4114
+Instr: vocals
+Metric sdr         value: 5.1394
+Time for song: 28.83 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Meaxic - Take A Step Shape: (2, 12467701)
+Instr: drums
+Metric sdr         value: 3.0182
+Instr: bass
+Metric sdr         value: 5.2117
+Instr: other
+Metric sdr         value: 1.0871
+Instr: vocals
+Metric sdr         value: 2.4579
+Time for song: 40.97 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Patrick Talbot - A Reason To Leave Shape: (2, 11454778)
+Instr: drums
+Metric sdr         value: 5.8136
+Instr: bass
+Metric sdr         value: 2.7546
+Instr: other
+Metric sdr         value: 3.7763
+Instr: vocals
+Metric sdr         value: 5.7612
+Time for song: 38.02 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Skelpolu - Human Mistakes Shape: (2, 14318640)
+Instr: drums
+Metric sdr         value: 1.5562
+Instr: bass
+Metric sdr         value: 4.6732
+Instr: other
+Metric sdr         value: 1.7715
+Instr: vocals
+Metric sdr         value: 1.1278
+Time for song: 54.72 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Traffic Experiment - Sirens Shape: (2, 18586361)
+Instr: drums
+Metric sdr         value: 2.6837
+Instr: bass
+Metric sdr         value: -0.0690
+Instr: other
+Metric sdr         value: 3.7609
+Instr: vocals
+Metric sdr         value: 1.3003
+Time for song: 13.31 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Triviul - Angelsaint Shape: (2, 10447256)
+Instr: drums
+Metric sdr         value: 5.3972
+Instr: bass
+Metric sdr         value: 5.2084
+Instr: other
+Metric sdr         value: 2.1948
+Instr: vocals
+Metric sdr         value: 4.2635
+Time for song: 29.63 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Young Griffo - Pennies Shape: (2, 12259556)
+Instr: drums
+Metric sdr         value: 3.0439
+Instr: bass
+Metric sdr         value: 5.6356
+Instr: other
+Metric sdr         value: 2.6628
+Instr: vocals
+Metric sdr         value: 4.8986
+Time for song: 40.41 sec
+Num overlap: 4
+Instr drums sdr: 3.6334 (Std: 1.4761)
+Instr bass sdr: 3.2974 (Std: 2.2972)
+Instr other sdr: 2.5374 (Std: 0.9908)
+Instr vocals sdr: 3.7585 (Std: 2.5320)
+Metric avg sdr        : 3.3067
+Elapsed time: 410.33 sec
+Train epoch: 26 Learning rate: 0.0002939292443187064
+  0%|          | 0/100 [00:00<?, ?it/s]  0%|          | 0/100 [00:42<?, ?it/s, loss=3.75, avg_loss=3.75]  1%|          | 1/100 [00:42<1:10:29, 42.72s/it, loss=3.75, avg_loss=3.75]  1%|          | 1/100 [00:43<1:10:29, 42.72s/it, loss=5.9, avg_loss=4.83]   2%|▏         | 2/100 [00:43<29:29, 18.05s/it, loss=5.9, avg_loss=4.83]    2%|▏         | 2/100 [00:44<29:29, 18.05s/it, loss=5.69, avg_loss=5.11]  3%|▎         | 3/100 [00:44<16:24, 10.15s/it, loss=5.69, avg_loss=5.11]  3%|▎         | 3/100 [00:45<16:24, 10.15s/it, loss=6.38, avg_loss=5.43]  4%|▍         | 4/100 [00:45<10:20,  6.47s/it, loss=6.38, avg_loss=5.43]  4%|▍         | 4/100 [00:46<10:20,  6.47s/it, loss=3.7, avg_loss=5.08]   5%|▌         | 5/100 [00:46<07:12,  4.56s/it, loss=3.7, avg_loss=5.08]  5%|▌         | 5/100 [00:46<07:12,  4.56s/it, loss=3.12, avg_loss=4.76]  6%|▌         | 6/100 [00:46<05:05,  3.25s/it, loss=3.12, avg_loss=4.76]  6%|▌         | 6/100 [00:47<05:05,  3.25s/it, loss=2.59, avg_loss=4.45]  7%|▋         | 7/100 [00:47<03:45,  2.42s/it, loss=2.59, avg_loss=4.45]  7%|▋         | 7/100 [00:48<03:45,  2.42s/it, loss=5.76, avg_loss=4.61]  8%|▊         | 8/100 [00:48<02:53,  1.89s/it, loss=5.76, avg_loss=4.61]  8%|▊         | 8/100 [00:49<02:53,  1.89s/it, loss=2.99, avg_loss=4.43]  9%|▉         | 9/100 [00:49<02:18,  1.52s/it, loss=2.99, avg_loss=4.43]  9%|▉         | 9/100 [00:51<02:18,  1.52s/it, loss=4.88, avg_loss=4.48] 10%|█         | 10/100 [00:51<02:28,  1.65s/it, loss=4.88, avg_loss=4.48] 10%|█         | 10/100 [00:51<02:28,  1.65s/it, loss=7.36, avg_loss=4.74] 11%|█         | 11/100 [00:51<02:01,  1.36s/it, loss=7.36, avg_loss=4.74] 11%|█         | 11/100 [00:52<02:01,  1.36s/it, loss=6.66, avg_loss=4.9]  12%|█▏        | 12/100 [00:52<01:43,  1.17s/it, loss=6.66, avg_loss=4.9] 12%|█▏        | 12/100 [00:53<01:43,  1.17s/it, loss=2.58, avg_loss=4.72] 13%|█▎        | 13/100 [00:53<01:29,  1.03s/it, loss=2.58, avg_loss=4.72] 13%|█▎        | 13/100 [00:53<01:29,  1.03s/it, loss=5.31, avg_loss=4.76] 14%|█▍        | 14/100 [00:53<01:20,  1.06it/s, loss=5.31, avg_loss=4.76] 14%|█▍        | 14/100 [00:54<01:20,  1.06it/s, loss=4.33, avg_loss=4.73] 15%|█▌        | 15/100 [00:54<01:14,  1.15it/s, loss=4.33, avg_loss=4.73] 15%|█▌        | 15/100 [00:55<01:14,  1.15it/s, loss=4.29, avg_loss=4.71] 16%|█▌        | 16/100 [00:55<01:09,  1.20it/s, loss=4.29, avg_loss=4.71] 16%|█▌        | 16/100 [00:56<01:09,  1.20it/s, loss=4.74, avg_loss=4.71] 17%|█▋        | 17/100 [00:56<01:06,  1.26it/s, loss=4.74, avg_loss=4.71] 17%|█▋        | 17/100 [00:56<01:06,  1.26it/s, loss=5.07, avg_loss=4.73] 18%|█▊        | 18/100 [00:56<01:03,  1.29it/s, loss=5.07, avg_loss=4.73] 18%|█▊        | 18/100 [00:57<01:03,  1.29it/s, loss=5.3, avg_loss=4.76]  19%|█▉        | 19/100 [00:57<01:01,  1.32it/s, loss=5.3, avg_loss=4.76] 19%|█▉        | 19/100 [00:58<01:01,  1.32it/s, loss=5.82, avg_loss=4.81] 20%|██        | 20/100 [00:58<00:59,  1.33it/s, loss=5.82, avg_loss=4.81] 20%|██        | 20/100 [00:58<00:59,  1.33it/s, loss=4.67, avg_loss=4.81] 21%|██        | 21/100 [00:58<00:58,  1.35it/s, loss=4.67, avg_loss=4.81] 21%|██        | 21/100 [00:59<00:58,  1.35it/s, loss=5.36, avg_loss=4.83] 22%|██▏       | 22/100 [00:59<00:57,  1.36it/s, loss=5.36, avg_loss=4.83] 22%|██▏       | 22/100 [01:00<00:57,  1.36it/s, loss=3, avg_loss=4.75]    23%|██▎       | 23/100 [01:00<00:56,  1.37it/s, loss=3, avg_loss=4.75] 23%|██▎       | 23/100 [01:01<00:56,  1.37it/s, loss=5.62, avg_loss=4.79] 24%|██▍       | 24/100 [01:01<00:55,  1.37it/s, loss=5.62, avg_loss=4.79] 24%|██▍       | 24/100 [01:01<00:55,  1.37it/s, loss=3.61, avg_loss=4.74] 25%|██▌       | 25/100 [01:01<00:54,  1.38it/s, loss=3.61, avg_loss=4.74] 25%|██▌       | 25/100 [01:02<00:54,  1.38it/s, loss=5.2, avg_loss=4.76]  26%|██▌       | 26/100 [01:02<00:53,  1.38it/s, loss=5.2, avg_loss=4.76] 26%|██▌       | 26/100 [01:03<00:53,  1.38it/s, loss=4.9, avg_loss=4.76] 27%|██▋       | 27/100 [01:03<00:52,  1.39it/s, loss=4.9, avg_loss=4.76] 27%|██▋       | 27/100 [01:04<00:52,  1.39it/s, loss=5.04, avg_loss=4.77] 28%|██▊       | 28/100 [01:04<00:52,  1.38it/s, loss=5.04, avg_loss=4.77] 28%|██▊       | 28/100 [01:04<00:52,  1.38it/s, loss=4.44, avg_loss=4.76] 29%|██▉       | 29/100 [01:04<00:51,  1.39it/s, loss=4.44, avg_loss=4.76] 29%|██▉       | 29/100 [01:05<00:51,  1.39it/s, loss=4.6, avg_loss=4.76]  30%|███       | 30/100 [01:05<00:50,  1.39it/s, loss=4.6, avg_loss=4.76] 30%|███       | 30/100 [01:06<00:50,  1.39it/s, loss=5.17, avg_loss=4.77] 31%|███       | 31/100 [01:06<00:49,  1.39it/s, loss=5.17, avg_loss=4.77] 31%|███       | 31/100 [01:06<00:49,  1.39it/s, loss=4.16, avg_loss=4.75] 32%|███▏      | 32/100 [01:06<00:49,  1.38it/s, loss=4.16, avg_loss=4.75] 32%|███▏      | 32/100 [01:07<00:49,  1.38it/s, loss=6.27, avg_loss=4.8]  33%|███▎      | 33/100 [01:07<00:48,  1.39it/s, loss=6.27, avg_loss=4.8] 33%|███▎      | 33/100 [01:08<00:48,  1.39it/s, loss=4.21, avg_loss=4.78] 34%|███▍      | 34/100 [01:08<00:47,  1.39it/s, loss=4.21, avg_loss=4.78] 34%|███▍      | 34/100 [01:09<00:47,  1.39it/s, loss=3.88, avg_loss=4.75] 35%|███▌      | 35/100 [01:09<00:46,  1.39it/s, loss=3.88, avg_loss=4.75] 35%|███▌      | 35/100 [01:09<00:46,  1.39it/s, loss=5.68, avg_loss=4.78] 36%|███▌      | 36/100 [01:09<00:46,  1.38it/s, loss=5.68, avg_loss=4.78] 36%|███▌      | 36/100 [01:10<00:46,  1.38it/s, loss=4.22, avg_loss=4.76] 37%|███▋      | 37/100 [01:10<00:45,  1.39it/s, loss=4.22, avg_loss=4.76] 37%|███▋      | 37/100 [01:11<00:45,  1.39it/s, loss=5.82, avg_loss=4.79] 38%|███▊      | 38/100 [01:11<00:44,  1.39it/s, loss=5.82, avg_loss=4.79] 38%|███▊      | 38/100 [01:11<00:44,  1.39it/s, loss=3.64, avg_loss=4.76] 39%|███▉      | 39/100 [01:11<00:43,  1.39it/s, loss=3.64, avg_loss=4.76] 39%|███▉      | 39/100 [01:12<00:43,  1.39it/s, loss=4.27, avg_loss=4.75] 40%|████      | 40/100 [01:12<00:43,  1.39it/s, loss=4.27, avg_loss=4.75] 40%|████      | 40/100 [01:13<00:43,  1.39it/s, loss=4.02, avg_loss=4.73] 41%|████      | 41/100 [01:13<00:42,  1.39it/s, loss=4.02, avg_loss=4.73] 41%|████      | 41/100 [01:14<00:42,  1.39it/s, loss=3.98, avg_loss=4.71] 42%|████▏     | 42/100 [01:14<00:41,  1.39it/s, loss=3.98, avg_loss=4.71] 42%|████▏     | 42/100 [01:14<00:41,  1.39it/s, loss=3.9, avg_loss=4.7]   43%|████▎     | 43/100 [01:14<00:40,  1.39it/s, loss=3.9, avg_loss=4.7] 43%|████▎     | 43/100 [01:15<00:40,  1.39it/s, loss=2.45, avg_loss=4.64] 44%|████▍     | 44/100 [01:15<00:40,  1.39it/s, loss=2.45, avg_loss=4.64] 44%|████▍     | 44/100 [01:16<00:40,  1.39it/s, loss=6.61, avg_loss=4.69] 45%|████▌     | 45/100 [01:16<00:39,  1.39it/s, loss=6.61, avg_loss=4.69] 45%|████▌     | 45/100 [01:16<00:39,  1.39it/s, loss=5.5, avg_loss=4.71]  46%|████▌     | 46/100 [01:16<00:38,  1.39it/s, loss=5.5, avg_loss=4.71] 46%|████▌     | 46/100 [01:17<00:38,  1.39it/s, loss=4.14, avg_loss=4.69] 47%|████▋     | 47/100 [01:17<00:38,  1.39it/s, loss=4.14, avg_loss=4.69] 47%|████▋     | 47/100 [01:18<00:38,  1.39it/s, loss=4.26, avg_loss=4.68] 48%|████▊     | 48/100 [01:18<00:37,  1.38it/s, loss=4.26, avg_loss=4.68] 48%|████▊     | 48/100 [01:19<00:37,  1.38it/s, loss=4.93, avg_loss=4.69] 49%|████▉     | 49/100 [01:19<00:36,  1.39it/s, loss=4.93, avg_loss=4.69] 49%|████▉     | 49/100 [01:19<00:36,  1.39it/s, loss=5.3, avg_loss=4.7]   50%|█████     | 50/100 [01:19<00:35,  1.39it/s, loss=5.3, avg_loss=4.7] 50%|█████     | 50/100 [01:20<00:35,  1.39it/s, loss=5.89, avg_loss=4.73] 51%|█████     | 51/100 [01:20<00:35,  1.39it/s, loss=5.89, avg_loss=4.73] 51%|█████     | 51/100 [01:21<00:35,  1.39it/s, loss=4.68, avg_loss=4.72] 52%|█████▏    | 52/100 [01:21<00:34,  1.38it/s, loss=4.68, avg_loss=4.72] 52%|█████▏    | 52/100 [01:22<00:34,  1.38it/s, loss=4.44, avg_loss=4.72] 53%|█████▎    | 53/100 [01:22<00:33,  1.39it/s, loss=4.44, avg_loss=4.72] 53%|█████▎    | 53/100 [01:22<00:33,  1.39it/s, loss=5.56, avg_loss=4.73] 54%|█████▍    | 54/100 [01:22<00:33,  1.39it/s, loss=5.56, avg_loss=4.73] 54%|█████▍    | 54/100 [01:23<00:33,  1.39it/s, loss=5.79, avg_loss=4.75] 55%|█████▌    | 55/100 [01:23<00:32,  1.39it/s, loss=5.79, avg_loss=4.75] 55%|█████▌    | 55/100 [01:24<00:32,  1.39it/s, loss=3.53, avg_loss=4.73] 56%|█████▌    | 56/100 [01:24<00:31,  1.38it/s, loss=3.53, avg_loss=4.73] 56%|█████▌    | 56/100 [01:24<00:31,  1.38it/s, loss=3.62, avg_loss=4.71] 57%|█████▋    | 57/100 [01:24<00:30,  1.39it/s, loss=3.62, avg_loss=4.71] 57%|█████▋    | 57/100 [01:25<00:30,  1.39it/s, loss=2.15, avg_loss=4.67] 58%|█████▊    | 58/100 [01:25<00:30,  1.39it/s, loss=2.15, avg_loss=4.67] 58%|█████▊    | 58/100 [01:26<00:30,  1.39it/s, loss=4.66, avg_loss=4.67] 59%|█████▉    | 59/100 [01:26<00:29,  1.39it/s, loss=4.66, avg_loss=4.67] 59%|█████▉    | 59/100 [01:27<00:29,  1.39it/s, loss=4.25, avg_loss=4.66] 60%|██████    | 60/100 [01:27<00:28,  1.38it/s, loss=4.25, avg_loss=4.66] 60%|██████    | 60/100 [01:27<00:28,  1.38it/s, loss=4.62, avg_loss=4.66] 61%|██████    | 61/100 [01:27<00:28,  1.39it/s, loss=4.62, avg_loss=4.66] 61%|██████    | 61/100 [01:28<00:28,  1.39it/s, loss=5.1, avg_loss=4.67]  62%|██████▏   | 62/100 [01:28<00:27,  1.39it/s, loss=5.1, avg_loss=4.67] 62%|██████▏   | 62/100 [01:29<00:27,  1.39it/s, loss=4.18, avg_loss=4.66] 63%|██████▎   | 63/100 [01:29<00:26,  1.39it/s, loss=4.18, avg_loss=4.66] 63%|██████▎   | 63/100 [01:29<00:26,  1.39it/s, loss=4.1, avg_loss=4.65]  64%|██████▍   | 64/100 [01:29<00:25,  1.39it/s, loss=4.1, avg_loss=4.65] 64%|██████▍   | 64/100 [01:30<00:25,  1.39it/s, loss=6.11, avg_loss=4.67] 65%|██████▌   | 65/100 [01:30<00:25,  1.39it/s, loss=6.11, avg_loss=4.67] 65%|██████▌   | 65/100 [01:31<00:25,  1.39it/s, loss=5.48, avg_loss=4.69] 66%|██████▌   | 66/100 [01:31<00:24,  1.39it/s, loss=5.48, avg_loss=4.69] 66%|██████▌   | 66/100 [01:32<00:24,  1.39it/s, loss=3.04, avg_loss=4.66] 67%|██████▋   | 67/100 [01:32<00:23,  1.39it/s, loss=3.04, avg_loss=4.66] 67%|██████▋   | 67/100 [01:32<00:23,  1.39it/s, loss=4.9, avg_loss=4.66]  68%|██████▊   | 68/100 [01:32<00:23,  1.39it/s, loss=4.9, avg_loss=4.66] 68%|██████▊   | 68/100 [01:33<00:23,  1.39it/s, loss=5.76, avg_loss=4.68] 69%|██████▉   | 69/100 [01:33<00:22,  1.39it/s, loss=5.76, avg_loss=4.68] 69%|██████▉   | 69/100 [01:34<00:22,  1.39it/s, loss=3.9, avg_loss=4.67]  70%|███████   | 70/100 [01:34<00:21,  1.39it/s, loss=3.9, avg_loss=4.67] 70%|███████   | 70/100 [01:34<00:21,  1.39it/s, loss=6.57, avg_loss=4.7] 71%|███████   | 71/100 [01:34<00:20,  1.39it/s, loss=6.57, avg_loss=4.7] 71%|███████   | 71/100 [01:35<00:20,  1.39it/s, loss=3.41, avg_loss=4.68] 72%|███████▏  | 72/100 [01:35<00:20,  1.39it/s, loss=3.41, avg_loss=4.68] 72%|███████▏  | 72/100 [01:36<00:20,  1.39it/s, loss=5.72, avg_loss=4.69] 73%|███████▎  | 73/100 [01:36<00:19,  1.39it/s, loss=5.72, avg_loss=4.69] 73%|███████▎  | 73/100 [01:37<00:19,  1.39it/s, loss=5.49, avg_loss=4.7]  74%|███████▍  | 74/100 [01:37<00:18,  1.39it/s, loss=5.49, avg_loss=4.7] 74%|███████▍  | 74/100 [01:37<00:18,  1.39it/s, loss=2.53, avg_loss=4.67] 75%|███████▌  | 75/100 [01:37<00:17,  1.39it/s, loss=2.53, avg_loss=4.67] 75%|███████▌  | 75/100 [01:38<00:17,  1.39it/s, loss=5.08, avg_loss=4.68] 76%|███████▌  | 76/100 [01:38<00:17,  1.39it/s, loss=5.08, avg_loss=4.68] 76%|███████▌  | 76/100 [01:39<00:17,  1.39it/s, loss=3.73, avg_loss=4.67] 77%|███████▋  | 77/100 [01:39<00:16,  1.39it/s, loss=3.73, avg_loss=4.67] 77%|███████▋  | 77/100 [01:40<00:16,  1.39it/s, loss=6.41, avg_loss=4.69] 78%|███████▊  | 78/100 [01:40<00:15,  1.39it/s, loss=6.41, avg_loss=4.69] 78%|███████▊  | 78/100 [01:40<00:15,  1.39it/s, loss=4.68, avg_loss=4.69] 79%|███████▉  | 79/100 [01:40<00:15,  1.39it/s, loss=4.68, avg_loss=4.69] 79%|███████▉  | 79/100 [01:41<00:15,  1.39it/s, loss=3.26, avg_loss=4.67] 80%|████████  | 80/100 [01:41<00:14,  1.39it/s, loss=3.26, avg_loss=4.67] 80%|████████  | 80/100 [01:42<00:14,  1.39it/s, loss=5.21, avg_loss=4.68] 81%|████████  | 81/100 [01:42<00:13,  1.39it/s, loss=5.21, avg_loss=4.68] 81%|████████  | 81/100 [01:42<00:13,  1.39it/s, loss=4.77, avg_loss=4.68] 82%|████████▏ | 82/100 [01:42<00:12,  1.39it/s, loss=4.77, avg_loss=4.68] 82%|████████▏ | 82/100 [01:43<00:12,  1.39it/s, loss=5.42, avg_loss=4.69] 83%|████████▎ | 83/100 [01:43<00:12,  1.39it/s, loss=5.42, avg_loss=4.69] 83%|████████▎ | 83/100 [01:44<00:12,  1.39it/s, loss=5.48, avg_loss=4.7]  84%|████████▍ | 84/100 [01:44<00:11,  1.39it/s, loss=5.48, avg_loss=4.7] 84%|████████▍ | 84/100 [01:45<00:11,  1.39it/s, loss=4.58, avg_loss=4.7] 85%|████████▌ | 85/100 [01:45<00:10,  1.39it/s, loss=4.58, avg_loss=4.7] 85%|████████▌ | 85/100 [01:45<00:10,  1.39it/s, loss=5.24, avg_loss=4.7] 86%|████████▌ | 86/100 [01:45<00:10,  1.39it/s, loss=5.24, avg_loss=4.7] 86%|████████▌ | 86/100 [01:46<00:10,  1.39it/s, loss=5.09, avg_loss=4.71] 87%|████████▋ | 87/100 [01:46<00:09,  1.39it/s, loss=5.09, avg_loss=4.71] 87%|████████▋ | 87/100 [01:47<00:09,  1.39it/s, loss=4.71, avg_loss=4.71] 88%|████████▊ | 88/100 [01:47<00:08,  1.39it/s, loss=4.71, avg_loss=4.71] 88%|████████▊ | 88/100 [01:47<00:08,  1.39it/s, loss=4.6, avg_loss=4.71]  89%|████████▉ | 89/100 [01:47<00:07,  1.39it/s, loss=4.6, avg_loss=4.71] 89%|████████▉ | 89/100 [01:48<00:07,  1.39it/s, loss=5.38, avg_loss=4.71] 90%|█████████ | 90/100 [01:48<00:07,  1.39it/s, loss=5.38, avg_loss=4.71] 90%|█████████ | 90/100 [01:49<00:07,  1.39it/s, loss=5.43, avg_loss=4.72] 91%|█████████ | 91/100 [01:49<00:06,  1.39it/s, loss=5.43, avg_loss=4.72] 91%|█████████ | 91/100 [01:50<00:06,  1.39it/s, loss=6.84, avg_loss=4.74] 92%|█████████▏| 92/100 [01:50<00:05,  1.39it/s, loss=6.84, avg_loss=4.74] 92%|█████████▏| 92/100 [01:50<00:05,  1.39it/s, loss=4.77, avg_loss=4.74] 93%|█████████▎| 93/100 [01:50<00:05,  1.39it/s, loss=4.77, avg_loss=4.74] 93%|█████████▎| 93/100 [01:51<00:05,  1.39it/s, loss=5.82, avg_loss=4.76] 94%|█████████▍| 94/100 [01:51<00:04,  1.39it/s, loss=5.82, avg_loss=4.76] 94%|█████████▍| 94/100 [01:52<00:04,  1.39it/s, loss=5.05, avg_loss=4.76] 95%|█████████▌| 95/100 [01:52<00:03,  1.39it/s, loss=5.05, avg_loss=4.76] 95%|█████████▌| 95/100 [01:52<00:03,  1.39it/s, loss=6.24, avg_loss=4.77] 96%|█████████▌| 96/100 [01:52<00:02,  1.39it/s, loss=6.24, avg_loss=4.77] 96%|█████████▌| 96/100 [01:53<00:02,  1.39it/s, loss=3.14, avg_loss=4.76] 97%|█████████▋| 97/100 [01:53<00:02,  1.39it/s, loss=3.14, avg_loss=4.76] 97%|█████████▋| 97/100 [01:54<00:02,  1.39it/s, loss=4.57, avg_loss=4.76] 98%|█████████▊| 98/100 [01:54<00:01,  1.39it/s, loss=4.57, avg_loss=4.76] 98%|█████████▊| 98/100 [01:55<00:01,  1.39it/s, loss=2.83, avg_loss=4.74] 99%|█████████▉| 99/100 [01:55<00:00,  1.39it/s, loss=2.83, avg_loss=4.74] 99%|█████████▉| 99/100 [01:55<00:00,  1.39it/s, loss=4.71, avg_loss=4.74]100%|██████████| 100/100 [01:55<00:00,  1.39it/s, loss=4.71, avg_loss=4.74]100%|██████████| 100/100 [01:56<00:00,  1.17s/it, loss=4.71, avg_loss=4.74]
