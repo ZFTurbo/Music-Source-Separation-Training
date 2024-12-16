@@ -4475,4 +4475,935 @@ Metric avg sdr        : 0.9918
 Elapsed time: 412.64 sec
 Store weights: checkpoints/htdemucs_2024-12-16_08-16-10/model_htdemucs_ep_8_sdr_0.9918.ckpt
 Train epoch: 9 Learning rate: 0.0004494653460180496
-  0%|          | 0/10 [00:00<?, ?it/s]
+  0%|          | 0/10 [00:00<?, ?it/s]  0%|          | 0/10 [09:41<?, ?it/s, loss=10.6, avg_loss=10.6] 10%|█         | 1/10 [09:41<1:27:10, 581.19s/it, loss=10.6, avg_loss=10.6] 10%|█         | 1/10 [09:41<1:27:10, 581.19s/it, loss=11.4, avg_loss=11]   20%|██        | 2/10 [09:41<31:58, 239.76s/it, loss=11.4, avg_loss=11]   20%|██        | 2/10 [09:42<31:58, 239.76s/it, loss=9.9, avg_loss=10.7] 30%|███       | 3/10 [09:42<15:14, 130.63s/it, loss=9.9, avg_loss=10.7] 30%|███       | 3/10 [09:43<15:14, 130.63s/it, loss=10.1, avg_loss=10.5] 40%|████      | 4/10 [09:43<07:56, 79.39s/it, loss=10.1, avg_loss=10.5]  40%|████      | 4/10 [09:46<07:56, 79.39s/it, loss=8.86, avg_loss=10.2] 50%|█████     | 5/10 [09:46<04:19, 51.94s/it, loss=8.86, avg_loss=10.2] 50%|█████     | 5/10 [09:47<04:19, 51.94s/it, loss=9.79, avg_loss=10.1] 60%|██████    | 6/10 [09:47<02:18, 34.52s/it, loss=9.79, avg_loss=10.1] 60%|██████    | 6/10 [09:48<02:18, 34.52s/it, loss=9.18, avg_loss=9.99] 70%|███████   | 7/10 [09:48<01:10, 23.47s/it, loss=9.18, avg_loss=9.99] 70%|███████   | 7/10 [09:48<01:10, 23.47s/it, loss=9.22, avg_loss=9.89] 80%|████████  | 8/10 [09:48<00:32, 16.23s/it, loss=9.22, avg_loss=9.89] 80%|████████  | 8/10 [09:51<00:32, 16.23s/it, loss=9.46, avg_loss=9.84] 90%|█████████ | 9/10 [09:51<00:12, 12.08s/it, loss=9.46, avg_loss=9.84] 90%|█████████ | 9/10 [09:52<00:12, 12.08s/it, loss=7.98, avg_loss=9.66]100%|██████████| 10/10 [09:52<00:00,  8.58s/it, loss=7.98, avg_loss=9.66]100%|██████████| 10/10 [09:58<00:00, 59.85s/it, loss=7.98, avg_loss=9.66]
+[I 2024-12-16 12:31:21,549] Trial 2 finished with value: 1.156719509659907 and parameters: {'lr': 0.0004494653460180496, 'reduce_factor': 0.8888421821418327, 'ema_momentum': 0.9243602576003885, 'q': 0.8651365652397538, 'channels': 32, 'depth': 6, 't_layers': 7, 't_hidden_scale': 5.1180311288809, 't_heads': 4, 't_dropout': 0.04302760549516841}. Best is trial 2 with value: 1.156719509659907.
+Training loss: 0.096564
+Total mixtures: 14
+Overlap: 4 Batch size: 8
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/ANiMAL - Rockshow Shape: (2, 7307212)
+Instr: drums
+Metric sdr         value: 1.4748
+Instr: bass
+Metric sdr         value: 2.7993
+Instr: other
+Metric sdr         value: 0.5524
+Instr: vocals
+Metric sdr         value: 1.0929
+Time for song: 19.34 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Actions - One Minute Smile Shape: (2, 7213530)
+Instr: drums
+Metric sdr         value: 0.8281
+Instr: bass
+Metric sdr         value: -0.5671
+Instr: other
+Metric sdr         value: 0.7229
+Instr: vocals
+Metric sdr         value: 1.0266
+Time for song: 15.83 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Alexander Ross - Goodbye Bolero Shape: (2, 18469819)
+Instr: drums
+Metric sdr         value: 0.5520
+Instr: bass
+Metric sdr         value: 0.5628
+Instr: other
+Metric sdr         value: 0.7554
+Instr: vocals
+Metric sdr         value: 1.0748
+Time for song: 13.21 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Clara Berry And Wooldog - Waltz For My Victims Shape: (2, 7736477)
+Instr: drums
+Metric sdr         value: -0.6931
+Instr: bass
+Metric sdr         value: 2.7057
+Instr: other
+Metric sdr         value: 0.9254
+Instr: vocals
+Metric sdr         value: 0.6061
+Time for song: 17.18 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Fergessen - Nos Palpitants Shape: (2, 8749912)
+Instr: drums
+Metric sdr         value: 1.3610
+Instr: bass
+Metric sdr         value: 0.3010
+Instr: other
+Metric sdr         value: 0.4827
+Instr: vocals
+Metric sdr         value: 1.7841
+Time for song: 21.18 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/James May - On The Line Shape: (2, 11301609)
+Instr: drums
+Metric sdr         value: 1.6835
+Instr: bass
+Metric sdr         value: 1.9385
+Instr: other
+Metric sdr         value: 0.7618
+Instr: vocals
+Metric sdr         value: 1.2074
+Time for song: 32.96 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Johnny Lokke - Promises & Lies Shape: (2, 12612600)
+Instr: drums
+Metric sdr         value: 2.0090
+Instr: bass
+Metric sdr         value: 0.7151
+Instr: other
+Metric sdr         value: 0.6201
+Instr: vocals
+Metric sdr         value: 1.1538
+Time for song: 40.14 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Leaf - Summerghost Shape: (2, 10231200)
+Instr: drums
+Metric sdr         value: 1.2682
+Instr: bass
+Metric sdr         value: 3.2480
+Instr: other
+Metric sdr         value: 0.4113
+Instr: vocals
+Metric sdr         value: 1.3521
+Time for song: 27.99 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Meaxic - Take A Step Shape: (2, 12467701)
+Instr: drums
+Metric sdr         value: 1.4292
+Instr: bass
+Metric sdr         value: 3.3563
+Instr: other
+Metric sdr         value: 0.4288
+Instr: vocals
+Metric sdr         value: 0.6753
+Time for song: 39.14 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Patrick Talbot - A Reason To Leave Shape: (2, 11454778)
+Instr: drums
+Metric sdr         value: 1.3630
+Instr: bass
+Metric sdr         value: 1.7130
+Instr: other
+Metric sdr         value: 0.7979
+Instr: vocals
+Metric sdr         value: 1.3460
+Time for song: 34.28 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Skelpolu - Human Mistakes Shape: (2, 14318640)
+Instr: drums
+Metric sdr         value: 1.0569
+Instr: bass
+Metric sdr         value: 2.5620
+Instr: other
+Metric sdr         value: 0.5127
+Instr: vocals
+Metric sdr         value: 0.4523
+Time for song: 59.64 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Traffic Experiment - Sirens Shape: (2, 18586361)
+Instr: drums
+Metric sdr         value: 0.6599
+Instr: bass
+Metric sdr         value: 0.0161
+Instr: other
+Metric sdr         value: 0.7730
+Instr: vocals
+Metric sdr         value: 0.6345
+Time for song: 21.50 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Triviul - Angelsaint Shape: (2, 10447256)
+Instr: drums
+Metric sdr         value: 0.5794
+Instr: bass
+Metric sdr         value: 3.2657
+Instr: other
+Metric sdr         value: 0.7743
+Instr: vocals
+Metric sdr         value: 1.3594
+Time for song: 29.65 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Young Griffo - Pennies Shape: (2, 12259556)
+Instr: drums
+Metric sdr         value: 1.0315
+Instr: bass
+Metric sdr         value: 3.3444
+Instr: other
+Metric sdr         value: 0.4975
+Instr: vocals
+Metric sdr         value: 1.4306
+Time for song: 39.36 sec
+Num overlap: 4
+Instr drums sdr: 1.0431 (Std: 0.6323)
+Instr bass sdr: 1.8543 (Std: 1.3410)
+Instr other sdr: 0.6440 (Std: 0.1565)
+Instr vocals sdr: 1.0854 (Std: 0.3632)
+Metric avg sdr        : 1.1567
+Elapsed time: 412.05 sec
+Store weights: checkpoints/htdemucs_2024-12-16_08-16-10/model_htdemucs_ep_9_sdr_1.1567.ckpt
+Instruments: ['drums', 'bass', 'other', 'vocals']
+Metrics for training: ['sdr']. Metric for scheduler: sdr
+Use augmentation for training
+Dataset type: 1 Processes to use: 32 
+Collecting metadata for ['/home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train']
+Found metadata cache file: checkpoints/htdemucs_2024-12-16_08-16-10/metadata_1.pkl
+Old metadata was used for 86 tracks.
+0it [00:00, ?it/s]0it [00:00, ?it/s]
+Found tracks in dataset: 86
+Use single GPU: [0]
+Patience: 2 Reduce factor: 0.9421918806684066 Batch size: 4 Grad accum steps: 4 Effective batch size: 16 Optimizer: adam
+Train for: 10
+Train epoch: 0 Learning rate: 1.4941681093237346e-05
+  0%|          | 0/10 [00:00<?, ?it/s]  0%|          | 0/10 [05:33<?, ?it/s, loss=13.1, avg_loss=13.1] 10%|█         | 1/10 [05:33<50:01, 333.45s/it, loss=13.1, avg_loss=13.1] 10%|█         | 1/10 [05:34<50:01, 333.45s/it, loss=9.78, avg_loss=11.5] 20%|██        | 2/10 [05:34<18:21, 137.72s/it, loss=9.78, avg_loss=11.5] 20%|██        | 2/10 [05:34<18:21, 137.72s/it, loss=9.35, avg_loss=10.8] 30%|███       | 3/10 [05:34<08:46, 75.19s/it, loss=9.35, avg_loss=10.8]  30%|███       | 3/10 [05:35<08:46, 75.19s/it, loss=7.83, avg_loss=10]   40%|████      | 4/10 [05:35<04:34, 45.83s/it, loss=7.83, avg_loss=10] 40%|████      | 4/10 [05:37<04:34, 45.83s/it, loss=13.8, avg_loss=10.8] 50%|█████     | 5/10 [05:37<02:29, 29.87s/it, loss=13.8, avg_loss=10.8] 50%|█████     | 5/10 [05:38<02:29, 29.87s/it, loss=14.4, avg_loss=11.4] 60%|██████    | 6/10 [05:38<01:19, 19.96s/it, loss=14.4, avg_loss=11.4] 60%|██████    | 6/10 [05:38<01:19, 19.96s/it, loss=10.5, avg_loss=11.3] 70%|███████   | 7/10 [05:38<00:40, 13.67s/it, loss=10.5, avg_loss=11.3] 70%|███████   | 7/10 [05:39<00:40, 13.67s/it, loss=11.8, avg_loss=11.3] 80%|████████  | 8/10 [05:39<00:19,  9.55s/it, loss=11.8, avg_loss=11.3] 80%|████████  | 8/10 [05:40<00:19,  9.55s/it, loss=7.76, avg_loss=10.9] 90%|█████████ | 9/10 [05:40<00:06,  6.79s/it, loss=7.76, avg_loss=10.9] 90%|█████████ | 9/10 [05:40<00:06,  6.79s/it, loss=14.5, avg_loss=11.3]100%|██████████| 10/10 [05:40<00:00,  4.91s/it, loss=14.5, avg_loss=11.3]100%|██████████| 10/10 [05:42<00:00, 34.24s/it, loss=14.5, avg_loss=11.3]
+Training loss: 0.113005
+Total mixtures: 14
+Overlap: 4 Batch size: 8
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/ANiMAL - Rockshow Shape: (2, 7307212)
+Instr: drums
+Metric sdr         value: -0.0365
+Instr: bass
+Metric sdr         value: 0.0652
+Instr: other
+Metric sdr         value: -0.2884
+Instr: vocals
+Metric sdr         value: -0.3685
+Time for song: 17.02 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Actions - One Minute Smile Shape: (2, 7213530)
+Instr: drums
+Metric sdr         value: -0.0621
+Instr: bass
+Metric sdr         value: -0.0761
+Instr: other
+Metric sdr         value: -0.0338
+Instr: vocals
+Metric sdr         value: -0.1151
+Time for song: 16.46 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Alexander Ross - Goodbye Bolero Shape: (2, 18469819)
+Instr: drums
+Metric sdr         value: -0.1158
+Instr: bass
+Metric sdr         value: 0.0064
+Instr: other
+Metric sdr         value: 0.0274
+Instr: vocals
+Metric sdr         value: -0.3275
+Time for song: 13.29 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Clara Berry And Wooldog - Waltz For My Victims Shape: (2, 7736477)
+Instr: drums
+Metric sdr         value: -0.2892
+Instr: bass
+Metric sdr         value: 0.0211
+Instr: other
+Metric sdr         value: 0.0484
+Instr: vocals
+Metric sdr         value: -0.5708
+Time for song: 20.01 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Fergessen - Nos Palpitants Shape: (2, 8749912)
+Instr: drums
+Metric sdr         value: -0.0732
+Instr: bass
+Metric sdr         value: -0.0415
+Instr: other
+Metric sdr         value: -0.0242
+Instr: vocals
+Metric sdr         value: -0.1045
+Time for song: 21.98 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/James May - On The Line Shape: (2, 11301609)
+Instr: drums
+Metric sdr         value: -0.0201
+Instr: bass
+Metric sdr         value: 0.0391
+Instr: other
+Metric sdr         value: -0.0783
+Instr: vocals
+Metric sdr         value: -0.3698
+Time for song: 34.38 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Johnny Lokke - Promises & Lies Shape: (2, 12612600)
+Instr: drums
+Metric sdr         value: -0.0237
+Instr: bass
+Metric sdr         value: 0.0253
+Instr: other
+Metric sdr         value: -0.0275
+Instr: vocals
+Metric sdr         value: -0.3327
+Time for song: 98.63 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Leaf - Summerghost Shape: (2, 10231200)
+Instr: drums
+Metric sdr         value: -0.0380
+Instr: bass
+Metric sdr         value: 0.0758
+Instr: other
+Metric sdr         value: -0.3272
+Instr: vocals
+Metric sdr         value: -0.2569
+Time for song: 27.78 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Meaxic - Take A Step Shape: (2, 12467701)
+Instr: drums
+Metric sdr         value: -0.0342
+Instr: bass
+Metric sdr         value: 0.0850
+Instr: other
+Metric sdr         value: -0.2420
+Instr: vocals
+Metric sdr         value: -0.3251
+Time for song: 42.15 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Patrick Talbot - A Reason To Leave Shape: (2, 11454778)
+Instr: drums
+Metric sdr         value: -0.0548
+Instr: bass
+Metric sdr         value: 0.0483
+Instr: other
+Metric sdr         value: -0.0535
+Instr: vocals
+Metric sdr         value: -0.2168
+Time for song: 47.62 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Skelpolu - Human Mistakes Shape: (2, 14318640)
+Instr: drums
+Metric sdr         value: -0.0831
+Instr: bass
+Metric sdr         value: 0.0821
+Instr: other
+Metric sdr         value: -0.1450
+Instr: vocals
+Metric sdr         value: -0.8198
+Time for song: 53.65 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Traffic Experiment - Sirens Shape: (2, 18586361)
+Instr: drums
+Metric sdr         value: -0.6204
+Instr: bass
+Metric sdr         value: -0.7235
+Instr: other
+Metric sdr         value: 0.1003
+Instr: vocals
+Metric sdr         value: -0.1295
+Time for song: 20.72 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Triviul - Angelsaint Shape: (2, 10447256)
+Instr: drums
+Metric sdr         value: -0.1088
+Instr: bass
+Metric sdr         value: 0.0686
+Instr: other
+Metric sdr         value: -0.0935
+Instr: vocals
+Metric sdr         value: -0.1729
+Time for song: 32.26 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Young Griffo - Pennies Shape: (2, 12259556)
+Instr: drums
+Metric sdr         value: -0.0727
+Instr: bass
+Metric sdr         value: 0.0913
+Instr: other
+Metric sdr         value: -0.2087
+Instr: vocals
+Metric sdr         value: -0.2936
+Time for song: 41.97 sec
+Num overlap: 4
+Instr drums sdr: -0.1166 (Std: 0.1541)
+Instr bass sdr: -0.0166 (Std: 0.2016)
+Instr other sdr: -0.0961 (Std: 0.1246)
+Instr vocals sdr: -0.3145 (Std: 0.1850)
+Metric avg sdr        : -0.1360
+Elapsed time: 487.98 sec
+Store weights: checkpoints/htdemucs_2024-12-16_08-16-10/model_htdemucs_ep_0_sdr_-0.1360.ckpt
+Train epoch: 1 Learning rate: 1.4941681093237346e-05
+  0%|          | 0/10 [00:00<?, ?it/s]  0%|          | 0/10 [08:51<?, ?it/s, loss=12.8, avg_loss=12.8] 10%|█         | 1/10 [08:51<1:19:41, 531.33s/it, loss=12.8, avg_loss=12.8] 10%|█         | 1/10 [08:52<1:19:41, 531.33s/it, loss=12.6, avg_loss=12.7] 20%|██        | 2/10 [08:52<29:14, 219.27s/it, loss=12.6, avg_loss=12.7]   20%|██        | 2/10 [08:52<29:14, 219.27s/it, loss=12.6, avg_loss=12.7] 30%|███       | 3/10 [08:52<13:56, 119.48s/it, loss=12.6, avg_loss=12.7] 30%|███       | 3/10 [08:53<13:56, 119.48s/it, loss=12.6, avg_loss=12.7] 40%|████      | 4/10 [08:53<07:15, 72.64s/it, loss=12.6, avg_loss=12.7]  40%|████      | 4/10 [08:54<07:15, 72.64s/it, loss=14.4, avg_loss=13]   50%|█████     | 5/10 [08:54<03:54, 46.90s/it, loss=14.4, avg_loss=13] 50%|█████     | 5/10 [08:55<03:54, 46.90s/it, loss=13.4, avg_loss=13.1] 60%|██████    | 6/10 [08:55<02:04, 31.20s/it, loss=13.4, avg_loss=13.1] 60%|██████    | 6/10 [08:56<02:04, 31.20s/it, loss=11.7, avg_loss=12.9] 70%|███████   | 7/10 [08:56<01:03, 21.23s/it, loss=11.7, avg_loss=12.9] 70%|███████   | 7/10 [08:57<01:03, 21.23s/it, loss=13, avg_loss=12.9]   80%|████████  | 8/10 [08:57<00:29, 14.71s/it, loss=13, avg_loss=12.9] 80%|████████  | 8/10 [08:57<00:29, 14.71s/it, loss=13, avg_loss=12.9] 90%|█████████ | 9/10 [08:57<00:10, 10.33s/it, loss=13, avg_loss=12.9] 90%|█████████ | 9/10 [08:58<00:10, 10.33s/it, loss=13.7, avg_loss=13]100%|██████████| 10/10 [08:58<00:00,  7.37s/it, loss=13.7, avg_loss=13]100%|██████████| 10/10 [08:59<00:00, 53.98s/it, loss=13.7, avg_loss=13]
+Training loss: 0.129797
+Total mixtures: 14
+Overlap: 4 Batch size: 8
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/ANiMAL - Rockshow Shape: (2, 7307212)
+Instr: drums
+Metric sdr         value: -0.0313
+Instr: bass
+Metric sdr         value: 0.0696
+Instr: other
+Metric sdr         value: -0.2824
+Instr: vocals
+Metric sdr         value: -0.3618
+Time for song: 20.21 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Actions - One Minute Smile Shape: (2, 7213530)
+Instr: drums
+Metric sdr         value: -0.0585
+Instr: bass
+Metric sdr         value: -0.0692
+Instr: other
+Metric sdr         value: -0.0293
+Instr: vocals
+Metric sdr         value: -0.1109
+Time for song: 17.86 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Alexander Ross - Goodbye Bolero Shape: (2, 18469819)
+Instr: drums
+Metric sdr         value: -0.1103
+Instr: bass
+Metric sdr         value: 0.0120
+Instr: other
+Metric sdr         value: 0.0313
+Instr: vocals
+Metric sdr         value: -0.3211
+Time for song: 24.27 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Clara Berry And Wooldog - Waltz For My Victims Shape: (2, 7736477)
+Instr: drums
+Metric sdr         value: -0.2821
+Instr: bass
+Metric sdr         value: 0.0264
+Instr: other
+Metric sdr         value: 0.0522
+Instr: vocals
+Metric sdr         value: -0.5621
+Time for song: 18.42 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Fergessen - Nos Palpitants Shape: (2, 8749912)
+Instr: drums
+Metric sdr         value: -0.0679
+Instr: bass
+Metric sdr         value: -0.0351
+Instr: other
+Metric sdr         value: -0.0200
+Instr: vocals
+Metric sdr         value: -0.0995
+Time for song: 23.84 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/James May - On The Line Shape: (2, 11301609)
+Instr: drums
+Metric sdr         value: -0.0150
+Instr: bass
+Metric sdr         value: 0.0440
+Instr: other
+Metric sdr         value: -0.0732
+Instr: vocals
+Metric sdr         value: -0.3630
+Time for song: 35.12 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Johnny Lokke - Promises & Lies Shape: (2, 12612600)
+Instr: drums
+Metric sdr         value: -0.0186
+Instr: bass
+Metric sdr         value: 0.0307
+Instr: other
+Metric sdr         value: -0.0236
+Instr: vocals
+Metric sdr         value: -0.3263
+Time for song: 41.64 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Leaf - Summerghost Shape: (2, 10231200)
+Instr: drums
+Metric sdr         value: -0.0328
+Instr: bass
+Metric sdr         value: 0.0803
+Instr: other
+Metric sdr         value: -0.3205
+Instr: vocals
+Metric sdr         value: -0.2510
+Time for song: 30.74 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Meaxic - Take A Step Shape: (2, 12467701)
+Instr: drums
+Metric sdr         value: -0.0293
+Instr: bass
+Metric sdr         value: 0.0897
+Instr: other
+Metric sdr         value: -0.2360
+Instr: vocals
+Metric sdr         value: -0.3196
+Time for song: 41.99 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Patrick Talbot - A Reason To Leave Shape: (2, 11454778)
+Instr: drums
+Metric sdr         value: -0.0495
+Instr: bass
+Metric sdr         value: 0.0531
+Instr: other
+Metric sdr         value: -0.0487
+Instr: vocals
+Metric sdr         value: -0.2111
+Time for song: 35.92 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Skelpolu - Human Mistakes Shape: (2, 14318640)
+Instr: drums
+Metric sdr         value: -0.0771
+Instr: bass
+Metric sdr         value: 0.0867
+Instr: other
+Metric sdr         value: -0.1391
+Instr: vocals
+Metric sdr         value: -0.8100
+Time for song: 57.32 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Traffic Experiment - Sirens Shape: (2, 18586361)
+Instr: drums
+Metric sdr         value: -0.6144
+Instr: bass
+Metric sdr         value: -0.7176
+Instr: other
+Metric sdr         value: 0.1039
+Instr: vocals
+Metric sdr         value: -0.1246
+Time for song: 22.12 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Triviul - Angelsaint Shape: (2, 10447256)
+Instr: drums
+Metric sdr         value: -0.1028
+Instr: bass
+Metric sdr         value: 0.0733
+Instr: other
+Metric sdr         value: -0.0886
+Instr: vocals
+Metric sdr         value: -0.1676
+Time for song: 32.33 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Young Griffo - Pennies Shape: (2, 12259556)
+Instr: drums
+Metric sdr         value: -0.0673
+Instr: bass
+Metric sdr         value: 0.0959
+Instr: other
+Metric sdr         value: -0.2035
+Instr: vocals
+Metric sdr         value: -0.2872
+Time for song: 39.71 sec
+Num overlap: 4
+Instr drums sdr: -0.1112 (Std: 0.1538)
+Instr bass sdr: -0.0114 (Std: 0.2013)
+Instr other sdr: -0.0913 (Std: 0.1237)
+Instr vocals sdr: -0.3083 (Std: 0.1836)
+Metric avg sdr        : -0.1305
+Elapsed time: 441.52 sec
+Store weights: checkpoints/htdemucs_2024-12-16_08-16-10/model_htdemucs_ep_1_sdr_-0.1305.ckpt
+Train epoch: 2 Learning rate: 1.4941681093237346e-05
+  0%|          | 0/10 [00:00<?, ?it/s]  0%|          | 0/10 [10:42<?, ?it/s, loss=11.8, avg_loss=11.8] 10%|█         | 1/10 [10:42<1:36:22, 642.55s/it, loss=11.8, avg_loss=11.8] 10%|█         | 1/10 [10:43<1:36:22, 642.55s/it, loss=11.2, avg_loss=11.5] 20%|██        | 2/10 [10:43<35:20, 265.03s/it, loss=11.2, avg_loss=11.5]   20%|██        | 2/10 [10:44<35:20, 265.03s/it, loss=10.8, avg_loss=11.3] 30%|███       | 3/10 [10:44<16:50, 144.37s/it, loss=10.8, avg_loss=11.3] 30%|███       | 3/10 [10:44<16:50, 144.37s/it, loss=13.9, avg_loss=11.9] 40%|████      | 4/10 [10:44<08:46, 87.70s/it, loss=13.9, avg_loss=11.9]  40%|████      | 4/10 [10:46<08:46, 87.70s/it, loss=8.96, avg_loss=11.3] 50%|█████     | 5/10 [10:46<04:42, 56.60s/it, loss=8.96, avg_loss=11.3] 50%|█████     | 5/10 [10:47<04:42, 56.60s/it, loss=8.37, avg_loss=10.8] 60%|██████    | 6/10 [10:47<02:30, 37.60s/it, loss=8.37, avg_loss=10.8] 60%|██████    | 6/10 [10:47<02:30, 37.60s/it, loss=9.65, avg_loss=10.7] 70%|███████   | 7/10 [10:47<01:16, 25.54s/it, loss=9.65, avg_loss=10.7] 70%|███████   | 7/10 [10:48<01:16, 25.54s/it, loss=10.3, avg_loss=10.6] 80%|████████  | 8/10 [10:48<00:35, 17.64s/it, loss=10.3, avg_loss=10.6] 80%|████████  | 8/10 [10:49<00:35, 17.64s/it, loss=13.4, avg_loss=10.9] 90%|█████████ | 9/10 [10:49<00:12, 12.35s/it, loss=13.4, avg_loss=10.9] 90%|█████████ | 9/10 [10:49<00:12, 12.35s/it, loss=10.3, avg_loss=10.9]100%|██████████| 10/10 [10:49<00:00,  8.76s/it, loss=10.3, avg_loss=10.9]100%|██████████| 10/10 [10:55<00:00, 65.56s/it, loss=10.3, avg_loss=10.9]
+Training loss: 0.108663
+Total mixtures: 14
+Overlap: 4 Batch size: 8
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/ANiMAL - Rockshow Shape: (2, 7307212)
+Instr: drums
+Metric sdr         value: -0.0262
+Instr: bass
+Metric sdr         value: 0.0740
+Instr: other
+Metric sdr         value: -0.2766
+Instr: vocals
+Metric sdr         value: -0.3547
+Time for song: 20.25 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Actions - One Minute Smile Shape: (2, 7213530)
+Instr: drums
+Metric sdr         value: -0.0550
+Instr: bass
+Metric sdr         value: -0.0621
+Instr: other
+Metric sdr         value: -0.0251
+Instr: vocals
+Metric sdr         value: -0.1064
+Time for song: 19.55 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Alexander Ross - Goodbye Bolero Shape: (2, 18469819)
+Instr: drums
+Metric sdr         value: -0.1051
+Instr: bass
+Metric sdr         value: 0.0177
+Instr: other
+Metric sdr         value: 0.0347
+Instr: vocals
+Metric sdr         value: -0.3142
+Time for song: 20.17 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Clara Berry And Wooldog - Waltz For My Victims Shape: (2, 7736477)
+Instr: drums
+Metric sdr         value: -0.2751
+Instr: bass
+Metric sdr         value: 0.0317
+Instr: other
+Metric sdr         value: 0.0555
+Instr: vocals
+Metric sdr         value: -0.5528
+Time for song: 19.73 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Fergessen - Nos Palpitants Shape: (2, 8749912)
+Instr: drums
+Metric sdr         value: -0.0628
+Instr: bass
+Metric sdr         value: -0.0286
+Instr: other
+Metric sdr         value: -0.0161
+Instr: vocals
+Metric sdr         value: -0.0942
+Time for song: 24.24 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/James May - On The Line Shape: (2, 11301609)
+Instr: drums
+Metric sdr         value: -0.0100
+Instr: bass
+Metric sdr         value: 0.0488
+Instr: other
+Metric sdr         value: -0.0684
+Instr: vocals
+Metric sdr         value: -0.3557
+Time for song: 34.69 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Johnny Lokke - Promises & Lies Shape: (2, 12612600)
+Instr: drums
+Metric sdr         value: -0.0137
+Instr: bass
+Metric sdr         value: 0.0362
+Instr: other
+Metric sdr         value: -0.0200
+Instr: vocals
+Metric sdr         value: -0.3195
+Time for song: 41.30 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Leaf - Summerghost Shape: (2, 10231200)
+Instr: drums
+Metric sdr         value: -0.0278
+Instr: bass
+Metric sdr         value: 0.0847
+Instr: other
+Metric sdr         value: -0.3139
+Instr: vocals
+Metric sdr         value: -0.2448
+Time for song: 30.87 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Meaxic - Take A Step Shape: (2, 12467701)
+Instr: drums
+Metric sdr         value: -0.0246
+Instr: bass
+Metric sdr         value: 0.0943
+Instr: other
+Metric sdr         value: -0.2302
+Instr: vocals
+Metric sdr         value: -0.3137
+Time for song: 43.44 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Patrick Talbot - A Reason To Leave Shape: (2, 11454778)
+Instr: drums
+Metric sdr         value: -0.0443
+Instr: bass
+Metric sdr         value: 0.0579
+Instr: other
+Metric sdr         value: -0.0442
+Instr: vocals
+Metric sdr         value: -0.2051
+Time for song: 36.79 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Skelpolu - Human Mistakes Shape: (2, 14318640)
+Instr: drums
+Metric sdr         value: -0.0715
+Instr: bass
+Metric sdr         value: 0.0913
+Instr: other
+Metric sdr         value: -0.1335
+Instr: vocals
+Metric sdr         value: -0.7993
+Time for song: 59.90 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Traffic Experiment - Sirens Shape: (2, 18586361)
+Instr: drums
+Metric sdr         value: -0.6085
+Instr: bass
+Metric sdr         value: -0.7114
+Instr: other
+Metric sdr         value: 0.1070
+Instr: vocals
+Metric sdr         value: -0.1194
+Time for song: 20.91 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Triviul - Angelsaint Shape: (2, 10447256)
+Instr: drums
+Metric sdr         value: -0.0972
+Instr: bass
+Metric sdr         value: 0.0779
+Instr: other
+Metric sdr         value: -0.0840
+Instr: vocals
+Metric sdr         value: -0.1620
+Time for song: 30.99 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Young Griffo - Pennies Shape: (2, 12259556)
+Instr: drums
+Metric sdr         value: -0.0622
+Instr: bass
+Metric sdr         value: 0.1004
+Instr: other
+Metric sdr         value: -0.1985
+Instr: vocals
+Metric sdr         value: -0.2805
+Time for song: 42.41 sec
+Num overlap: 4
+Instr drums sdr: -0.1060 (Std: 0.1534)
+Instr bass sdr: -0.0062 (Std: 0.2008)
+Instr other sdr: -0.0867 (Std: 0.1227)
+Instr vocals sdr: -0.3016 (Std: 0.1820)
+Metric avg sdr        : -0.1251
+Elapsed time: 446.52 sec
+Store weights: checkpoints/htdemucs_2024-12-16_08-16-10/model_htdemucs_ep_2_sdr_-0.1251.ckpt
+Train epoch: 3 Learning rate: 1.4941681093237346e-05
+  0%|          | 0/10 [00:00<?, ?it/s]  0%|          | 0/10 [01:31<?, ?it/s, loss=10.1, avg_loss=10.1] 10%|█         | 1/10 [01:31<13:45, 91.72s/it, loss=10.1, avg_loss=10.1] 10%|█         | 1/10 [01:32<13:45, 91.72s/it, loss=11.1, avg_loss=10.6] 20%|██        | 2/10 [01:32<05:05, 38.21s/it, loss=11.1, avg_loss=10.6] 20%|██        | 2/10 [01:33<05:05, 38.21s/it, loss=13.9, avg_loss=11.7] 30%|███       | 3/10 [01:33<02:27, 21.10s/it, loss=13.9, avg_loss=11.7] 30%|███       | 3/10 [01:34<02:27, 21.10s/it, loss=13.3, avg_loss=12.1] 40%|████      | 4/10 [01:34<01:18, 13.10s/it, loss=13.3, avg_loss=12.1] 40%|████      | 4/10 [01:34<01:18, 13.10s/it, loss=12.4, avg_loss=12.2] 50%|█████     | 5/10 [01:34<00:43,  8.71s/it, loss=12.4, avg_loss=12.2] 50%|█████     | 5/10 [01:35<00:43,  8.71s/it, loss=9.18, avg_loss=11.7] 60%|██████    | 6/10 [01:35<00:23,  6.00s/it, loss=9.18, avg_loss=11.7] 60%|██████    | 6/10 [01:36<00:23,  6.00s/it, loss=13, avg_loss=11.9]   70%|███████   | 7/10 [01:36<00:12,  4.27s/it, loss=13, avg_loss=11.9] 70%|███████   | 7/10 [01:37<00:12,  4.27s/it, loss=13.9, avg_loss=12.1] 80%|████████  | 8/10 [01:37<00:06,  3.14s/it, loss=13.9, avg_loss=12.1] 80%|████████  | 8/10 [01:37<00:06,  3.14s/it, loss=12.5, avg_loss=12.2] 90%|█████████ | 9/10 [01:37<00:02,  2.39s/it, loss=12.5, avg_loss=12.2] 90%|█████████ | 9/10 [01:38<00:02,  2.39s/it, loss=9.34, avg_loss=11.9]100%|██████████| 10/10 [01:38<00:00,  1.87s/it, loss=9.34, avg_loss=11.9]100%|██████████| 10/10 [01:39<00:00,  9.96s/it, loss=9.34, avg_loss=11.9]
+Training loss: 0.118705
+Total mixtures: 14
+Overlap: 4 Batch size: 8
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/ANiMAL - Rockshow Shape: (2, 7307212)
+Instr: drums
+Metric sdr         value: -0.0208
+Instr: bass
+Metric sdr         value: 0.0782
+Instr: other
+Metric sdr         value: -0.2707
+Instr: vocals
+Metric sdr         value: -0.3480
+Time for song: 16.21 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Actions - One Minute Smile Shape: (2, 7213530)
+Instr: drums
+Metric sdr         value: -0.0513
+Instr: bass
+Metric sdr         value: -0.0553
+Instr: other
+Metric sdr         value: -0.0211
+Instr: vocals
+Metric sdr         value: -0.1021
+Time for song: 16.02 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Alexander Ross - Goodbye Bolero Shape: (2, 18469819)
+Instr: drums
+Metric sdr         value: -0.0996
+Instr: bass
+Metric sdr         value: 0.0232
+Instr: other
+Metric sdr         value: 0.0379
+Instr: vocals
+Metric sdr         value: -0.3076
+Time for song: 13.17 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Clara Berry And Wooldog - Waltz For My Victims Shape: (2, 7736477)
+Instr: drums
+Metric sdr         value: -0.2680
+Instr: bass
+Metric sdr         value: 0.0369
+Instr: other
+Metric sdr         value: 0.0586
+Instr: vocals
+Metric sdr         value: -0.5441
+Time for song: 17.66 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Fergessen - Nos Palpitants Shape: (2, 8749912)
+Instr: drums
+Metric sdr         value: -0.0575
+Instr: bass
+Metric sdr         value: -0.0224
+Instr: other
+Metric sdr         value: -0.0123
+Instr: vocals
+Metric sdr         value: -0.0889
+Time for song: 21.14 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/James May - On The Line Shape: (2, 11301609)
+Instr: drums
+Metric sdr         value: -0.0047
+Instr: bass
+Metric sdr         value: 0.0534
+Instr: other
+Metric sdr         value: -0.0638
+Instr: vocals
+Metric sdr         value: -0.3488
+Time for song: 35.46 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Johnny Lokke - Promises & Lies Shape: (2, 12612600)
+Instr: drums
+Metric sdr         value: -0.0083
+Instr: bass
+Metric sdr         value: 0.0415
+Instr: other
+Metric sdr         value: -0.0166
+Instr: vocals
+Metric sdr         value: -0.3130
+Time for song: 42.02 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Leaf - Summerghost Shape: (2, 10231200)
+Instr: drums
+Metric sdr         value: -0.0225
+Instr: bass
+Metric sdr         value: 0.0889
+Instr: other
+Metric sdr         value: -0.3073
+Instr: vocals
+Metric sdr         value: -0.2388
+Time for song: 31.77 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Meaxic - Take A Step Shape: (2, 12467701)
+Instr: drums
+Metric sdr         value: -0.0195
+Instr: bass
+Metric sdr         value: 0.0987
+Instr: other
+Metric sdr         value: -0.2244
+Instr: vocals
+Metric sdr         value: -0.3084
+Time for song: 38.90 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Patrick Talbot - A Reason To Leave Shape: (2, 11454778)
+Instr: drums
+Metric sdr         value: -0.0388
+Instr: bass
+Metric sdr         value: 0.0624
+Instr: other
+Metric sdr         value: -0.0399
+Instr: vocals
+Metric sdr         value: -0.1992
+Time for song: 36.15 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Skelpolu - Human Mistakes Shape: (2, 14318640)
+Instr: drums
+Metric sdr         value: -0.0653
+Instr: bass
+Metric sdr         value: 0.0956
+Instr: other
+Metric sdr         value: -0.1280
+Instr: vocals
+Metric sdr         value: -0.7898
+Time for song: 45.29 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Traffic Experiment - Sirens Shape: (2, 18586361)
+Instr: drums
+Metric sdr         value: -0.6024
+Instr: bass
+Metric sdr         value: -0.7053
+Instr: other
+Metric sdr         value: 0.1099
+Instr: vocals
+Metric sdr         value: -0.1144
+Time for song: 32.46 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Triviul - Angelsaint Shape: (2, 10447256)
+Instr: drums
+Metric sdr         value: -0.0912
+Instr: bass
+Metric sdr         value: 0.0824
+Instr: other
+Metric sdr         value: -0.0795
+Instr: vocals
+Metric sdr         value: -0.1565
+Time for song: 31.96 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Young Griffo - Pennies Shape: (2, 12259556)
+Instr: drums
+Metric sdr         value: -0.0567
+Instr: bass
+Metric sdr         value: 0.1047
+Instr: other
+Metric sdr         value: -0.1936
+Instr: vocals
+Metric sdr         value: -0.2739
+Time for song: 41.98 sec
+Num overlap: 4
+Instr drums sdr: -0.1005 (Std: 0.1530)
+Instr bass sdr: -0.0012 (Std: 0.2004)
+Instr other sdr: -0.0822 (Std: 0.1216)
+Instr vocals sdr: -0.2952 (Std: 0.1808)
+Metric avg sdr        : -0.1198
+Elapsed time: 420.20 sec
+Store weights: checkpoints/htdemucs_2024-12-16_08-16-10/model_htdemucs_ep_3_sdr_-0.1198.ckpt
+Train epoch: 4 Learning rate: 1.4941681093237346e-05
+  0%|          | 0/10 [00:00<?, ?it/s]  0%|          | 0/10 [10:56<?, ?it/s, loss=12.4, avg_loss=12.4] 10%|█         | 1/10 [10:56<1:38:24, 656.08s/it, loss=12.4, avg_loss=12.4] 10%|█         | 1/10 [10:56<1:38:24, 656.08s/it, loss=13, avg_loss=12.7]   20%|██        | 2/10 [10:56<36:04, 270.60s/it, loss=13, avg_loss=12.7]   20%|██        | 2/10 [10:57<36:04, 270.60s/it, loss=12.1, avg_loss=12.5] 30%|███       | 3/10 [10:57<17:11, 147.37s/it, loss=12.1, avg_loss=12.5] 30%|███       | 3/10 [10:59<17:11, 147.37s/it, loss=11.8, avg_loss=12.3] 40%|████      | 4/10 [10:59<09:00, 90.10s/it, loss=11.8, avg_loss=12.3]  40%|████      | 4/10 [11:03<09:00, 90.10s/it, loss=12.4, avg_loss=12.3] 50%|█████     | 5/10 [11:03<04:55, 59.05s/it, loss=12.4, avg_loss=12.3] 50%|█████     | 5/10 [11:05<04:55, 59.05s/it, loss=14.4, avg_loss=12.7] 60%|██████    | 6/10 [11:05<02:38, 39.61s/it, loss=14.4, avg_loss=12.7] 60%|██████    | 6/10 [11:06<02:38, 39.61s/it, loss=9.48, avg_loss=12.2] 70%|███████   | 7/10 [11:06<01:20, 26.91s/it, loss=9.48, avg_loss=12.2] 70%|███████   | 7/10 [11:07<01:20, 26.91s/it, loss=10.3, avg_loss=12]   80%|████████  | 8/10 [11:07<00:37, 18.78s/it, loss=10.3, avg_loss=12] 80%|████████  | 8/10 [11:13<00:37, 18.78s/it, loss=7.41, avg_loss=11.5] 90%|█████████ | 9/10 [11:13<00:14, 14.73s/it, loss=7.41, avg_loss=11.5] 90%|█████████ | 9/10 [11:14<00:14, 14.73s/it, loss=13.6, avg_loss=11.7]100%|██████████| 10/10 [11:14<00:00, 10.41s/it, loss=13.6, avg_loss=11.7]100%|██████████| 10/10 [11:24<00:00, 68.47s/it, loss=13.6, avg_loss=11.7]
+Training loss: 0.116865
+Total mixtures: 14
+Overlap: 4 Batch size: 8
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/ANiMAL - Rockshow Shape: (2, 7307212)
+Instr: drums
+Metric sdr         value: -0.0156
+Instr: bass
+Metric sdr         value: 0.0827
+Instr: other
+Metric sdr         value: -0.2651
+Instr: vocals
+Metric sdr         value: -0.3418
+Time for song: 18.03 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Actions - One Minute Smile Shape: (2, 7213530)
+Instr: drums
+Metric sdr         value: -0.0478
+Instr: bass
+Metric sdr         value: -0.0486
+Instr: other
+Metric sdr         value: -0.0171
+Instr: vocals
+Metric sdr         value: -0.0981
+Time for song: 15.80 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Alexander Ross - Goodbye Bolero Shape: (2, 18469819)
+Instr: drums
+Metric sdr         value: -0.0942
+Instr: bass
+Metric sdr         value: 0.0288
+Instr: other
+Metric sdr         value: 0.0412
+Instr: vocals
+Metric sdr         value: -0.3015
+Time for song: 23.52 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Clara Berry And Wooldog - Waltz For My Victims Shape: (2, 7736477)
+Instr: drums
+Metric sdr         value: -0.2614
+Instr: bass
+Metric sdr         value: 0.0421
+Instr: other
+Metric sdr         value: 0.0618
+Instr: vocals
+Metric sdr         value: -0.5360
+Time for song: 18.76 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Fergessen - Nos Palpitants Shape: (2, 8749912)
+Instr: drums
+Metric sdr         value: -0.0523
+Instr: bass
+Metric sdr         value: -0.0162
+Instr: other
+Metric sdr         value: -0.0084
+Instr: vocals
+Metric sdr         value: -0.0841
+Time for song: 22.18 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/James May - On The Line Shape: (2, 11301609)
+Instr: drums
+Metric sdr         value: 0.0004
+Instr: bass
+Metric sdr         value: 0.0583
+Instr: other
+Metric sdr         value: -0.0592
+Instr: vocals
+Metric sdr         value: -0.3423
+Time for song: 36.54 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Johnny Lokke - Promises & Lies Shape: (2, 12612600)
+Instr: drums
+Metric sdr         value: -0.0031
+Instr: bass
+Metric sdr         value: 0.0469
+Instr: other
+Metric sdr         value: -0.0131
+Instr: vocals
+Metric sdr         value: -0.3071
+Time for song: 40.21 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Leaf - Summerghost Shape: (2, 10231200)
+Instr: drums
+Metric sdr         value: -0.0173
+Instr: bass
+Metric sdr         value: 0.0935
+Instr: other
+Metric sdr         value: -0.3009
+Instr: vocals
+Metric sdr         value: -0.2333
+Time for song: 29.95 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Meaxic - Take A Step Shape: (2, 12467701)
+Instr: drums
+Metric sdr         value: -0.0146
+Instr: bass
+Metric sdr         value: 0.1035
+Instr: other
+Metric sdr         value: -0.2186
+Instr: vocals
+Metric sdr         value: -0.3032
+Time for song: 42.53 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Patrick Talbot - A Reason To Leave Shape: (2, 11454778)
+Instr: drums
+Metric sdr         value: -0.0334
+Instr: bass
+Metric sdr         value: 0.0672
+Instr: other
+Metric sdr         value: -0.0355
+Instr: vocals
+Metric sdr         value: -0.1937
+Time for song: 35.95 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Skelpolu - Human Mistakes Shape: (2, 14318640)
+Instr: drums
+Metric sdr         value: -0.0594
+Instr: bass
+Metric sdr         value: 0.1003
+Instr: other
+Metric sdr         value: -0.1226
+Instr: vocals
+Metric sdr         value: -0.7807
+Time for song: 55.00 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Traffic Experiment - Sirens Shape: (2, 18586361)
+Instr: drums
+Metric sdr         value: -0.5965
+Instr: bass
+Metric sdr         value: -0.6993
+Instr: other
+Metric sdr         value: 0.1129
+Instr: vocals
+Metric sdr         value: -0.1099
+Time for song: 20.39 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Triviul - Angelsaint Shape: (2, 10447256)
+Instr: drums
+Metric sdr         value: -0.0854
+Instr: bass
+Metric sdr         value: 0.0871
+Instr: other
+Metric sdr         value: -0.0752
+Instr: vocals
+Metric sdr         value: -0.1515
+Time for song: 29.59 sec
+Song: /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation/Young Griffo - Pennies Shape: (2, 12259556)
+Instr: drums
+Metric sdr         value: -0.0513
+Instr: bass
+Metric sdr         value: 0.1093
+Instr: other
+Metric sdr         value: -0.1887
+Instr: vocals
+Metric sdr         value: -0.2679
+Time for song: 39.87 sec
+Num overlap: 4
+Instr drums sdr: -0.0951 (Std: 0.1528)
+Instr bass sdr: 0.0040 (Std: 0.2000)
+Instr other sdr: -0.0778 (Std: 0.1207)
+Instr vocals sdr: -0.2894 (Std: 0.1795)
+Metric avg sdr        : -0.1146
+Elapsed time: 429.11 sec
+Store weights: checkpoints/htdemucs_2024-12-16_08-16-10/model_htdemucs_ep_4_sdr_-0.1146.ckpt
+Train epoch: 5 Learning rate: 1.4941681093237346e-05
+  0%|          | 0/10 [00:00<?, ?it/s]  0%|          | 0/10 [06:43<?, ?it/s, loss=14.8, avg_loss=14.8] 10%|█         | 1/10 [06:43<1:00:34, 403.89s/it, loss=14.8, avg_loss=14.8] 10%|█         | 1/10 [06:44<1:00:34, 403.89s/it, loss=11.5, avg_loss=13.1] 20%|██        | 2/10 [06:44<22:13, 166.75s/it, loss=11.5, avg_loss=13.1]   20%|██        | 2/10 [06:45<22:13, 166.75s/it, loss=13.8, avg_loss=13.4] 30%|███       | 3/10 [06:45<10:36, 90.95s/it, loss=13.8, avg_loss=13.4]  30%|███       | 3/10 [06:46<10:36, 90.95s/it, loss=10.1, avg_loss=12.5] 40%|████      | 4/10 [06:46<05:32, 55.41s/it, loss=10.1, avg_loss=12.5] 40%|████      | 4/10 [06:47<05:32, 55.41s/it, loss=12.7, avg_loss=12.6] 50%|█████     | 5/10 [06:47<02:58, 35.69s/it, loss=12.7, avg_loss=12.6] 50%|█████     | 5/10 [06:47<02:58, 35.69s/it, loss=12.4, avg_loss=12.5] 60%|██████    | 6/10 [06:47<01:35, 23.80s/it, loss=12.4, avg_loss=12.5] 60%|██████    | 6/10 [06:48<01:35, 23.80s/it, loss=13.7, avg_loss=12.7] 70%|███████   | 7/10 [06:48<00:48, 16.25s/it, loss=13.7, avg_loss=12.7] 70%|███████   | 7/10 [06:49<00:48, 16.25s/it, loss=12.7, avg_loss=12.7] 80%|████████  | 8/10 [06:49<00:22, 11.31s/it, loss=12.7, avg_loss=12.7] 80%|████████  | 8/10 [06:49<00:22, 11.31s/it, loss=14.3, avg_loss=12.9] 90%|█████████ | 9/10 [06:49<00:07,  8.00s/it, loss=14.3, avg_loss=12.9] 90%|█████████ | 9/10 [06:50<00:07,  8.00s/it, loss=11, avg_loss=12.7]  100%|██████████| 10/10 [06:50<00:00,  5.75s/it, loss=11, avg_loss=12.7]100%|██████████| 10/10 [06:51<00:00, 41.17s/it, loss=11, avg_loss=12.7]

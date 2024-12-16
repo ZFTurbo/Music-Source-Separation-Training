@@ -1,0 +1,65 @@
+running training script
+[I 2024-12-16 12:59:41,730] A new study created in RDB with name: no-name-a53d7c18-bdb8-4a98-9e75-74586cd5eee3
+[W 2024-12-16 13:00:13,610] Trial 0 failed with parameters: {'lr': 2.032123213480595e-05, 'reduce_factor': 0.9618909928475697, 'ema_momentum': 0.905365737504447, 'q': 0.7689412623200006, 'channels': 64} because of the following error: AttributeError(KeyError("'htdemucs'")).
+Traceback (most recent call last):
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/ml_collections/config_dict/config_dict.py", line 947, in __getitem__
+    field = self._fields[key]
+KeyError: 'htdemucs'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/ml_collections/config_dict/config_dict.py", line 849, in __getattr__
+    return self[attribute]
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/ml_collections/config_dict/config_dict.py", line 953, in __getitem__
+    raise KeyError(self._generate_did_you_mean_message(key, str(e)))
+KeyError: "'htdemucs'"
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/optuna/study/_optimize.py", line 197, in _run_trial
+    value_or_values = func(trial)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/train_optuna.py", line 362, in objective
+    config.htdemucs.channels = trial.suggest_int("channels", 32, 64, step=8)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/ml_collections/config_dict/config_dict.py", line 851, in __getattr__
+    raise AttributeError(e)
+AttributeError: "'htdemucs'"
+[W 2024-12-16 13:00:13,665] Trial 0 failed with value None.
+training using optuna
+Traceback (most recent call last):
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/ml_collections/config_dict/config_dict.py", line 947, in __getitem__
+    field = self._fields[key]
+KeyError: 'htdemucs'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/ml_collections/config_dict/config_dict.py", line 849, in __getattr__
+    return self[attribute]
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/ml_collections/config_dict/config_dict.py", line 953, in __getitem__
+    raise KeyError(self._generate_did_you_mean_message(key, str(e)))
+KeyError: "'htdemucs'"
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/project/6002780/kaim/Music-Source-Separation-Training/train_optuna.py", line 374, in <module>
+    study.optimize(objective, n_trials=args.optuna_trials)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/optuna/study/study.py", line 475, in optimize
+    _optimize(
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/optuna/study/_optimize.py", line 63, in _optimize
+    _optimize_sequential(
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/optuna/study/_optimize.py", line 160, in _optimize_sequential
+    frozen_trial = _run_trial(study, func, catch)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/optuna/study/_optimize.py", line 248, in _run_trial
+    raise func_err
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/optuna/study/_optimize.py", line 197, in _run_trial
+    value_or_values = func(trial)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/train_optuna.py", line 362, in objective
+    config.htdemucs.channels = trial.suggest_int("channels", 32, 64, step=8)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/ml_collections/config_dict/config_dict.py", line 851, in __getattr__
+    raise AttributeError(e)
+AttributeError: "'htdemucs'"
+Running command: python train_optuna.py --model_type mdx23c --config_path configs/config_musdb18_mdx23c.yaml --results_path checkpoints/mdx23c_2024-12-16_12-59-04 --data_path /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train --valid_path /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation --num_workers 4 --start_check_point  --device_ids 0
+An error occurred: Command '['python', 'train_optuna.py', '--model_type', 'mdx23c', '--config_path', 'configs/config_musdb18_mdx23c.yaml', '--results_path', 'checkpoints/mdx23c_2024-12-16_12-59-04', '--data_path', '/home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train', '--valid_path', '/home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation', '--num_workers', '4', '--start_check_point', '', '--device_ids', '0']' returned non-zero exit status 1.
