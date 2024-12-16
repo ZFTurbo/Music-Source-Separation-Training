@@ -84,7 +84,7 @@ def load_not_compatible_weights(model, weights, verbose=False):
 def train_model(args, config):
     manual_seed(args.seed + int(time.time()))
     torch.backends.cudnn.deterministic = False
-    torch.multiprocessing.set_start_method('spawn')
+    
 
     # Model initialization
     model, _ = get_model_from_config(args.model_type, args.config_path)
@@ -323,6 +323,7 @@ if __name__ == "__main__":
 
     # Load initial config
     model, base_config = get_model_from_config(args.model_type, args.config_path)
+    torch.multiprocessing.set_start_method('spawn')
 
     def objective(trial):
         # Copy the base config to not modify it permanently
