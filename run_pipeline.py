@@ -14,7 +14,7 @@ import os
 import shutil
 
 # Set the dataset folder and model name here
-dataset_folder = "../data/MUSDB18"  # Change this to your dataset folder path
+dataset_folder = "../data/MUSDB18-7second"  # Change this to your dataset folder path
 model_choice = "htdemucs"  # Change this to "mdx23c", "bs_mamba2", "scnet", or "htdemucs"
 
 
@@ -38,8 +38,8 @@ models = {
     },
     "htdemucs": {
         "config_path": "configs/config_musdb18_htdemucs.yaml",
-        "checkpoint": "results/demucs_ckpt.th",
-        "store_dir": "separated/htdemucs/"
+        "checkpoint": "results/htdemucs_train/model_htdemucs_ep_0_sdr_-0.1195.ckpt",
+        "store_dir": "separated/test_trained_htdemucs/"
     }
 }
 
@@ -77,9 +77,9 @@ def print_files_in_directory(path, name):
     else:
         print(f"{name} path does not exist or is not a directory.")
 
-print_files_in_directory(dataset_folder, "Dataset")
-print_files_in_directory(estimates_directory, "Estimates Directory")
-print_files_in_directory(output_directory, "Output Directory")
+#print_files_in_directory(dataset_folder, "Dataset")
+#print_files_in_directory(estimates_directory, "Estimates Directory")
+#print_files_in_directory(output_directory, "Output Directory")
 
 
 
@@ -96,7 +96,7 @@ separation_command = [
     "--config_path", config_path,
     "--start_check_point", checkpoint,
     "--store_dir", estimates_directory,
-    #"--force_cpu"
+    "--force_cpu"
 ]
 subprocess.run(separation_command)
 
@@ -165,7 +165,7 @@ print("Files organized by song title.")
 
 print("Calculating metrics...")
 
-print(f"dataset folder is {dataset_folder}, estimates_dir {estimates_directory}, output directory {output_directory}")
+#print(f"dataset folder is {dataset_folder}, estimates_dir {estimates_directory}, output directory {output_directory}")
 
 
 # Set up musdb for testing data

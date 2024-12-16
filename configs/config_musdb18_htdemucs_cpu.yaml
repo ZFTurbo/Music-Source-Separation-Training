@@ -4,8 +4,8 @@ audio:
   hop_length: 1024
 
 training:
-  batch_size: 4
-  gradient_accumulation_steps: 4
+  batch_size: 1
+  gradient_accumulation_steps: 1
   grad_clip: 0
   segment: 11
   shift: 1
@@ -14,8 +14,8 @@ training:
   normalize: true
   instruments: ['drums', 'bass', 'other', 'vocals']
   target_instrument: null
-  num_epochs: 50
-  num_steps: 100
+  num_epochs: 2
+  num_steps: 2
   optimizer: adam
   lr: 9.0e-05
   patience: 2
@@ -27,7 +27,7 @@ training:
   use_amp: true # enable or disable usage of mixed precision (float16) - usually it must be true
 
 augmentations:
-  enable: true # enable or disable all augmentations (to fast disable if needed)
+  enable: False # enable or disable all augmentations (to fast disable if needed)
   loudness: true # randomly change loudness of each stem on the range (loudness_min; loudness_max)
   loudness_min: 0.5
   loudness_max: 1.5

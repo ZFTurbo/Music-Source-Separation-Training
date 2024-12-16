@@ -1,0 +1,8 @@
+usage: train_optuna.py [-h] [--model_type MODEL_TYPE]
+                       [--config_path CONFIG_PATH]
+                       [--results_path RESULTS_PATH]
+                       [--data_path DATA_PATH [DATA_PATH ...]]
+                       [--optuna_trials OPTUNA_TRIALS]
+train_optuna.py: error: unrecognized arguments: --valid_path ../data/MUSDB18/validation --num_workers 4 --start_check_point  --device_ids 0
+
+An error occurred: Command '['python', 'train_optuna.py', '--model_type', 'htdemucs', '--config_path', 'configs/config_musdb18_htdemucs_cpu.yaml', '--results_path', 'checkpoints/mac_20241216_114524', '--data_path', '../data/MUSDB18/train', '--valid_path', '../data/MUSDB18/validation', '--num_workers', '4', '--start_check_point', '', '--device_ids', '0']' returned non-zero exit status 2.
