@@ -10,8 +10,8 @@ def main():
 
     
     # Add arguments for the command-line options
-    parser.add_argument("--model_type", type=str, default="htdemucs", help="Type of model to train")
-    parser.add_argument("--config_path", type=str, default="configs/config_musdb18_htdemucs_cpu.yaml", help="Path to the config file")
+    parser.add_argument("--model_type", type=str, default="scnet", help="Type of model to train")
+    parser.add_argument("--config_path", type=str, default="configs/config_musdb18_scnet.yaml", help="Path to the config file")
     parser.add_argument("--results_path", type=str, default=f"checkpoints/mac_{current_time}", help="Path to save results")
     parser.add_argument("--data_path", type=str, default="../data/MUSDB18/train", help="Path to training data")
     parser.add_argument("--valid_path", type=str, default="../data/MUSDB18/small_validation", help="Path to validation data")

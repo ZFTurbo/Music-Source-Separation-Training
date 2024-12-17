@@ -1,0 +1,334 @@
+running training script
+[I 2024-12-17 16:37:38,937] A new study created in RDB with name: no-name-9df9ae84-4883-48cb-9f80-436b188a3856
+training using optuna
+model type is mdx23c
+Instruments: ['vocals', 'bass', 'drums', 'other']
+Metrics for training: ['sdr']. Metric for scheduler: sdr
+Use augmentation for training
+Dataset type: 1 Processes to use: 8 
+Collecting metadata for ['../data/MUSDB18HQ/train']
+  0%|          | 0/80 [00:00<?, ?it/s]  1%|▏         | 1/80 [00:08<11:32,  8.77s/it] 16%|█▋        | 13/80 [00:08<00:32,  2.03it/s] 30%|███       | 24/80 [00:08<00:12,  4.44it/s] 49%|████▉     | 39/80 [00:09<00:04,  8.92it/s] 69%|██████▉   | 55/80 [00:09<00:01, 15.29it/s] 88%|████████▊ | 70/80 [00:09<00:00, 22.86it/s]100%|██████████| 80/80 [00:09<00:00,  8.56it/s]
+Found tracks in dataset: 80
+CUDA is not available. Training on CPU will be very slow...
+Patience: 2 Reduce factor: 0.8984650963548397 Batch size: 4 Grad accum steps: 4 Effective batch size: 16 Optimizer: adam
+Train for: 5
+Train epoch: 0 Learning rate: 3.58439236281376e-05
+  0%|          | 0/100 [00:00<?, ?it/s]  0%|          | 0/100 [00:10<?, ?it/s]
+Traceback (most recent call last):
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/test_env/lib/python3.10/site-packages/optuna/study/_optimize.py", line 209, in _run_trial
+Running command: python train_optuna.py --model_type mdx23c --config_path configs/config_musdb18_mdx23c.yaml --results_path checkpoints/mdx23c_2024-12-17_16-37-33 --data_path ../data/MUSDB18HQ/train --valid_path ../MUSDB18HQ/validation --num_workers 4 --start_check_point  --device_ids 0
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/subprocess.py", line 1204, in wait
+    return self._wait(timeout=timeout)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/subprocess.py", line 1938, in _wait
+    (pid, sts) = self._try_wait(0)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/subprocess.py", line 1896, in _try_wait
+    (pid, sts) = os.waitpid(self.pid, wait_flags)
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/run_training.py", line 45, in <module>
+    main()
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/run_training.py", line 39, in main
+    subprocess.run(command, check=True)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/subprocess.py", line 503, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/subprocess.py", line 1141, in communicate
+    self.wait()
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/subprocess.py", line 1217, in wait
+    self._wait(timeout=sigint_timeout)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/subprocess.py", line 1932, in _wait
+    time.sleep(delay)
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 116, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 125, in _main
+    prepare(preparation_data)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 236, in prepare
+    _fixup_main_from_path(data['init_main_from_path'])
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 287, in _fixup_main_from_path
+    main_content = runpy.run_path(main_path,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 269, in run_path
+    return _run_module_code(code, init_globals, run_name,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 96, in _run_module_code
+    _run_code(code, mod_globals, init_globals,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train_optuna.py", line 30, in <module>
+    from utils import demix, sdr, get_model_from_config
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/utils.py", line 12, in <module>
+    from omegaconf import OmegaConf
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/test_env/lib/python3.10/site-packages/omegaconf/__init__.py", line 1, in <module>
+    from .base import Container, DictKeyType, Node, SCMode, UnionNode
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/test_env/lib/python3.10/site-packages/omegaconf/base.py", line 84, in <module>
+    class ContainerMetadata(Metadata):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1178, in dataclass
+    return wrap(cls)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1169, in wrap
+    return _process_class(cls, init, repr, eq, order, unsafe_hash,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1038, in _process_class
+    _set_new_attribute(cls, '__repr__', _repr_fn(flds, globals))
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 583, in _repr_fn
+    fn = _create_fn('__repr__',
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 434, in _create_fn
+    exec(txt, globals, ns)
+  File "<string>", line 1, in <module>
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 116, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 125, in _main
+    prepare(preparation_data)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 236, in prepare
+    _fixup_main_from_path(data['init_main_from_path'])
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 287, in _fixup_main_from_path
+    main_content = runpy.run_path(main_path,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 269, in run_path
+    return _run_module_code(code, init_globals, run_name,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 96, in _run_module_code
+    _run_code(code, mod_globals, init_globals,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train_optuna.py", line 30, in <module>
+    from utils import demix, sdr, get_model_from_config
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/utils.py", line 12, in <module>
+    from omegaconf import OmegaConf
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/test_env/lib/python3.10/site-packages/omegaconf/__init__.py", line 1, in <module>
+    from .base import Container, DictKeyType, Node, SCMode, UnionNode
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/test_env/lib/python3.10/site-packages/omegaconf/base.py", line 84, in <module>
+    class ContainerMetadata(Metadata):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1178, in dataclass
+    return wrap(cls)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1169, in wrap
+    return _process_class(cls, init, repr, eq, order, unsafe_hash,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1038, in _process_class
+    _set_new_attribute(cls, '__repr__', _repr_fn(flds, globals))
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 583, in _repr_fn
+    fn = _create_fn('__repr__',
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 434, in _create_fn
+    exec(txt, globals, ns)
+  File "<string>", line 1, in <module>
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 116, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 125, in _main
+    prepare(preparation_data)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 236, in prepare
+    _fixup_main_from_path(data['init_main_from_path'])
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 287, in _fixup_main_from_path
+    main_content = runpy.run_path(main_path,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 269, in run_path
+    return _run_module_code(code, init_globals, run_name,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 96, in _run_module_code
+    _run_code(code, mod_globals, init_globals,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train_optuna.py", line 30, in <module>
+    from utils import demix, sdr, get_model_from_config
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/utils.py", line 12, in <module>
+    from omegaconf import OmegaConf
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/test_env/lib/python3.10/site-packages/omegaconf/__init__.py", line 1, in <module>
+    from .base import Container, DictKeyType, Node, SCMode, UnionNode
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/test_env/lib/python3.10/site-packages/omegaconf/base.py", line 84, in <module>
+    class ContainerMetadata(Metadata):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1178, in dataclass
+    return wrap(cls)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1169, in wrap
+    return _process_class(cls, init, repr, eq, order, unsafe_hash,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1038, in _process_class
+    _set_new_attribute(cls, '__repr__', _repr_fn(flds, globals))
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 583, in _repr_fn
+    fn = _create_fn('__repr__',
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 434, in _create_fn
+    exec(txt, globals, ns)
+  File "<string>", line 1, in <module>
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 116, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 125, in _main
+    prepare(preparation_data)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 236, in prepare
+    _fixup_main_from_path(data['init_main_from_path'])
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 287, in _fixup_main_from_path
+    main_content = runpy.run_path(main_path,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 269, in run_path
+    return _run_module_code(code, init_globals, run_name,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 96, in _run_module_code
+    _run_code(code, mod_globals, init_globals,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train_optuna.py", line 30, in <module>
+    from utils import demix, sdr, get_model_from_config
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/utils.py", line 12, in <module>
+    from omegaconf import OmegaConf
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/test_env/lib/python3.10/site-packages/omegaconf/__init__.py", line 1, in <module>
+    from .base import Container, DictKeyType, Node, SCMode, UnionNode
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/test_env/lib/python3.10/site-packages/omegaconf/base.py", line 84, in <module>
+    class ContainerMetadata(Metadata):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1178, in dataclass
+    return wrap(cls)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1169, in wrap
+    return _process_class(cls, init, repr, eq, order, unsafe_hash,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1038, in _process_class
+    _set_new_attribute(cls, '__repr__', _repr_fn(flds, globals))
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 583, in _repr_fn
+    fn = _create_fn('__repr__',
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 434, in _create_fn
+    exec(txt, globals, ns)
+  File "<string>", line 1, in <module>
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 116, in spawn_main
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 116, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 125, in _main
+    prepare(preparation_data)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 236, in prepare
+    exitcode = _main(fd, parent_sentinel)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 125, in _main
+    _fixup_main_from_path(data['init_main_from_path'])
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 287, in _fixup_main_from_path
+    main_content = runpy.run_path(main_path,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 269, in run_path
+    prepare(preparation_data)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 236, in prepare
+    return _run_module_code(code, init_globals, run_name,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 96, in _run_module_code
+    _run_code(code, mod_globals, init_globals,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 86, in _run_code
+    _fixup_main_from_path(data['init_main_from_path'])
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 287, in _fixup_main_from_path
+    exec(code, run_globals)
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train_optuna.py", line 30, in <module>
+    main_content = runpy.run_path(main_path,
+    from utils import demix, sdr, get_model_from_config
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/utils.py", line 12, in <module>
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 269, in run_path
+    from omegaconf import OmegaConf
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/test_env/lib/python3.10/site-packages/omegaconf/__init__.py", line 1, in <module>
+    return _run_module_code(code, init_globals, run_name,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 96, in _run_module_code
+    from .base import Container, DictKeyType, Node, SCMode, UnionNode
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/test_env/lib/python3.10/site-packages/omegaconf/base.py", line 84, in <module>
+    _run_code(code, mod_globals, init_globals,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 86, in _run_code
+    class ContainerMetadata(Metadata):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1178, in dataclass
+    exec(code, run_globals)
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train_optuna.py", line 30, in <module>
+    from utils import demix, sdr, get_model_from_config
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/utils.py", line 12, in <module>
+    from omegaconf import OmegaConf
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/test_env/lib/python3.10/site-packages/omegaconf/__init__.py", line 1, in <module>
+    from .base import Container, DictKeyType, Node, SCMode, UnionNode
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/test_env/lib/python3.10/site-packages/omegaconf/base.py", line 84, in <module>
+    class ContainerMetadata(Metadata):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1178, in dataclass
+    return wrap(cls)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1169, in wrap
+    return wrap(cls)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1169, in wrap
+    return _process_class(cls, init, repr, eq, order, unsafe_hash,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1038, in _process_class
+    _set_new_attribute(cls, '__repr__', _repr_fn(flds, globals))
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 583, in _repr_fn
+    return _process_class(cls, init, repr, eq, order, unsafe_hash,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1038, in _process_class
+    fn = _create_fn('__repr__',
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 434, in _create_fn
+    exec(txt, globals, ns)
+  File "<string>", line 1, in <module>
+    _set_new_attribute(cls, '__repr__', _repr_fn(flds, globals))
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 583, in _repr_fn
+KeyboardInterrupt
+    fn = _create_fn('__repr__',
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 434, in _create_fn
+    exec(txt, globals, ns)
+  File "<string>", line 1, in <module>
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 116, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 125, in _main
+    prepare(preparation_data)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 236, in prepare
+    _fixup_main_from_path(data['init_main_from_path'])
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 287, in _fixup_main_from_path
+    main_content = runpy.run_path(main_path,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 269, in run_path
+    return _run_module_code(code, init_globals, run_name,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 96, in _run_module_code
+    _run_code(code, mod_globals, init_globals,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train_optuna.py", line 30, in <module>
+    from utils import demix, sdr, get_model_from_config
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/utils.py", line 12, in <module>
+    from omegaconf import OmegaConf
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/test_env/lib/python3.10/site-packages/omegaconf/__init__.py", line 1, in <module>
+    from .base import Container, DictKeyType, Node, SCMode, UnionNode
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/test_env/lib/python3.10/site-packages/omegaconf/base.py", line 84, in <module>
+    class ContainerMetadata(Metadata):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1178, in dataclass
+    return wrap(cls)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1169, in wrap
+    return _process_class(cls, init, repr, eq, order, unsafe_hash,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1038, in _process_class
+    _set_new_attribute(cls, '__repr__', _repr_fn(flds, globals))
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 583, in _repr_fn
+    fn = _create_fn('__repr__',
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 434, in _create_fn
+    exec(txt, globals, ns)
+  File "<string>", line 1, in <module>
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 116, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 125, in _main
+    prepare(preparation_data)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 236, in prepare
+    _fixup_main_from_path(data['init_main_from_path'])
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 287, in _fixup_main_from_path
+    main_content = runpy.run_path(main_path,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 269, in run_path
+    return _run_module_code(code, init_globals, run_name,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 96, in _run_module_code
+    _run_code(code, mod_globals, init_globals,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train_optuna.py", line 30, in <module>
+    from utils import demix, sdr, get_model_from_config
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/utils.py", line 12, in <module>
+    from omegaconf import OmegaConf
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/test_env/lib/python3.10/site-packages/omegaconf/__init__.py", line 1, in <module>
+    from .base import Container, DictKeyType, Node, SCMode, UnionNode
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/test_env/lib/python3.10/site-packages/omegaconf/base.py", line 84, in <module>
+    class ContainerMetadata(Metadata):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1178, in dataclass
+    return wrap(cls)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1169, in wrap
+    return _process_class(cls, init, repr, eq, order, unsafe_hash,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 1038, in _process_class
+    _set_new_attribute(cls, '__repr__', _repr_fn(flds, globals))
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 583, in _repr_fn
+    fn = _create_fn('__repr__',
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/dataclasses.py", line 434, in _create_fn
+    exec(txt, globals, ns)
+  File "<string>", line 1, in <module>
+KeyboardInterrupt
+/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/resource_tracker.py:224: UserWarning: resource_tracker: There appear to be 41 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

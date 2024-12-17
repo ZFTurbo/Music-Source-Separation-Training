@@ -1,0 +1,13 @@
+running training script
+[I 2024-12-17 16:34:18,474] A new study created in RDB with name: no-name-feb78b5b-3806-43ba-9845-38aa407564c9
+training using optuna
+model type is mdx23c
+Instruments: ['vocals', 'bass', 'drums', 'other']
+Metrics for training: ['sdr']. Metric for scheduler: sdr
+Use augmentation for training
+Dataset type: 1 Processes to use: 8 
+Collecting metadata for ['/home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train']
+Warning: no tracks found in folder '/home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train'. Please check it!
+0it [00:00, ?it/s]0it [00:00, ?it/s]
+No tracks found for training. Check paths you provided!
+Running command: python train_optuna.py --model_type mdx23c --config_path configs/config_musdb18_mdx23c.yaml --results_path checkpoints/mdx23c_2024-12-17_16-34-10 --data_path /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train --valid_path /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation --num_workers 4 --start_check_point  --device_ids 0
