@@ -89,6 +89,7 @@ def suggest_hyperparams_for_model(trial, config, model_type):
     config.training.q = trial.suggest_float("q", 0.7, 0.99)
 
     if model_type == 'htdemucs':
+        print("model is htdemucs!!")
         # Tune htdemucs-specific parameters
         config.htdemucs.channels = trial.suggest_int("channels", 32, 64, step=8)
         config.htdemucs.depth = trial.suggest_int("depth", 2, 6)
