@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --gres=gpu:v100l:1       # Request GPU "generic resources"
-#SBATCH --cpus-per-task=6        # Refer to cluster's documentation for the right CPU/GPU ratio
-#SBATCH --mem=125G               # Memory proportional to GPUs: 32000 Cedar, 47000 Béluga, 64000 Graham.
-#SBATCH --time=2-00:00          # DD-HH:MM:SS
+#SBATCH --cpus-per-task=6        # Adjust based on your cluster's CPU/GPU ratio
+#SBATCH --mem=125G               # Adjust memory as needed
+#SBATCH --time=2-00:00           # DD-HH:MM:SS
 #SBATCH --account=def-ichiro
 #SBATCH --output=slurm_logs/slurm-%j.out  # Use Job ID for unique output files
 
@@ -11,19 +11,29 @@ export XLA_FLAGS=--xla_gpu_cuda_data_dir=$CUDA_HOME
 
 CURRENT_DATE=$(date +"%Y-%m-%d_%H-%M-%S")
 
-# Create a dynamic results folder
-CHECKPOINTS_PATH="checkpoints/scnet_$CURRENT_DATE"
-SLURM_LOGS_PATH="slurm_logs/scnet_$CURRENT_DATE"
+# Model-specific parameters
+MODEL_TYPE="scnet"
+CONFIG_PATH="configs/config_musdb18_scnet.yaml"
 
-mkdir -p "$CHECKPOINTS_PATH"   # Fixed path creation
-mkdir -p "$SLURM_LOGS_PATH"    # Create a folder for SLURM logs if desired
+CHECKPOINTS_PATH="checkpoints/${MODEL_TYPE}_${CURRENT_DATE}"
+SLURM_LOGS_PATH="slurm_logs/${MODEL_TYPE}_${CURRENT_DATE}"
+
+mkdir -p "$CHECKPOINTS_PATH"
+mkdir -p "$SLURM_LOGS_PATH"
 
 # Redirect SLURM output dynamically
 exec > >(tee -a "$SLURM_LOGS_PATH/slurm-${SLURM_JOB_ID}.out") 2>&1
 
 source separation_env/bin/activate
 
+echo "Running training script for model: $MODEL_TYPE"
 
-echo 'running training script'
-python run_training.py --model_type "scnet" --config_path="configs/config_musdb18_scnet.yaml" --results_path="$CHECKPOINTS_PATH" --start_check_point=""
-#python run_training.py
+python train_optuna.py \
+  --model_type "$MODEL_TYPE" \
+  --config_path "$CONFIG_PATH" \
+  --results_path "$CHECKPOINTS_PATH" \
+  --data_path "../data/MUSDB18HQ/train" \
+  --valid_path "../data/MUSDB18HQ/validation" \
+  --num_workers 4 \
+  --start_check_point "" \
+  --device_ids 0
