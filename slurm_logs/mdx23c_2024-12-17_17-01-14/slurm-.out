@@ -1,0 +1,195 @@
+Running training script for model: mdx23c
+[I 2024-12-17 17:01:19,984] A new study created in RDB with name: no-name-df803c65-a777-4725-8530-09ea685a01bc
+training using optuna
+model type is mdx23c
+Instruments: ['vocals', 'bass', 'drums', 'other']
+Metrics for training: ['sdr']. Metric for scheduler: sdr
+Use augmentation for training
+Dataset type: 1 Processes to use: 8 
+Collecting metadata for ['../data/MUSDB18HQ/train']
+  0%|          | 0/80 [00:00<?, ?it/s]  1%|▏         | 1/80 [00:09<11:51,  9.00s/it] 16%|█▋        | 13/80 [00:09<00:33,  1.98it/s] 25%|██▌       | 20/80 [00:09<00:17,  3.47it/s] 41%|████▏     | 33/80 [00:09<00:06,  7.27it/s] 61%|██████▏   | 49/80 [00:09<00:02, 13.45it/s] 81%|████████▏ | 65/80 [00:09<00:00, 21.35it/s]100%|██████████| 80/80 [00:09<00:00,  8.32it/s]
+Found tracks in dataset: 80
+CUDA is not available. Training on CPU will be very slow...
+Patience: 2 Reduce factor: 0.9852347322910211 Batch size: 4 Grad accum steps: 4 Effective batch size: 16 Optimizer: adam
+Train for: 5
+Train epoch: 0 Learning rate: 1.910913123190845e-05
+  0%|          | 0/100 [00:00<?, ?it/s]Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+Process Process-13:
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 116, in spawn_main
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/process.py", line 315, in _bootstrap
+    self.run()
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+KeyboardInterrupt
+    exitcode = _main(fd, parent_sentinel)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 129, in _main
+    return self._bootstrap(parent_sentinel)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/process.py", line 333, in _bootstrap
+    threading._shutdown()
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/threading.py", line 1525, in _shutdown
+    atexit_call()
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/concurrent/futures/thread.py", line 25, in _python_exit
+    with _global_shutdown_lock:
+KeyboardInterrupt
+Process Process-15:
+Process Process-12:
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/process.py", line 315, in _bootstrap
+    self.run()
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+KeyboardInterrupt
+Process Process-9:
+Exception ignored in atexit callback: <bound method finalize._exitfunc of <class 'weakref.finalize'>>
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/weakref.py", line 657, in _exitfunc
+Exception ignored in atexit callback: <bound method finalize._exitfunc of <class 'weakref.finalize'>>
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/weakref.py", line 657, in _exitfunc
+Exception ignored in atexit callback: <function teardown_continuous_profiler at 0x11e75ef80>
+Traceback (most recent call last):
+    pending = cls._select_for_exit()
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/weakref.py", line 638, in _select_for_exit
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/sentry_sdk/profiler/continuous_profiler.py", line 154, in teardown_continuous_profiler
+    pending = cls._select_for_exit()
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/weakref.py", line 638, in _select_for_exit
+    L = [(f,i) for (f,i) in cls._registry.items() if i.atexit]
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/weakref.py", line 638, in <listcomp>
+    L = [(f,i) for (f,i) in cls._registry.items() if i.atexit]
+KeyboardInterrupt: 
+    L = [(f,i) for (f,i) in cls._registry.items() if i.atexit]
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/weakref.py", line 638, in <listcomp>
+Traceback (most recent call last):
+    L = [(f,i) for (f,i) in cls._registry.items() if i.atexit]
+KeyboardInterrupt: 
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/process.py", line 318, in _bootstrap
+    stop_profiler()
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/sentry_sdk/profiler/continuous_profiler.py", line 149, in stop_profiler
+    _scheduler.teardown()
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/sentry_sdk/profiler/continuous_profiler.py", line 324, in teardown
+    util._exit_function()
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/util.py", line 360, in _exit_function
+    if self.running:
+KeyboardInterrupt: 
+    _run_finalizers()
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/util.py", line 300, in _run_finalizers
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/process.py", line 315, in _bootstrap
+    finalizer()
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/util.py", line 224, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/queues.py", line 201, in _finalize_join
+    thread.join()
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/threading.py", line 1089, in join
+    self._wait_for_tstate_lock()
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/threading.py", line 1105, in _wait_for_tstate_lock
+    self.run()
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/process.py", line 108, in run
+    elif lock.acquire(block, timeout):
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 116, in spawn_main
+    self._target(*self._args, **self._kwargs)
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    exitcode = _main(fd, parent_sentinel)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 129, in _main
+    return self._bootstrap(parent_sentinel)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/process.py", line 331, in _bootstrap
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 116, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/spawn.py", line 129, in _main
+    return self._bootstrap(parent_sentinel)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/process.py", line 331, in _bootstrap
+    traceback.print_exc()
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/traceback.py", line 179, in print_exc
+    traceback.print_exc()
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/traceback.py", line 179, in print_exc
+    print_exception(*sys.exc_info(), limit=limit, file=file, chain=chain)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/traceback.py", line 119, in print_exception
+    te = TracebackException(type(value), value, tb, limit=limit, compact=True)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/traceback.py", line 502, in __init__
+    print_exception(*sys.exc_info(), limit=limit, file=file, chain=chain)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/traceback.py", line 119, in print_exception
+    self.stack = StackSummary.extract(
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/traceback.py", line 370, in extract
+    linecache.lazycache(filename, f.f_globals)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/linecache.py", line 161, in lazycache
+    te = TracebackException(type(value), value, tb, limit=limit, compact=True)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/traceback.py", line 502, in __init__
+    if len(cache[filename]) == 1:
+KeyboardInterrupt
+    self.stack = StackSummary.extract(
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/traceback.py", line 383, in extract
+    f.line
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/traceback.py", line 306, in line
+    self._line = linecache.getline(self.filename, self.lineno)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/linecache.py", line 30, in getline
+    lines = getlines(filename, module_globals)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/linecache.py", line 46, in getlines
+    return updatecache(filename, module_globals)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/linecache.py", line 137, in updatecache
+    lines = fp.readlines()
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/codecs.py", line 319, in decode
+    def decode(self, input, final=False):
+KeyboardInterrupt
+Exception ignored in atexit callback: <bound method TemporaryDirectory.cleanup of <TemporaryDirectory '/var/folders/nn/xmq_vw3n7kzb3fr1ylfyz3t80000gn/T/tmpl3rvhbhewandb-media'>>
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/tempfile.py", line 846, in cleanup
+Exception ignored in atexit callback: <bound method TemporaryDirectory.cleanup of <TemporaryDirectory '/var/folders/nn/xmq_vw3n7kzb3fr1ylfyz3t80000gn/T/tmpgulb3avlwandb-media'>>
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/tempfile.py", line 846, in cleanup
+Exception ignored in atexit callback: <bound method TemporaryDirectory.cleanup of <TemporaryDirectory '/var/folders/nn/xmq_vw3n7kzb3fr1ylfyz3t80000gn/T/tmpd1b786lkwandb-media'>>
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/tempfile.py", line 846, in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/tempfile.py", line 828, in _rmtree
+    _shutil.rmtree(name, onerror=onerror)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/shutil.py", line 719, in rmtree
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/tempfile.py", line 828, in _rmtree
+    _shutil.rmtree(name, onerror=onerror)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/shutil.py", line 719, in rmtree
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/tempfile.py", line 828, in _rmtree
+    os.rmdir(path)
+KeyboardInterrupt: 
+    os.rmdir(path)
+KeyboardInterrupt: 
+    _shutil.rmtree(name, onerror=onerror)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/shutil.py", line 719, in rmtree
+    os.rmdir(path)
+KeyboardInterrupt: 
+Exception ignored in atexit callback: <bound method finalize._exitfunc of <class 'weakref.finalize'>>
+Traceback (most recent call last):
+Exception ignored in atexit callback: <bound method finalize._exitfunc of <class 'weakref.finalize'>>
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/weakref.py", line 667, in _exitfunc
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/weakref.py", line 667, in _exitfunc
+    f()
+    f()
+KeyboardInterrupt: 
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/weakref.py", line 591, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/numba/core/dispatcher.py", line 260, in finalizer
+Exception ignored in atexit callback: <bound method finalize._exitfunc of <class 'weakref.finalize'>>
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/weakref.py", line 667, in _exitfunc
+    f()
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/weakref.py", line 591, in __call__
+    return info.func(*info.args, **(info.kwargs or {}))
+    def finalizer(shutting_down=utils.shutting_down):
+KeyboardInterrupt: 
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/numba/core/dispatcher.py", line 260, in finalizer
+    def finalizer(shutting_down=utils.shutting_down):
+KeyboardInterrupt: 
