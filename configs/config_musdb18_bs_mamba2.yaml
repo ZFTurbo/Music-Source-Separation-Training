@@ -6,7 +6,7 @@ audio:
   min_mean_abs: 0.0
 
 training:
-  batch_size: 8
+  batch_size: 2
   gradient_accumulation_steps: 1
   grad_clip: 0
   segment: 11
