@@ -106,7 +106,7 @@ model:
   skip_connection: False # Enable skip connection between transformer blocks - can solve problem with gradients and probably faster training
 
 training:
-  batch_size: 2
+  batch_size: 1
   gradient_accumulation_steps: 1
   grad_clip: 0
   instruments: ['drums', 'bass', 'other', 'vocals']
