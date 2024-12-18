@@ -1,5 +1,3 @@
-#params taken from https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/pretrained_models.md
-
 audio:
   chunk_size: 132300  # samplerate * segment
   hop_length: 1024
@@ -54,30 +52,6 @@ augmentations:
     channel_shuffle: 0.5 # Set 0 or lower to disable
     random_inverse: 0.1 # inverse track (better lower probability)
     random_polarity: 0.5 # polarity change (multiply waveform to -1)
-
-loss_multistft:
-  fft_sizes:
-  - 1024
-  - 2048
-  - 4096
-  hop_sizes:
-  - 512
-  - 1024
-  - 2048
-  win_lengths:
-  - 1024
-  - 2048
-  - 4096
-  window: "hann_window"
-  scale: "mel"
-  n_bins: 128
-  sample_rate: 44100
-  perceptual_weighting: true
-  w_sc: 1.0
-  w_log_mag: 1.0
-  w_lin_mag: 0.0
-  w_phs: 0.0
-  mag_distance: "L1"
 
 inference:
   num_overlap: 2
