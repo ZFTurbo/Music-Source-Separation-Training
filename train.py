@@ -29,6 +29,8 @@ from utils import demix, sdr, get_model_from_config
 from valid import valid_multi_gpu, valid
 
 import warnings
+from torch.utils.tensorboard import SummaryWriter  # Import SummaryWriter
+import datetime  # For timestamping log directories
 
 warnings.filterwarnings("ignore")
 
@@ -426,7 +428,8 @@ def normalize_batch(x: torch.Tensor, y: torch.Tensor) -> Tuple[torch.Tensor, tor
 def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.Namespace, optimizer: torch.optim.Optimizer,
                     device: torch.device, device_ids: List[int], epoch: int, use_amp: bool, scaler: torch.cuda.amp.GradScaler,
                     gradient_accumulation_steps: int, train_loader: torch.utils.data.DataLoader,
-                    multi_loss: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]) -> None:
+                    multi_loss: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
+                    writer: SummaryWriter) -> None:
     """
     Train the model for one epoch.
 
@@ -443,6 +446,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
         gradient_accumulation_steps: Number of gradient accumulation steps before updating the optimizer.
         train_loader: DataLoader for the training dataset.
         multi_loss: The loss function to use during training.
+        writer: TensorBoard SummaryWriter for logging.
 
     Returns:
         None
@@ -487,12 +491,27 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
         li = loss.item() * gradient_accumulation_steps
         loss_val += li
         total += 1
-        pbar.set_postfix({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1)})
-        wandb.log({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1), 'i': i})
+        avg_loss = loss_val / (i + 1)
+        pbar.set_postfix({'loss': 100 * li, 'avg_loss': 100 * avg_loss})
+        
+        # Log to wandb
+        wandb.log({'loss': 100 * li, 'avg_loss': 100 * avg_loss, 'i': i})
+        
+        # Log to TensorBoard
+        global_step = epoch * len(train_loader) + i
+        writer.add_scalar('Train/Loss', li, global_step)
+        writer.add_scalar('Train/Avg_Loss', avg_loss, global_step)
+
         loss.detach()
 
     print(f'Training loss: {loss_val / total}')
+    
+    # Log to wandb
     wandb.log({'train_loss': loss_val / total, 'epoch': epoch, 'learning_rate': optimizer.param_groups[0]['lr']})
+    
+    # Log to TensorBoard
+    writer.add_scalar('Train/Epoch_Loss', loss_val / total, epoch)
+    writer.add_scalar('Train/Learning_Rate', optimizer.param_groups[0]['lr'], epoch)
 
 
 def save_weights(store_path, model, device_ids):
@@ -522,7 +541,8 @@ def save_last_weights(args: argparse.Namespace, model: torch.nn.Module, device_i
 
 def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, config: ConfigDict,
                           device: torch.device, device_ids: List[int], best_metric: float,
-                          epoch: int, scheduler: torch.optim.lr_scheduler._LRScheduler) -> float:
+                          epoch: int, scheduler: torch.optim.lr_scheduler._LRScheduler,
+                          writer: SummaryWriter) -> float:
     """
     Compute and log the metrics for the current epoch, and save model weights if the metric improves.
 
@@ -535,6 +555,7 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
         best_metric: The best metric value seen so far.
         epoch: The current epoch number.
         scheduler: The learning rate scheduler to adjust the learning rate.
+        writer: TensorBoard SummaryWriter for logging.
 
     Returns:
         The updated best_metric.
@@ -546,14 +567,23 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
         metrics_avg = valid(model, args, config, device, verbose=False)
     metric_avg = metrics_avg[args.metric_for_scheduler]
     if metric_avg > best_metric:
-        store_path = f'{args.results_path}/model_{args.model_type}_ep_{epoch}_{args.metric_for_scheduler}_{metric_avg:.4f}.ckpt'
+        timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        store_path = f'{args.results_path}/model_{args.model_type}_ep_{epoch}_{args.metric_for_scheduler}_{metric_avg:.4f}_{timestamp}.ckpt'
         print(f'Store weights: {store_path}')
         save_weights(store_path, model, device_ids)
         best_metric = metric_avg
     scheduler.step(metric_avg)
+    
+    # Log to wandb
     wandb.log({'metric_main': metric_avg, 'best_metric': best_metric})
     for metric_name in metrics_avg:
         wandb.log({f'metric_{metric_name}': metrics_avg[metric_name]})
+    
+    # Log to TensorBoard
+    writer.add_scalar('Validation/Main_Metric', metric_avg, epoch)
+    writer.add_scalar('Validation/Best_Metric', best_metric, epoch)
+    for metric_name, value in metrics_avg.items():
+        writer.add_scalar(f'Validation/{metric_name}', value, epoch)
 
     return best_metric
 
@@ -561,7 +591,7 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
 def train_model(args: argparse.Namespace) -> None:
     """
     Trains the model based on the provided arguments, including data preparation, optimizer setup,
-    and loss calculation. The model is trained for multiple epochs with logging via wandb.
+    and loss calculation. The model is trained for multiple epochs with logging via wandb and TensorBoard.
 
     Args:
         args: Command-line arguments containing configuration paths, hyperparameters, and other settings.
@@ -579,6 +609,12 @@ def train_model(args: argparse.Namespace) -> None:
     batch_size = config.training.batch_size * len(device_ids)
 
     wandb_init(args, config, device_ids, batch_size)
+
+    # Initialize TensorBoard SummaryWriter with timestamp to ensure unique log directories
+    timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_dir = os.path.join(args.results_path, 'runs', timestamp)  # Changed to 'runs/'
+    writer = SummaryWriter(log_dir=log_dir)
+    print(f"TensorBoard logging enabled. Logs will be saved to {log_dir}")
 
     train_loader = prepare_data(config, args, batch_size)
 
@@ -620,9 +656,13 @@ def train_model(args: argparse.Namespace) -> None:
     for epoch in range(config.training.num_epochs):
 
         train_one_epoch(model, config, args, optimizer, device, device_ids, epoch,
-                         use_amp, scaler, gradient_accumulation_steps, train_loader, multi_loss)
+                       use_amp, scaler, gradient_accumulation_steps, train_loader, multi_loss, writer)
         save_last_weights(args, model, device_ids)
-        best_metric = compute_epoch_metrics(model, args, config, device, device_ids, best_metric, epoch, scheduler)
+        best_metric = compute_epoch_metrics(model, args, config, device, device_ids, best_metric, epoch, scheduler, writer)
+
+    # Close the TensorBoard writer
+    writer.close()
+    print("TensorBoard writer closed.")
 
 
 if __name__ == "__main__":
