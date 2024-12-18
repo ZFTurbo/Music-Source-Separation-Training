@@ -33,7 +33,7 @@ python train_optuna.py \
   --config_path "$CONFIG_PATH" \
   --results_path "$CHECKPOINTS_PATH" \
   --data_path "../data/MUSDB18HQ/train" \
-  --valid_path "../MUSDB18HQ/validation" \
+  --valid_path "../data/MUSDB18HQ/validation" \
   --num_workers 4 \
   --start_check_point "" \
   --device_ids 0
