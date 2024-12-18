@@ -1,70 +1,0 @@
-Running training script for model: bs_roformer
-training without optuna now
-GPU Compute Capability below 8.0, using math or mem efficient attention if input tensor is on cuda
-Instruments: ['drums', 'bass', 'other', 'vocals']
-Metrics for training: ['sdr']. Metric for scheduler: sdr
-Use augmentation for training
-Dataset type: 1 Processes to use: 32 
-Collecting metadata for ['../data/MUSDB18HQ/train']
-  0%|          | 0/86 [00:00<?, ?it/s]  1%|          | 1/86 [01:07<1:36:05, 67.83s/it]  2%|▏         | 2/86 [02:16<1:35:37, 68.30s/it]  9%|▉         | 8/86 [02:17<14:55, 11.48s/it]   10%|█         | 9/86 [02:37<16:33, 12.90s/it] 17%|█▋        | 15/86 [03:29<12:19, 10.42s/it] 19%|█▊        | 16/86 [03:47<13:15, 11.37s/it] 27%|██▋       | 23/86 [04:06<06:54,  6.57s/it] 71%|███████   | 61/86 [04:11<00:34,  1.36s/it] 73%|███████▎  | 63/86 [04:21<00:35,  1.56s/it] 76%|███████▌  | 65/86 [04:29<00:36,  1.75s/it]100%|██████████| 86/86 [04:29<00:00,  3.14s/it]
-Found tracks in dataset: 86
-Use single GPU: [0]
-Patience: 3 Reduce factor: 0.95 Batch size: 2 Grad accum steps: 1 Effective batch size: 2 Optimizer: adam
-Train for: 1000
-Train epoch: 0 Learning rate: 1e-05
-  0%|          | 0/1000 [00:00<?, ?it/s]terminate called without an active exception
-terminate called without an active exception
-Exception ignored in: <function _MultiProcessingDataLoaderIter.__del__ at 0x153ad12ceb00>
-Traceback (most recent call last):
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1604, in __del__
-    self._shutdown_workers()
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1568, in _shutdown_workers
-    w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
-  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Compiler/gcccore/python/3.10.13/lib/python3.10/multiprocessing/process.py", line 149, in join
-    res = self._popen.wait(timeout)
-  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Compiler/gcccore/python/3.10.13/lib/python3.10/multiprocessing/popen_fork.py", line 40, in wait
-    if not wait([self.sentinel], timeout):
-  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Compiler/gcccore/python/3.10.13/lib/python3.10/multiprocessing/connection.py", line 931, in wait
-    ready = selector.select(timeout)
-  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Compiler/gcccore/python/3.10.13/lib/python3.10/selectors.py", line 416, in select
-    fd_event_list = self._selector.poll(timeout)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/utils/data/_utils/signal_handling.py", line 73, in handler
-    _error_if_any_worker_fails()
-RuntimeError: DataLoader worker (pid 1897827) is killed by signal: Aborted. 
-  0%|          | 0/1000 [00:23<?, ?it/s]
-Traceback (most recent call last):
-  File "/project/6002780/kaim/Music-Source-Separation-Training/train_tensorboard.py", line 356, in <module>
-    best_metric = train_model(args, base_config, writer=writer)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/train_tensorboard.py", line 234, in train_model
-    loss = model(x, y)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/models/bs_roformer/bs_roformer.py", line 531, in forward
-    x = time_transformer(x)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/models/bs_roformer/bs_roformer.py", line 215, in forward
-    x = ff(x) + x
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/models/bs_roformer/bs_roformer.py", line 74, in forward
-    return self.net(x)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/container.py", line 250, in forward
-    input = module(input)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/models/bs_roformer/bs_roformer.py", line 50, in forward
-    return F.normalize(x, dim=-1) * self.scale * self.gamma
-torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 200.00 MiB. GPU 0 has a total capacity of 31.73 GiB of which 140.69 MiB is free. Including non-PyTorch memory, this process has 31.59 GiB memory in use. Of the allocated memory 31.21 GiB is allocated by PyTorch, and 10.10 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
