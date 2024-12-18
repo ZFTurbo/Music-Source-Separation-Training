@@ -1,1 +1,53 @@
 Running training script for model: bs_roformer
+training without optuna now
+GPU Compute Capability below 8.0, using math or mem efficient attention if input tensor is on cuda
+Instruments: ['drums', 'bass', 'other', 'vocals']
+Metrics for training: ['sdr']. Metric for scheduler: sdr
+Use augmentation for training
+Dataset type: 1 Processes to use: 24 
+Collecting metadata for ['../data/MUSDB18HQ/train']
+  0%|          | 0/86 [00:00<?, ?it/s]  1%|          | 1/86 [00:22<32:04, 22.64s/it]  2%|▏         | 2/86 [00:38<25:47, 18.42s/it] 10%|█         | 9/86 [00:44<04:26,  3.46s/it] 17%|█▋        | 15/86 [00:47<02:17,  1.93s/it] 19%|█▊        | 16/86 [00:51<02:32,  2.18s/it] 23%|██▎       | 20/86 [00:54<01:45,  1.59s/it] 27%|██▋       | 23/86 [01:08<02:40,  2.56s/it] 48%|████▊     | 41/86 [01:10<00:35,  1.26it/s] 70%|██████▉   | 60/86 [01:14<00:12,  2.05it/s] 71%|███████   | 61/86 [01:24<00:21,  1.19it/s] 73%|███████▎  | 63/86 [01:30<00:24,  1.08s/it] 76%|███████▌  | 65/86 [01:43<00:35,  1.69s/it]100%|██████████| 86/86 [01:43<00:00,  1.20s/it]
+Found tracks in dataset: 86
+Use single GPU: [0]
+Patience: 3 Reduce factor: 0.95 Batch size: 2 Grad accum steps: 1 Effective batch size: 2 Optimizer: adam
+Train for: 1000
+Train epoch: 0 Learning rate: 1e-05
+  0%|          | 0/1000 [00:00<?, ?it/s]terminate called without an active exception
+terminate called without an active exception
+  0%|          | 0/1000 [00:19<?, ?it/s]
+Traceback (most recent call last):
+  File "/project/6002780/kaim/Music-Source-Separation-Training/train_tensorboard.py", line 356, in <module>
+    best_metric = train_model(args, base_config, writer=writer)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/train_tensorboard.py", line 234, in train_model
+    loss = model(x, y)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/models/bs_roformer/bs_roformer.py", line 540, in forward
+    x = freq_transformer(x)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/models/bs_roformer/bs_roformer.py", line 215, in forward
+    x = ff(x) + x
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/models/bs_roformer/bs_roformer.py", line 74, in forward
+    return self.net(x)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/container.py", line 250, in forward
+    input = module(input)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/linear.py", line 125, in forward
+    return F.linear(input, self.weight, self.bias)
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 400.00 MiB. GPU 0 has a total capacity of 11.90 GiB of which 244.62 MiB is free. Including non-PyTorch memory, this process has 11.66 GiB memory in use. Of the allocated memory 11.34 GiB is allocated by PyTorch, and 25.71 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
