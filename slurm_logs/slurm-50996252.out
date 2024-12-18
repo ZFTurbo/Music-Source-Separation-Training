@@ -1,0 +1,44 @@
+Running training script for model: mdx23c
+training without optuna now
+Instruments: ['vocals', 'bass', 'drums', 'other']
+Metrics for training: ['sdr']. Metric for scheduler: sdr
+There is no augmentations block in config. Augmentations disabled for training...
+Dataset type: 1 Processes to use: 32 
+Collecting metadata for ['../data/MUSDB18HQ/train']
+  0%|          | 0/86 [00:00<?, ?it/s]  1%|          | 1/86 [01:06<1:34:17, 66.56s/it]  2%|▏         | 2/86 [02:20<1:39:31, 71.09s/it] 10%|█         | 9/86 [02:56<18:51, 14.69s/it]   13%|█▎        | 11/86 [03:15<16:39, 13.32s/it] 17%|█▋        | 15/86 [03:53<13:51, 11.72s/it] 23%|██▎       | 20/86 [04:04<08:20,  7.58s/it] 27%|██▋       | 23/86 [04:15<06:52,  6.55s/it] 71%|███████   | 61/86 [04:21<00:31,  1.25s/it] 73%|███████▎  | 63/86 [04:24<00:28,  1.25s/it] 76%|███████▌  | 65/86 [04:28<00:27,  1.31s/it] 85%|████████▍ | 73/86 [04:30<00:12,  1.02it/s] 88%|████████▊ | 76/86 [04:31<00:09,  1.11it/s]100%|██████████| 86/86 [04:31<00:00,  3.16s/it]
+Found tracks in dataset: 86
+Use single GPU: [0]
+Patience: 3 Reduce factor: 0.95 Batch size: 6 Grad accum steps: 6 Effective batch size: 36 Optimizer: adam
+Train for: 1000
+Train epoch: 0 Learning rate: 5e-05
+  0%|          | 0/1000 [00:00<?, ?it/s]  0%|          | 0/1000 [00:12<?, ?it/s]
+Traceback (most recent call last):
+  File "/project/6002780/kaim/Music-Source-Separation-Training/train_tensorboard.py", line 356, in <module>
+    best_metric = train_model(args, base_config, writer=writer)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/train_tensorboard.py", line 238, in train_model
+    y_ = model(x)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/models/mdx23c_tfc_tdf_v3.py", line 226, in forward
+    x = block.tfc_tdf(x)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/models/mdx23c_tfc_tdf_v3.py", line 135, in forward
+    x = x + block.tdf(x)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/container.py", line 250, in forward
+    input = module(input)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/activation.py", line 734, in forward
+    return F.gelu(input, approximate=self.approximate)
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 96.00 MiB. GPU 0 has a total capacity of 31.73 GiB of which 68.69 MiB is free. Including non-PyTorch memory, this process has 31.66 GiB memory in use. Of the allocated memory 31.17 GiB is allocated by PyTorch, and 121.43 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
