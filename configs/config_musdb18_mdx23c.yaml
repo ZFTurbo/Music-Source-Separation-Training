@@ -1,3 +1,5 @@
+# these params taken from https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/pretrained_models.md
+
 audio:
   chunk_size: 261120
   dim_f: 4096

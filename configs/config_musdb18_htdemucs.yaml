@@ -1,11 +1,13 @@
+# taken from https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/pretrained_models.md
+
 audio:
   chunk_size: 485100 # samplerate * segment
   min_mean_abs: 0.001
   hop_length: 1024
 
 training:
-  batch_size: 4
-  gradient_accumulation_steps: 4
+  batch_size: 8
+  gradient_accumulation_steps: 1
   grad_clip: 0
   segment: 11
   shift: 1
@@ -14,8 +16,8 @@ training:
   normalize: true
   instruments: ['drums', 'bass', 'other', 'vocals']
   target_instrument: null
-  num_epochs: 5
-  num_steps: 100
+  num_epochs: 1000
+  num_steps: 1000
   optimizer: adam
   lr: 9.0e-05
   patience: 2
@@ -116,4 +118,3 @@ htdemucs:  # see demucs/htdemucs.py for a detailed description
   t_cross_first: False
   # Weight init
   rescale: 0.1
-

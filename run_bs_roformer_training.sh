@@ -12,8 +12,8 @@ export XLA_FLAGS=--xla_gpu_cuda_data_dir=$CUDA_HOME
 CURRENT_DATE=$(date +"%Y-%m-%d_%H-%M-%S")
 
 # Model-specific parameters
-MODEL_TYPE="scnet"
-CONFIG_PATH="configs/config_musdb18_scnet.yaml"
+MODEL_TYPE="bs_roformer"
+CONFIG_PATH="configs/config_musdb18_bs_roformer.yaml"
 
 CHECKPOINTS_PATH="checkpoints/${MODEL_TYPE}_${CURRENT_DATE}"
 SLURM_LOGS_PATH="slurm_logs/${MODEL_TYPE}_${CURRENT_DATE}"
