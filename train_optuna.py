@@ -22,6 +22,7 @@ from torch.cuda.amp.grad_scaler import GradScaler
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch.nn.functional as F
 import warnings
+from datetime import datetime
 warnings.filterwarnings("ignore")
 
 import optuna
@@ -401,7 +402,17 @@ if __name__ == "__main__":
         return best_metric
 
     ### CHANGED: Provide the storage to the study for the Optuna dashboard
-    study = optuna.create_study(direction="maximize", storage=storage_url, load_if_exists=True)
+    # Get the current date and time in a specific format
+    current_date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+    # Create a study name with the model type and current date
+    study_name = f"{args.model_type}_study_{current_date}"
+    study = optuna.create_study(
+    study_name=study_name,  # Add the study name here
+    direction="maximize",
+    storage=storage_url,
+    load_if_exists=True
+    )   
     study.optimize(objective, n_trials=args.optuna_trials)
 
     print("Best trial:")

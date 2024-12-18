@@ -1,73 +1,0 @@
-Running training script for model: scnet
-[I 2024-12-17 21:10:25,420] A new study created in RDB with name: no-name-7b37f16a-ba4c-4c0f-9e50-0892f2afec51
-training using optuna
-model type is scnet
-Instruments: ['drums', 'bass', 'other', 'vocals']
-Metrics for training: ['sdr']. Metric for scheduler: sdr
-Use augmentation for training
-Dataset type: 1 Processes to use: 8 
-Collecting metadata for ['../data/MUSDB18HQ/train']
-  0%|          | 0/80 [00:00<?, ?it/s]  1%|▏         | 1/80 [00:04<05:36,  4.26s/it]  5%|▌         | 4/80 [00:04<01:04,  1.18it/s]  9%|▉         | 7/80 [00:04<00:30,  2.42it/s] 11%|█▏        | 9/80 [00:04<00:22,  3.10it/s] 14%|█▍        | 11/80 [00:04<00:17,  4.05it/s] 18%|█▊        | 14/80 [00:05<00:10,  6.14it/s] 22%|██▎       | 18/80 [00:05<00:06,  9.29it/s] 31%|███▏      | 25/80 [00:05<00:03, 16.96it/s] 41%|████▏     | 33/80 [00:05<00:01, 25.96it/s] 64%|██████▍   | 51/80 [00:05<00:00, 53.01it/s] 91%|█████████▏| 73/80 [00:05<00:00, 86.41it/s]100%|██████████| 80/80 [00:05<00:00, 13.97it/s]
-Found tracks in dataset: 80
-CUDA is not available. Training on CPU will be very slow...
-Patience: 2 Reduce factor: 0.872090339343468 Batch size: 10 Grad accum steps: 1 Effective batch size: 10 Optimizer: adam
-Train for: 5
-Train epoch: 0 Learning rate: 0.00017686550903700082
-  0%|          | 0/100 [00:00<?, ?it/s]Exception ignored in: <function _MultiProcessingDataLoaderIter.__del__ at 0x10a1f64d0>
-Traceback (most recent call last):
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1604, in __del__
-    self._shutdown_workers()
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1568, in _shutdown_workers
-    w.join(timeout=_utils.MP_STATUS_CHECK_INTERVAL)
-  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/process.py", line 149, in join
-    res = self._popen.wait(timeout)
-  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/popen_fork.py", line 40, in wait
-    if not wait([self.sentinel], timeout):
-  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/multiprocessing/connection.py", line 936, in wait
-    ready = selector.select(timeout)
-KeyboardInterrupt: 
-  0%|          | 0/100 [00:11<?, ?it/s]
-[W 2024-12-17 21:10:44,443] Trial 0 failed with parameters: {'lr': 0.00017686550903700082, 'reduce_factor': 0.872090339343468, 'ema_momentum': 0.9809152181131264, 'q': 0.7434702893845179, 'dims_last': 128, 'compress': 3, 'num_dplayer': 8, 'conv_kernel': 4} because of the following error: KeyboardInterrupt().
-Traceback (most recent call last):
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/optuna/study/_optimize.py", line 197, in _run_trial
-    value_or_values = func(trial)
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train_optuna.py", line 400, in objective
-    best_metric = train_model(args, config, writer=writer)
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train_optuna.py", line 273, in train_model
-    y_ = model(x)
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/models/scnet/scnet.py", line 338, in forward
-    x = torch.stft(x, **self.stft_config, return_complex=True)
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/functional.py", line 704, in stft
-    return _VF.stft(  # type: ignore[attr-defined]
-KeyboardInterrupt
-[W 2024-12-17 21:10:44,446] Trial 0 failed with value None.
-Traceback (most recent call last):
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train_optuna.py", line 405, in <module>
-    study.optimize(objective, n_trials=args.optuna_trials)
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/optuna/study/study.py", line 475, in optimize
-    _optimize(
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/optuna/study/_optimize.py", line 63, in _optimize
-    _optimize_sequential(
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/optuna/study/_optimize.py", line 160, in _optimize_sequential
-    frozen_trial = _run_trial(study, func, catch)
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/optuna/study/_optimize.py", line 248, in _run_trial
-    raise func_err
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/optuna/study/_optimize.py", line 197, in _run_trial
-    value_or_values = func(trial)
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train_optuna.py", line 400, in objective
-    best_metric = train_model(args, config, writer=writer)
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train_optuna.py", line 273, in train_model
-    y_ = model(x)
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/models/scnet/scnet.py", line 338, in forward
-    x = torch.stft(x, **self.stft_config, return_complex=True)
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/functional.py", line 704, in stft
-    return _VF.stft(  # type: ignore[attr-defined]
-KeyboardInterrupt
