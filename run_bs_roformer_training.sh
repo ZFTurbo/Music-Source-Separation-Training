@@ -1,6 +1,7 @@
 #!/bin/bash
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #SBATCH --gpus-per-node=v100:3  # Request 3 V100 GPUs
 #SBATCH --cpus-per-task=16      # Adjust CPU allocation accordingly
 #SBATCH --mem=128G              # Increase memory if necessary
@@ -16,6 +17,11 @@
 #SBATCH --ntasks-per-node=24
 #SBATCH --exclusive
 >>>>>>> c5874c0 (yes)
+=======
+#SBATCH --cpus-per-task=16
+#SBATCH --gpus-per-node=v100l:2 # Adjust  based on your cluster's CPU/GPU ratio
+#SBATCH --mem=125G               # Adjust memory as needed
+>>>>>>> 7238389 (yes)
 #SBATCH --time=0-00:60:00           # DD-HH:MM:SS
 #SBATCH --account=def-ichiro
 #SBATCH --output=slurm_logs/slurm-%j.out  # Use Job ID for unique output files
