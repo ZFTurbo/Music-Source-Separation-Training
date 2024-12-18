@@ -1,10 +1,8 @@
 #!/bin/bash
-#SBATCH --nodes=1
-#SBATCH --gpus-per-node=p100:4
-#SBATCH --ntasks-per-node=24
-#SBATCH --exclusive
-#SBATCH --mem=125G
-#SBATCH --time=0-00:60:00           # DD-HH:MM:SS
+#SBATCH --gres=gpu:v100l:1       # Request GPU "generic resources"
+#SBATCH --cpus-per-task=6        # Adjust based on your cluster's CPU/GPU ratio
+#SBATCH --mem=125G               # Adjust memory as needed
+#SBATCH --time=3-00:00           # DD-HH:MM:SS
 #SBATCH --account=def-ichiro
 #SBATCH --output=slurm_logs/slurm-%j.out  # Use Job ID for unique output files
 
@@ -38,4 +36,4 @@ python train_tensorboard.py \
   --valid_path "../data/MUSDB18HQ/validation" \
   --num_workers 4 \
   --start_check_point "" \
-  --device_ids 0 1 2 3
+  --device_ids 0
