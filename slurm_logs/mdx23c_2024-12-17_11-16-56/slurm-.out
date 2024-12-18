@@ -1,7 +1,0 @@
-running training script
-Traceback (most recent call last):
-  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train_optuna.py", line 27, in <module>
-    import optuna
-ModuleNotFoundError: No module named 'optuna'
-Running command: python train_optuna.py --model_type mdx23c --config_path configs/config_musdb18_mdx23c.yaml --results_path checkpoints/mdx23c_2024-12-17_11-16-56 --data_path /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train --valid_path /home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation --num_workers 4 --start_check_point  --device_ids 0
-An error occurred: Command '['python', 'train_optuna.py', '--model_type', 'mdx23c', '--config_path', 'configs/config_musdb18_mdx23c.yaml', '--results_path', 'checkpoints/mdx23c_2024-12-17_11-16-56', '--data_path', '/home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/train', '--valid_path', '/home/kaim/projects/def-ichiro/kaim/data/MUSDB18HQ/validation', '--num_workers', '4', '--start_check_point', '', '--device_ids', '0']' returned non-zero exit status 1.
