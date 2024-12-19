@@ -1,72 +1,0 @@
-Running training script for model: bs_mamba2
-training without optuna now
-Exception during load Mamba2 modules: No module named 'mamba_ssm.modules.mamba2'
-Load local torch implementation!
-[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 11, 11, 11, 11, 11, 11, 11, 11, 23, 23, 23, 23, 23, 23, 23, 23, 46, 46, 46, 46, 46, 46, 46, 46, 92, 92, 121]
-[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 11, 11, 11, 11, 11, 11, 11, 11, 23, 23, 23, 23, 23, 23, 23, 23, 46, 46, 46, 46, 46, 46, 46, 46, 92, 92, 121]
-Instruments: ['drums', 'bass', 'other', 'vocals']
-Metrics for training: ['sdr']. Metric for scheduler: sdr
-Use augmentation for training
-Dataset type: 1 Processes to use: 8 
-Collecting metadata for ['../data/MUSDB18HQ/train']
-  0%|          | 0/86 [00:00<?, ?it/s]  1%|          | 1/86 [00:18<25:49, 18.23s/it]  2%|▏         | 2/86 [00:29<19:25, 13.87s/it] 10%|█         | 9/86 [00:39<04:15,  3.32s/it] 13%|█▎        | 11/86 [00:48<04:33,  3.65s/it] 17%|█▋        | 15/86 [00:58<03:42,  3.13s/it] 19%|█▊        | 16/86 [01:10<04:55,  4.23s/it] 22%|██▏       | 19/86 [01:19<04:14,  3.79s/it] 26%|██▌       | 22/86 [01:27<03:39,  3.43s/it] 27%|██▋       | 23/86 [01:42<05:19,  5.06s/it] 31%|███▏      | 27/86 [01:54<04:02,  4.11s/it] 38%|███▊      | 33/86 [02:00<02:17,  2.59s/it] 42%|████▏     | 36/86 [02:03<01:49,  2.18s/it] 44%|████▍     | 38/86 [02:07<01:44,  2.17s/it] 45%|████▌     | 39/86 [02:14<02:12,  2.82s/it] 48%|████▊     | 41/86 [02:23<02:24,  3.20s/it] 69%|██████▊   | 59/86 [02:25<00:22,  1.18it/s] 70%|██████▉   | 60/86 [02:38<00:39,  1.53s/it] 71%|███████   | 61/86 [02:44<00:45,  1.83s/it] 73%|███████▎  | 63/86 [02:48<00:43,  1.90s/it] 76%|███████▌  | 65/86 [03:14<01:26,  4.12s/it] 81%|████████▏ | 70/86 [03:15<00:39,  2.46s/it] 85%|████████▍ | 73/86 [03:28<00:39,  3.01s/it] 88%|████████▊ | 76/86 [03:34<00:27,  2.73s/it] 92%|█████████▏| 79/86 [03:35<00:14,  2.01s/it] 93%|█████████▎| 80/86 [03:39<00:13,  2.23s/it] 98%|█████████▊| 84/86 [03:43<00:03,  1.83s/it] 99%|█████████▉| 85/86 [03:49<00:02,  2.25s/it]100%|██████████| 86/86 [03:49<00:00,  2.66s/it]
-Found tracks in dataset: 86
-Use single GPU: [0]
-Patience: 2 Reduce factor: 0.95 Batch size: 2 Grad accum steps: 1 Effective batch size: 2 Optimizer: prodigy
-Train for: 1000
-Train epoch: 0 Learning rate: 1.0
-  0%|          | 0/1000 [00:00<?, ?it/s]  0%|          | 0/1000 [00:15<?, ?it/s]
-Traceback (most recent call last):
-  File "/project/6002780/kaim/Music-Source-Separation-Training/train_tensorboard.py", line 356, in <module>
-    best_metric = train_model(args, base_config, writer=writer)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/train_tensorboard.py", line 238, in train_model
-    y_ = model(x)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/models/ts_bs_mamba2.py", line 264, in forward
-    sep_output = checkpoint_sequential(self.separator_mask, 2, subband_feature_mask.view(batch_size, nch, self.nband*self.feature_dim, -1))  # B, nband*N, T
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/utils/checkpoint.py", line 575, in checkpoint_sequential
-    input = checkpoint(
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/_compile.py", line 24, in inner
-    return torch._dynamo.disable(fn, recursive)(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 489, in _fn
-    return fn(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/_dynamo/external_utils.py", line 17, in inner
-    return fn(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/utils/checkpoint.py", line 482, in checkpoint
-    return CheckpointFunction.apply(function, preserve, *args)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/autograd/function.py", line 553, in apply
-    return super().apply(*args, **kwargs)  # type: ignore[misc]
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/utils/checkpoint.py", line 261, in forward
-    outputs = run_function(*args)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/utils/checkpoint.py", line 562, in forward
-    input = functions[j](input)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/models/ts_bs_mamba2.py", line 128, in forward
-    band_output = self.band_rnn(input.view(B*nch*self.nband, self.feature_dim, -1)).view(B*nch, self.nband, -1, T)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/models/ts_bs_mamba2.py", line 106, in forward
-    rnn_output =  self.rnn(self.dropout(self.norm(input)).transpose(1, 2).contiguous())
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/models/ts_bs_mamba2.py", line 37, in forward
-    forward_f_output = self.forward_mamba2(forward_f)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/project/6002780/kaim/Music-Source-Separation-Training/models/ex_bi_mamba2.py", line 82, in forward
-    y = self.ssd(x * dt.unsqueeze(-1),
-  File "/project/6002780/kaim/Music-Source-Separation-Training/models/ex_bi_mamba2.py", line 112, in ssd
-    x = x.reshape(x.shape[0], x.shape[1] // chunk_size, chunk_size, x.shape[2], x.shape[3], )
-RuntimeError: shape '[228, 4, 64, 8, 64]' is invalid for input of size 30234624
