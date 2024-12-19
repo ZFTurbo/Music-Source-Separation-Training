@@ -610,9 +610,9 @@ def train_model(args: argparse.Namespace) -> None:
 
     wandb_init(args, config, device_ids, batch_size)
 
-    # Initialize TensorBoard SummaryWriter with timestamp to ensure unique log directories
     timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    log_dir = os.path.join(args.results_path, 'runs', timestamp)  # Changed to 'runs/'
+    run_name = f"experiment_{timestamp}"
+    log_dir = os.path.join(args.results_path, 'runs', run_name)
     writer = SummaryWriter(log_dir=log_dir)
     print(f"TensorBoard logging enabled. Logs will be saved to {log_dir}")
 
