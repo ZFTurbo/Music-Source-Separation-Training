@@ -25,6 +25,8 @@ mkdir -p "$SLURM_LOGS_PATH"
 exec > >(tee -a "$SLURM_LOGS_PATH/slurm-${SLURM_JOB_ID}.out") 2>&1
 
 source separation_env/bin/activate
+pip install mamba_ssm
+
 
 echo "Running training script for model: $MODEL_TYPE"
 
