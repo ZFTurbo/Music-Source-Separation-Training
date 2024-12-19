@@ -44,5 +44,4 @@ musdb
 museval
 tensorboard
 optuna-dashboard
-mamba_ssm
 
