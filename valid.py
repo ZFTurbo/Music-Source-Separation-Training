@@ -14,7 +14,8 @@ import soundfile as sf
 import numpy as np
 import torch.nn as nn
 import multiprocessing
-from utils import demix, get_metrics, get_model_from_config, prefer_target_instrument, normalize_audio, denormalize_audio, apply_tta, read_audio_transposed
+from utils import demix, get_model_from_config, prefer_target_instrument, normalize_audio, denormalize_audio, apply_tta, read_audio_transposed
+from metrics import get_metrics
 from typing import Tuple, Dict, List, Union
 import warnings
 from ml_collections import ConfigDict
