@@ -299,7 +299,7 @@ def choice_loss(args: argparse.Namespace, config: ConfigDict) -> Callable[[torch
     """
 
     if args.use_multistft_loss:
-        loss_options = dict(config.get(key='loss_multistft', default={}))
+        loss_options = dict(getattr(config, 'loss_multistft', {}))
         print(f'Loss options: {loss_options}')
         loss_multistft = auraloss.freq.MultiResolutionSTFTLoss(**loss_options)
 
@@ -379,7 +379,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
     loss_val = 0.
     total = 0
 
-    normalize = config.training.get('normalize', False)
+    normalize = getattr(config.training, 'normalize', False)
 
     pbar = tqdm(train_loader)
     for i, (batch, mixes) in enumerate(pbar):

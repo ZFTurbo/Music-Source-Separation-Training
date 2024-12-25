@@ -45,11 +45,11 @@ def run_folder(model, args, config, device, verbose: bool = False):
     model.eval()
 
     mixture_paths = sorted(glob.glob(os.path.join(args.input_folder, '*.*')))
-    sample_rate = config.audio.get('sample_rate', 44100)
+    sample_rate = getattr(config.audio, 'sample_rate', 44100)
 
     print(f"Total files found: {len(mixture_paths)}. Using sample rate: {sample_rate}")
 
-    instruments = prefer_target_instrument(config)
+    instruments = prefer_target_instrument(config)[:]
     os.makedirs(args.store_dir, exist_ok=True)
 
     if not verbose:

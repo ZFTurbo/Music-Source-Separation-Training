@@ -355,7 +355,7 @@ def demix(
 
     batch_size = config.inference.batch_size
 
-    use_amp = config.training.get(key='use_amp', default=True)
+    use_amp = getattr(config.training, 'use_amp', True)
 
     with torch.cuda.amp.autocast(enabled=use_amp):
         with torch.inference_mode():
@@ -454,7 +454,7 @@ def prefer_target_instrument(config: ConfigDict) -> List[str]:
         List[str]
             A list of target instruments.
         """
-    if config.training.get('target_instrument'):
+    if getattr(config.training, 'target_instrument', None):
         return [config.training.target_instrument]
     else:
         return config.training.instruments
