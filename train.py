@@ -513,12 +513,12 @@ def train_model(args: argparse.Namespace) -> None:
 
     train_loader = prepare_data(config, args, batch_size)
 
+    if args.start_check_point:
+        load_start_checkpoint(args, model)
+
     if args.train_lora:
         model = bind_lora_to_model(config, model)
         lora.mark_only_lora_as_trainable(model)
-
-    if args.start_check_point:
-        load_start_checkpoint(args, model)
 
     device, model = initialize_model_and_device(model, args.device_ids)
 

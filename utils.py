@@ -543,7 +543,7 @@ def load_lora_weights(model: torch.nn.Module, lora_path: str, device: str = 'cpu
     model.load_state_dict(lora_state_dict, strict=False)
 
 
-def load_start_checkpoint(args: argparse.Namespace, model: torch.nn.Module) -> None:
+def load_start_checkpoint(args: argparse.Namespace, model: torch.nn.Module, type_='train') -> None:
     """
     Load the starting checkpoint for a model.
 
@@ -553,10 +553,24 @@ def load_start_checkpoint(args: argparse.Namespace, model: torch.nn.Module) -> N
     """
 
     print(f'Start from checkpoint: {args.start_check_point}')
-    if 1:
-        load_not_compatible_weights(model, args.start_check_point, verbose=False)
+    if type_ in ['train', 'valid']:
+        if 0:
+            load_not_compatible_weights(model, args.start_check_point, verbose=False)
+        else:
+            model.load_state_dict(torch.load(args.start_check_point))
     else:
-        model.load_state_dict(torch.load(args.start_check_point))
+        device='cpu'
+        if args.model_type in ['htdemucs', 'apollo']:
+            state_dict = torch.load(args.start_check_point, map_location=device, weights_only=False)
+            # Fix for htdemucs pretrained models
+            if 'state' in state_dict:
+                state_dict = state_dict['state']
+            # Fix for apollo pretrained models
+            if 'state_dict' in state_dict:
+                state_dict = state_dict['state_dict']
+        else:
+            state_dict = torch.load(args.start_check_point, map_location=device, weights_only=True)
+        model.load_state_dict(state_dict)
 
     if args.lora_checkpoint:
         print(f"Loading LoRA weights from: {args.lora_checkpoint}")

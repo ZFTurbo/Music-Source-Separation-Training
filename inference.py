@@ -17,7 +17,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
 from utils import demix, get_model_from_config, normalize_audio, denormalize_audio
-from utils import prefer_target_instrument, apply_tta, load_start_checkpoint
+from utils import prefer_target_instrument, apply_tta, load_start_checkpoint, load_lora_weights
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -138,8 +138,9 @@ def proc_folder(args):
     torch.backends.cudnn.benchmark = True
 
     model, config = get_model_from_config(args.model_type, args.config_path)
-    if args.start_check_point:
-        load_start_checkpoint(args, model)
+
+    if args.start_check_point != '':
+        load_start_checkpoint(args, model, type_='inference')
 
     print("Instruments: {}".format(config.training.instruments))
 
