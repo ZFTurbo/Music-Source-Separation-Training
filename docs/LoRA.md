@@ -99,7 +99,7 @@ python inference.py --lora_checkpoint weights/lora_last_scnet.ckpt \
 
 ### Train example with BSRoformer and LoRA
 
-You can use this [config](configs/config_musdb18_bs_roformer_with_lora.yaml) and this [weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.12/model_bs_roformer_ep_17_sdr_9.6568.ckpt) to finetune BSRoformer on your dataset.
+You can use this [config](../configs/config_musdb18_bs_roformer_with_lora.yaml) and this [weights](https://github.com/ZFTurbo/Music-Source-Separation-Training/releases/download/v1.0.12/model_bs_roformer_ep_17_sdr_9.6568.ckpt) to finetune BSRoformer on your dataset.
 
 ```
 python train.py --model_type bs_roformer \
