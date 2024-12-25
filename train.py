@@ -4,15 +4,10 @@ __version__ = '1.0.4'
 
 import random
 import argparse
-import time
-import copy
 from tqdm.auto import tqdm
-import sys
 import os
-import glob
 import torch
 import wandb
-import soundfile as sf
 import numpy as np
 import auraloss
 import torch.nn as nn
@@ -25,8 +20,11 @@ import torch.nn.functional as F
 from typing import List, Tuple, Dict, Union, Callable
 
 from dataset import MSSDataset
-from utils import demix, sdr, get_model_from_config
+from utils import get_model_from_config
 from valid import valid_multi_gpu, valid
+
+from utils import bind_lora_to_model, load_start_checkpoint
+import loralib as lora
 
 import warnings
 
@@ -70,6 +68,9 @@ def parse_args(args: Union[List[str], None]) -> argparse.Namespace:
     parser.add_argument("--metric_for_scheduler", default="sdr",
                         choices=['sdr', 'l1_freq', 'si_sdr', 'neg_log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
                                  'fullness'], help='Metric which will be used for scheduler.')
+    parser.add_argument("--train_lora", action='store_true', help="Train with LoRA")
+    parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to LoRA weights")
+
     if args is None:
         args = parser.parse_args()
     else:
@@ -160,81 +161,6 @@ def prepare_data(config: Dict, args: argparse.Namespace, batch_size: int) -> Dat
         pin_memory=args.pin_memory
     )
     return train_loader
-
-
-def load_not_compatible_weights(model: torch.nn.Module, weights: str, verbose: bool = False) -> None:
-    """
-    Load weights into a model, handling mismatched shapes and dimensions.
-
-    Args:
-        model: PyTorch model into which the weights will be loaded.
-        weights: Path to the weights file.
-        verbose: If True, prints detailed information about matching and mismatched layers.
-    """
-
-    new_model = model.state_dict()
-    old_model = torch.load(weights)
-    if 'state' in old_model:
-        # Fix for htdemucs weights loading
-        old_model = old_model['state']
-    if 'state_dict' in old_model:
-        # Fix for apollo weights loading
-        old_model = old_model['state_dict']
-
-    for el in new_model:
-        if el in old_model:
-            if verbose:
-                print(f'Match found for {el}!')
-            if new_model[el].shape == old_model[el].shape:
-                if verbose:
-                    print('Action: Just copy weights!')
-                new_model[el] = old_model[el]
-            else:
-                if len(new_model[el].shape) != len(old_model[el].shape):
-                    if verbose:
-                        print('Action: Different dimension! Too lazy to write the code... Skip it')
-                else:
-                    if verbose:
-                        print(f'Shape is different: {tuple(new_model[el].shape)} != {tuple(old_model[el].shape)}')
-                    ln = len(new_model[el].shape)
-                    max_shape = []
-                    slices_old = []
-                    slices_new = []
-                    for i in range(ln):
-                        max_shape.append(max(new_model[el].shape[i], old_model[el].shape[i]))
-                        slices_old.append(slice(0, old_model[el].shape[i]))
-                        slices_new.append(slice(0, new_model[el].shape[i]))
-                    # print(max_shape)
-                    # print(slices_old, slices_new)
-                    slices_old = tuple(slices_old)
-                    slices_new = tuple(slices_new)
-                    max_matrix = np.zeros(max_shape, dtype=np.float32)
-                    for i in range(ln):
-                        max_matrix[slices_old] = old_model[el].cpu().numpy()
-                    max_matrix = torch.from_numpy(max_matrix)
-                    new_model[el] = max_matrix[slices_new]
-        else:
-            if verbose:
-                print(f'Match not found for {el}!')
-    model.load_state_dict(
-        new_model
-    )
-
-
-def load_start_checkpoint(args: argparse.Namespace, model: torch.nn.Module) -> None:
-    """
-    Load the starting checkpoint for a model.
-
-    Args:
-        args: Parsed command-line arguments containing the checkpoint path.
-        model: PyTorch model to load the checkpoint into.
-    """
-
-    print(f'Start from checkpoint: {args.start_check_point}')
-    if 1:
-        load_not_compatible_weights(model, args.start_check_point, verbose=False)
-    else:
-        model.load_state_dict(torch.load(args.start_check_point))
 
 
 def initialize_model_and_device(model: torch.nn.Module, device_ids: List[int]) -> Tuple[Union[torch.device, str], torch.nn.Module]:
@@ -373,7 +299,7 @@ def choice_loss(args: argparse.Namespace, config: ConfigDict) -> Callable[[torch
     """
 
     if args.use_multistft_loss:
-        loss_options = dict(config.get(key='loss_multistft', default={}))
+        loss_options = dict(getattr(config, 'loss_multistft', {}))
         print(f'Loss options: {loss_options}')
         loss_multistft = auraloss.freq.MultiResolutionSTFTLoss(**loss_options)
 
@@ -453,7 +379,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
     loss_val = 0.
     total = 0
 
-    normalize = config.training.get('normalize', False)
+    normalize = getattr(config.training, 'normalize', False)
 
     pbar = tqdm(train_loader)
     for i, (batch, mixes) in enumerate(pbar):
@@ -495,12 +421,16 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
     wandb.log({'train_loss': loss_val / total, 'epoch': epoch, 'learning_rate': optimizer.param_groups[0]['lr']})
 
 
-def save_weights(store_path, model, device_ids):
-    state_dict = model.state_dict() if len(device_ids) <= 1 else model.module.state_dict()
-    torch.save(
-        state_dict,
-        store_path
-    )
+def save_weights(store_path, model, device_ids, train_lora):
+
+    if train_lora:
+        torch.save(lora.lora_state_dict(model), store_path)
+    else:
+        state_dict = model.state_dict() if len(device_ids) <= 1 else model.module.state_dict()
+        torch.save(
+            state_dict,
+            store_path
+        )
 
 
 def save_last_weights(args: argparse.Namespace, model: torch.nn.Module, device_ids: List[int]) -> None:
@@ -517,8 +447,8 @@ def save_last_weights(args: argparse.Namespace, model: torch.nn.Module, device_i
     """
 
     store_path = f'{args.results_path}/last_{args.model_type}.ckpt'
-    save_weights(store_path, model, device_ids)
-
+    train_lora = args.train_lora
+    save_weights(store_path, model, device_ids, train_lora)
 
 def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, config: ConfigDict,
                           device: torch.device, device_ids: List[int], best_metric: float,
@@ -548,7 +478,8 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
     if metric_avg > best_metric:
         store_path = f'{args.results_path}/model_{args.model_type}_ep_{epoch}_{args.metric_for_scheduler}_{metric_avg:.4f}.ckpt'
         print(f'Store weights: {store_path}')
-        save_weights(store_path, model, device_ids)
+        train_lora = args.train_lora
+        save_weights(store_path, model, device_ids, train_lora)
         best_metric = metric_avg
     scheduler.step(metric_avg)
     wandb.log({'metric_main': metric_avg, 'best_metric': best_metric})
@@ -584,6 +515,10 @@ def train_model(args: argparse.Namespace) -> None:
 
     if args.start_check_point:
         load_start_checkpoint(args, model)
+
+    if args.train_lora:
+        model = bind_lora_to_model(config, model)
+        lora.mark_only_lora_as_trainable(model)
 
     device, model = initialize_model_and_device(model, args.device_ids)
 
