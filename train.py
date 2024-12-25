@@ -73,8 +73,8 @@ def parse_args(args: Union[List[str], None]) -> argparse.Namespace:
     parser.add_argument("--metric_for_scheduler", default="sdr",
                         choices=['sdr', 'l1_freq', 'si_sdr', 'neg_log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
                                  'fullness'], help='Metric which will be used for scheduler.')
-    parser.add_argument("--train_lora", action='store_true', help="Train LoRA")
-    parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to valid weights")
+    parser.add_argument("--train_lora", action='store_true', help="Train with LoRA")
+    parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to LoRA weights")
 
     if args is None:
         args = parser.parse_args()

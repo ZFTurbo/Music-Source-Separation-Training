@@ -118,7 +118,7 @@ def proc_folder(args):
     parser.add_argument("--flac_file", action = 'store_true', help="Output flac file instead of wav")
     parser.add_argument("--pcm_type", type=str, choices=['PCM_16', 'PCM_24'], default='PCM_24', help="PCM type for FLAC files (PCM_16 or PCM_24)")
     parser.add_argument("--use_tta", action='store_true', help="Flag adds test time augmentation during inference (polarity and channel inverse). While this triples the runtime, it reduces noise and slightly improves prediction quality.")
-    parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to valid weights")
+    parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to LoRA weights")
     if args is None:
         args = parser.parse_args()
     else:
