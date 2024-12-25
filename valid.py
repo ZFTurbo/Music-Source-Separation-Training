@@ -185,12 +185,13 @@ def process_audio_files(
     instruments = prefer_target_instrument(config)
 
     use_tta = getattr(args, 'use_tta', False)
-    #dir to save files, if empty no saving
+    # dir to save files, if empty no saving
     store_dir = getattr(args, 'store_dir', '')
-    #codec to save files
-    extension = getattr(config['inference'],'extension',
-                        getattr(args, 'extension',
-                                'wav') )
+    # codec to save files
+    if 'extension' in config['inference']:
+        extension = config['inference']['extension']
+    else:
+        extension = getattr(args, 'extension', 'wav')
 
     # Initialize metrics dictionary
     all_metrics = {
@@ -387,11 +388,10 @@ def valid(
     # dir to save files, if empty no saving
     store_dir = getattr(args, 'store_dir', '')
     # codec to save files
-    extension = getattr(
-        config['inference'],
-        'extension',
-        getattr(args, 'extension', 'wav')
-    )
+    if 'extension' in config['inference']:
+        extension = config['inference']['extension']
+    else:
+        extension = getattr(args, 'extension', 'wav')
 
     all_mixtures_path = get_mixture_paths(args, verbose, config, extension)
     all_metrics = process_audio_files(all_mixtures_path, model, args, config, device, verbose, not verbose)
@@ -567,11 +567,10 @@ def valid_multi_gpu(
     # dir to save files, if empty no saving
     store_dir = getattr(args, 'store_dir', '')
     # codec to save files
-    extension = getattr(
-        config['inference'],
-        'extension',
-        getattr(args, 'extension', 'wav')
-    )
+    if 'extension' in config['inference']:
+        extension = config['inference']['extension']
+    else:
+        extension = getattr(args, 'extension', 'wav')
 
     all_mixtures_path = get_mixture_paths(args, verbose, config, extension)
 
