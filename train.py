@@ -514,7 +514,7 @@ def train_model(args: argparse.Namespace) -> None:
     train_loader = prepare_data(config, args, batch_size)
 
     if args.start_check_point:
-        load_start_checkpoint(args, model)
+        load_start_checkpoint(args, model, type_='train')
 
     if args.train_lora:
         model = bind_lora_to_model(config, model)

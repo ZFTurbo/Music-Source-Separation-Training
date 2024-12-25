@@ -618,7 +618,7 @@ def check_validation(args):
     model, config = get_model_from_config(args.model_type, args.config_path)
 
     if args.start_check_point:
-        load_start_checkpoint(args, model)
+        load_start_checkpoint(args, model, type_='valid')
 
     print(f"Instruments: {config.training.instruments}")
 

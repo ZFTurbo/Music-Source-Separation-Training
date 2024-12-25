@@ -550,11 +550,12 @@ def load_start_checkpoint(args: argparse.Namespace, model: torch.nn.Module, type
     Args:
         args: Parsed command-line arguments containing the checkpoint path.
         model: PyTorch model to load the checkpoint into.
+        type_: how to load weights - for train we can load not fully compatible weights
     """
 
     print(f'Start from checkpoint: {args.start_check_point}')
-    if type_ in ['train', 'valid']:
-        if 0:
+    if type_ in ['train']:
+        if 1:
             load_not_compatible_weights(model, args.start_check_point, verbose=False)
         else:
             model.load_state_dict(torch.load(args.start_check_point))
