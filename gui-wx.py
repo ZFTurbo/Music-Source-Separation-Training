@@ -9,6 +9,7 @@ import queue
 import json
 import webbrowser
 import requests
+import sys
 
 def run_subprocess(cmd, output_queue):
     try:
@@ -426,7 +427,7 @@ class MainFrame(wx.Frame):
             return
 
         cmd = [
-            "python", "train.py",
+            sys.executable, "train.py",
             "--model_type", model_type,
             "--config_path", config_path,
             "--results_path", results_path,
@@ -470,7 +471,7 @@ class MainFrame(wx.Frame):
             return
 
         cmd = [
-            "python", "inference.py",
+            sys.executable, "inference.py",
             "--model_type", model_type,
             "--config_path", config_path,
             "--input_folder", input_folder,
