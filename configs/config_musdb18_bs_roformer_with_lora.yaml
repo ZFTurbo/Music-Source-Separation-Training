@@ -14,7 +14,8 @@ lora:
   lora_dropout: 0.05
   merge_weights: False
   fan_in_fan_out: False
-  enable_lora: [True, False, True]
+  enable_lora: [True, False, True] # This for QKV
+  # enable_lora: [True] # For non-Roformers architectures
 
 model:
   dim: 384
