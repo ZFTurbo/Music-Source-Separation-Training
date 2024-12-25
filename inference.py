@@ -16,7 +16,9 @@ import torch.nn as nn
 # Using the embedded version of Python can also correctly import the utils module.
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
-from utils import demix, get_model_from_config, normalize_audio, denormalize_audio, prefer_target_instrument, apply_tta, read_audio_transposed
+
+from utils import demix, get_model_from_config, normalize_audio, denormalize_audio
+from utils import prefer_target_instrument, apply_tta, read_audio_transposed, load_start_checkpoint
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -116,6 +118,7 @@ def proc_folder(args):
     parser.add_argument("--flac_file", action = 'store_true', help="Output flac file instead of wav")
     parser.add_argument("--pcm_type", type=str, choices=['PCM_16', 'PCM_24'], default='PCM_24', help="PCM type for FLAC files (PCM_16 or PCM_24)")
     parser.add_argument("--use_tta", action='store_true', help="Flag adds test time augmentation during inference (polarity and channel inverse). While this triples the runtime, it reduces noise and slightly improves prediction quality.")
+    parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to valid weights")
     if args is None:
         args = parser.parse_args()
     else:
@@ -136,19 +139,9 @@ def proc_folder(args):
     torch.backends.cudnn.benchmark = True
 
     model, config = get_model_from_config(args.model_type, args.config_path)
-    if args.start_check_point != '':
-        print('Start from checkpoint: {}'.format(args.start_check_point))
-        if args.model_type in ['htdemucs', 'apollo']:
-            state_dict = torch.load(args.start_check_point, map_location=device, weights_only=False)
-            # Fix for htdemucs pretrained models
-            if 'state' in state_dict:
-                state_dict = state_dict['state']
-            # Fix for apollo pretrained models
-            if 'state_dict' in state_dict:
-                state_dict = state_dict['state_dict']
-        else:
-            state_dict = torch.load(args.start_check_point, map_location=device, weights_only=True)
-        model.load_state_dict(state_dict)
+    if args.start_check_point:
+        load_start_checkpoint(args, model)
+
     print("Instruments: {}".format(config.training.instruments))
 
     # in case multiple CUDA GPUs are used and --device_ids arg is passed

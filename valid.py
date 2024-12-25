@@ -14,7 +14,8 @@ import soundfile as sf
 import numpy as np
 import torch.nn as nn
 import multiprocessing
-from utils import demix, get_model_from_config, prefer_target_instrument, normalize_audio, denormalize_audio, apply_tta, read_audio_transposed
+from utils import demix, get_model_from_config, prefer_target_instrument
+from utils import normalize_audio, denormalize_audio, apply_tta, read_audio_transposed, load_start_checkpoint
 from metrics import get_metrics
 from typing import Tuple, Dict, List, Union
 import warnings
@@ -608,6 +609,8 @@ def check_validation(args):
     parser.add_argument("--extension", type=str, default='wav', help="Choose extension for validation")
     parser.add_argument("--use_tta", action='store_true', help="Flag adds test time augmentation during inference (polarity and channel inverse). While this triples the runtime, it reduces noise and slightly improves prediction quality.")
     parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"], choices=['sdr', 'l1_freq', 'si_sdr', 'neg_log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless', 'fullness'], help='List of metrics to use.')
+    parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to valid weights")
+
     if args is None:
         args = parser.parse_args()
     else:
@@ -617,17 +620,9 @@ def check_validation(args):
     torch.multiprocessing.set_start_method('spawn')
 
     model, config = get_model_from_config(args.model_type, args.config_path)
+
     if args.start_check_point:
-        print(f'Start from checkpoint: {args.start_check_point}')
-        state_dict = torch.load(args.start_check_point)
-        if args.model_type in ['htdemucs', 'apollo']:
-            # Fix for htdemucs pretrained models
-            if 'state' in state_dict:
-                state_dict = state_dict['state']
-            # Fix for apollo pretrained models
-            if 'state_dict' in state_dict:
-                state_dict = state_dict['state_dict']
-        model.load_state_dict(state_dict)
+        load_start_checkpoint(args, model)
 
     print(f"Instruments: {config.training.instruments}")
 

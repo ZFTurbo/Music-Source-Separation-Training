@@ -1,6 +1,7 @@
 # coding: utf-8
 __author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
 
+import argparse
 import numpy as np
 import torch
 import torch.nn as nn
@@ -12,6 +13,7 @@ from ml_collections import ConfigDict
 from omegaconf import OmegaConf
 from tqdm.auto import tqdm
 from typing import Dict, List, Tuple, Any, Union
+import loralib as lora
 
 
 def load_config(model_type: str, config_path: str) -> Union[ConfigDict, OmegaConf]:
@@ -458,3 +460,148 @@ def prefer_target_instrument(config: ConfigDict) -> List[str]:
         return [config.training.target_instrument]
     else:
         return config.training.instruments
+
+
+def load_not_compatible_weights(model: torch.nn.Module, weights: str, verbose: bool = False) -> None:
+    """
+    Load weights into a model, handling mismatched shapes and dimensions.
+
+    Args:
+        model: PyTorch model into which the weights will be loaded.
+        weights: Path to the weights file.
+        verbose: If True, prints detailed information about matching and mismatched layers.
+    """
+
+    new_model = model.state_dict()
+    old_model = torch.load(weights)
+    if 'state' in old_model:
+        # Fix for htdemucs weights loading
+        old_model = old_model['state']
+    if 'state_dict' in old_model:
+        # Fix for apollo weights loading
+        old_model = old_model['state_dict']
+
+    for el in new_model:
+        if el in old_model:
+            if verbose:
+                print(f'Match found for {el}!')
+            if new_model[el].shape == old_model[el].shape:
+                if verbose:
+                    print('Action: Just copy weights!')
+                new_model[el] = old_model[el]
+            else:
+                if len(new_model[el].shape) != len(old_model[el].shape):
+                    if verbose:
+                        print('Action: Different dimension! Too lazy to write the code... Skip it')
+                else:
+                    if verbose:
+                        print(f'Shape is different: {tuple(new_model[el].shape)} != {tuple(old_model[el].shape)}')
+                    ln = len(new_model[el].shape)
+                    max_shape = []
+                    slices_old = []
+                    slices_new = []
+                    for i in range(ln):
+                        max_shape.append(max(new_model[el].shape[i], old_model[el].shape[i]))
+                        slices_old.append(slice(0, old_model[el].shape[i]))
+                        slices_new.append(slice(0, new_model[el].shape[i]))
+                    # print(max_shape)
+                    # print(slices_old, slices_new)
+                    slices_old = tuple(slices_old)
+                    slices_new = tuple(slices_new)
+                    max_matrix = np.zeros(max_shape, dtype=np.float32)
+                    for i in range(ln):
+                        max_matrix[slices_old] = old_model[el].cpu().numpy()
+                    max_matrix = torch.from_numpy(max_matrix)
+                    new_model[el] = max_matrix[slices_new]
+        else:
+            if verbose:
+                print(f'Match not found for {el}!')
+    model.load_state_dict(
+        new_model
+    )
+
+
+def load_lora_weights(model, lora_path, device='cpu'):
+    # Загружаем веса LoRA
+    lora_state_dict = torch.load(lora_path, map_location=device)
+
+    # Обновляем модель только слоями LoRA
+    model.load_state_dict(lora_state_dict, strict=False)
+
+
+def load_start_checkpoint(args: argparse.Namespace, model: torch.nn.Module) -> None:
+    """
+    Load the starting checkpoint for a model.
+
+    Args:
+        args: Parsed command-line arguments containing the checkpoint path.
+        model: PyTorch model to load the checkpoint into.
+    """
+
+    print(f'Start from checkpoint: {args.start_check_point}')
+    if 1:
+        load_not_compatible_weights(model, args.start_check_point, verbose=False)
+    else:
+        model.load_state_dict(torch.load(args.start_check_point))
+
+    if args.lora_checkpoint:
+        print(f"Loading LoRA weights from: {args.lora_checkpoint}")
+        load_lora_weights(model, args.lora_checkpoint)
+
+
+def bind_lora_to_model(config: Dict[str, Any], model: nn.Module) -> nn.Module:
+    """
+    Replaces specific layers in the model with LoRA-extended versions.
+
+    Parameters:
+    ----------
+    config : Dict[str, Any]
+        Configuration containing parameters for LoRA. It should include a 'lora' key with parameters for `MergedLinear`.
+    model : nn.Module
+        The original model in which the layers will be replaced.
+
+    Returns:
+    -------
+    nn.Module
+        The modified model with the replaced layers.
+    """
+
+    if 'lora' not in config:
+        raise ValueError("Configuration must contain the 'lora' key with parameters for LoRA.")
+
+    replaced_layers = 0  # Counter for replaced layers
+
+    for name, module in model.named_modules():
+        hierarchy = name.split('.')
+        layer_name = hierarchy[-1]
+
+        # Check if this is the target layer to replace
+        if isinstance(module, nn.Linear):
+            try:
+                # Get the parent module
+                parent_module = model
+                for submodule_name in hierarchy[:-1]:
+                    parent_module = getattr(parent_module, submodule_name)
+
+                # Replace the module with LoRA-enabled layer
+                setattr(
+                    parent_module,
+                    layer_name,
+                    lora.MergedLinear(
+                        in_features=module.in_features,
+                        out_features=module.out_features,
+                        bias=module.bias is not None,
+                        **config['lora']
+                    )
+                )
+                replaced_layers += 1  # Increment the counter
+
+            except Exception as e:
+                print(f"Error replacing layer {name}: {e}")
+
+    if replaced_layers == 0:
+        print("Warning: No layers were replaced. Check the model structure and configuration.")
+    else:
+        print(f"Number of layers replaced with LoRA: {replaced_layers}")
+
+    return model
