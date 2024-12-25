@@ -594,7 +594,7 @@ def train_model(args: argparse.Namespace) -> None:
             valid(model, args, config, device, verbose=True)
 
     optimizer = get_optimizer(config, model)
-    gradient_accumulation_steps = int(config.training.get(key='gradient_accumulation_steps', default=1))
+    gradient_accumulation_steps = int(getattr(config.training, 'gradient_accumulation_steps', 1))
 
     # Reduce LR if no metric improvements for several epochs
     scheduler = ReduceLROnPlateau(optimizer, 'max', patience=config.training.patience,
