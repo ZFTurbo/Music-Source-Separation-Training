@@ -64,7 +64,7 @@ def run_folder(model, args, config, device, verbose: bool = False):
     for path in mixture_paths:
         print(f"Processing track: {path}")
         try:
-            mix, sr = read_audio_transposed(path)
+            mix, sr = librosa.load(path, sr=sample_rate, mono=False)
         except Exception as e:
             print(f'Cannot read track: {format(path)}')
             print(f'Error message: {str(e)}')
