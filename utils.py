@@ -6,9 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import yaml
-import librosa
 import soundfile as sf
-import torch.nn.functional as F
 from ml_collections import ConfigDict
 from omegaconf import OmegaConf
 from tqdm.auto import tqdm
@@ -521,11 +519,27 @@ def load_not_compatible_weights(model: torch.nn.Module, weights: str, verbose: b
     )
 
 
-def load_lora_weights(model, lora_path, device='cpu'):
-    # Загружаем веса LoRA
-    lora_state_dict = torch.load(lora_path, map_location=device)
+def load_lora_weights(model: torch.nn.Module, lora_path: str, device: str = 'cpu') -> None:
+    """
+    Load LoRA weights into a model.
+    This function updates the given model with LoRA-specific weights from the specified checkpoint file.
+    It does not require the checkpoint to match the model's full state dictionary, as only LoRA layers are updated.
 
-    # Обновляем модель только слоями LoRA
+    Parameters:
+    ----------
+    model : Module
+        The PyTorch model into which the LoRA weights will be loaded.
+    lora_path : str
+        Path to the LoRA checkpoint file.
+    device : str, optional
+        The device to load the weights onto, by default 'cpu'. Common values are 'cpu' or 'cuda'.
+
+    Returns:
+    -------
+    None
+        The model is updated in place.
+    """
+    lora_state_dict = torch.load(lora_path, map_location=device)
     model.load_state_dict(lora_state_dict, strict=False)
 
 
