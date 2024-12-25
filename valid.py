@@ -4,16 +4,12 @@ __author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
 import argparse
 import time
 from tqdm.auto import tqdm
-import sys
 import os
 import glob
-import copy
 import torch
 import librosa
 import soundfile as sf
 import numpy as np
-import torch.nn as nn
-import multiprocessing
 from utils import demix, get_model_from_config, prefer_target_instrument
 from utils import normalize_audio, denormalize_audio, apply_tta, read_audio_transposed, load_start_checkpoint
 from metrics import get_metrics

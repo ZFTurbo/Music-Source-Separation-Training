@@ -9,7 +9,6 @@ import sys
 import os
 import glob
 import torch
-import numpy as np
 import soundfile as sf
 import torch.nn as nn
 
@@ -18,7 +17,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
 from utils import demix, get_model_from_config, normalize_audio, denormalize_audio
-from utils import prefer_target_instrument, apply_tta, read_audio_transposed, load_start_checkpoint
+from utils import prefer_target_instrument, apply_tta, load_start_checkpoint
 
 import warnings
 warnings.filterwarnings("ignore")
