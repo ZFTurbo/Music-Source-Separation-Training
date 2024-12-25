@@ -574,7 +574,7 @@ def train_model(args: argparse.Namespace) -> None:
 
     initialize_environment(args.seed, args.results_path)
     model, config = get_model_from_config(args.model_type, args.config_path)
-    use_amp = config.training.get(key='use_amp', default=True)
+    use_amp = getattr(config.training, 'use_amp', True)
     device_ids = args.device_ids
     batch_size = config.training.batch_size * len(device_ids)
 
@@ -612,6 +612,7 @@ def train_model(args: argparse.Namespace) -> None:
         f"Batch size: {batch_size} "
         f"Grad accum steps: {gradient_accumulation_steps} "
         f"Effective batch size: {batch_size * gradient_accumulation_steps}\n"
+        f"Dataset type: {args.dataset_type}\n"
         f"Optimizer: {config.training.optimizer}"
     )
 
