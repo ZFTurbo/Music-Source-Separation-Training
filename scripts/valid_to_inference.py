@@ -15,12 +15,13 @@ def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
     Returns:
     -------
     argparse.Namespace
-        The parsed arguments containing valid_dir, inference_dir, and mixture_name.
+        The parsed arguments containing valid_path, inference_dir, and mixture_name.
     """
-    parser = argparse.ArgumentParser(description="Copy mixture files from VALID_DIR to INFERENCE_DIR")
-    parser.add_argument('--valid_dir', type=str, required=True, help="Directory with valid tracks")
+    parser = argparse.ArgumentParser(description="Copy mixture files from VALID_PATH to INFERENCE_DIR")
+    parser.add_argument('--valid_path', type=str, required=True, help="Directory with valid tracks")
     parser.add_argument('--inference_dir', type=str, required=True, help="Directory to save inference tracks")
     parser.add_argument('--mixture_name', type=str, default='mixture.wav', help="Name of mixture tracks (default: 'mixture.wav')")
+    parser.add_argument('--max_mixtures', type=int, default=float('inf'), help="Maximum number of mixtures to process.")
 
     if args is None:
         args = parser.parse_args()
@@ -29,28 +30,31 @@ def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
     return args
 
 
-def main(args: Optional[argparse.Namespace] = None) -> None:
+def copying_files(args: Optional[argparse.Namespace] = None) -> None:
     """
     Main function to copy mixture files from valid directory to inference directory.
 
     Parameters:
     ----------
     args : Optional[argparse.Namespace]
-        The parsed arguments containing valid_dir, inference_dir, and mixture_name.
+        The parsed arguments containing valid_path, inference_dir, and mixture_name.
     """
     args = parse_args(args)
 
-    valid_dir = args.valid_dir
+    valid_path = args.valid_path
     inference_dir = args.inference_dir
     mixture_name = args.mixture_name
-
+    max_mixtures = args.max_mixtures
     # Create the inference directory if it doesn't exist
     os.makedirs(inference_dir, exist_ok=True)
-
+    mixture_count = 0
     # Walk through the valid directory to find and copy mixture files
-    for root, _, files in os.walk(valid_dir):
+    for root, _, files in os.walk(valid_path):
+        if mixture_count >= max_mixtures:
+            break
         for file in files:
             if file == mixture_name:
+                mixture_count += 1
                 # Full path to the valid file
                 source_path = os.path.join(root, file)
 
@@ -70,4 +74,4 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
 
 
 if __name__ == '__main__':
-    main(None)
+    copying_files(None)
