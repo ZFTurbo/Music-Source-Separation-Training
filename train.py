@@ -54,7 +54,7 @@ def parse_args(args: Union[List[str], None]) -> argparse.Namespace:
     parser.add_argument("--valid_path", nargs="+", type=str,
                         help="validation data paths. You can provide several folders.")
     parser.add_argument("--num_workers", type=int, default=0, help="dataloader num_workers")
-    parser.add_argument("--pin_memory", type=bool, default=False, help="dataloader pin_memory")
+    parser.add_argument("--pin_memory", action='store_true', help="dataloader pin_memory")
     parser.add_argument("--seed", type=int, default=0, help="random seed")
     parser.add_argument("--device_ids", nargs='+', type=int, default=[0], help='list of gpu ids')
     parser.add_argument("--use_multistft_loss", action='store_true', help="Use MultiSTFT Loss (from auraloss package)")
@@ -111,7 +111,10 @@ def initialize_environment(seed: int, results_path: str) -> None:
 
     manual_seed(seed)
     torch.backends.cudnn.deterministic = False
-    torch.multiprocessing.set_start_method('spawn')
+    try:
+        torch.multiprocessing.set_start_method('spawn')
+    except Exception as e:
+        pass
     os.makedirs(results_path, exist_ok=True)
 
 def wandb_init(args: argparse.Namespace, config: Dict, device_ids: List[int], batch_size: int) -> None:
@@ -449,6 +452,7 @@ def save_last_weights(args: argparse.Namespace, model: torch.nn.Module, device_i
     store_path = f'{args.results_path}/last_{args.model_type}.ckpt'
     train_lora = args.train_lora
     save_weights(store_path, model, device_ids, train_lora)
+
 
 def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, config: ConfigDict,
                           device: torch.device, device_ids: List[int], best_metric: float,
