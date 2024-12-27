@@ -111,7 +111,10 @@ def initialize_environment(seed: int, results_path: str) -> None:
 
     manual_seed(seed)
     torch.backends.cudnn.deterministic = False
-    torch.multiprocessing.set_start_method('spawn')
+    try:
+        torch.multiprocessing.set_start_method('spawn')
+    except Exception as e:
+        pass
     os.makedirs(results_path, exist_ok=True)
 
 def wandb_init(args: argparse.Namespace, config: Dict, device_ids: List[int], batch_size: int) -> None:
@@ -449,6 +452,7 @@ def save_last_weights(args: argparse.Namespace, model: torch.nn.Module, device_i
     store_path = f'{args.results_path}/last_{args.model_type}.ckpt'
     train_lora = args.train_lora
     save_weights(store_path, model, device_ids, train_lora)
+
 
 def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, config: ConfigDict,
                           device: torch.device, device_ids: List[int], best_metric: float,

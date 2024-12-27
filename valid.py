@@ -612,8 +612,10 @@ def check_validation(args):
         args = parser.parse_args(args)
 
     torch.backends.cudnn.benchmark = True
-    torch.multiprocessing.set_start_method('spawn')
-
+    try:
+        torch.multiprocessing.set_start_method('spawn')
+    except Exception as e:
+        pass
     model, config = get_model_from_config(args.model_type, args.config_path)
 
     if args.start_check_point:
