@@ -604,7 +604,7 @@ def bind_lora_to_model(config: Dict[str, Any], model: nn.Module) -> nn.Module:
         hierarchy = name.split('.')
         layer_name = hierarchy[-1]
 
-        # Check if this is the target layer to replace
+        # Check if this is the target layer to replace (and layer_name == 'to_qkv')
         if isinstance(module, nn.Linear):
             try:
                 # Get the parent module
