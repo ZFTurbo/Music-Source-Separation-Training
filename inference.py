@@ -70,7 +70,9 @@ def run_folder(model, args, config, device, verbose: bool = False):
             continue
 
         mix_orig = mix.copy()
-        mix, norm_params = normalize_audio(mix)
+        if 'normalize' in config.inference:
+            if config.inference['normalize'] is True:
+                mix, norm_params = normalize_audio(mix)
 
         waveforms_orig = demix(config, model, mix, device, model_type=args.model_type, pbar=detailed_pbar)
 
