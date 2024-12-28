@@ -554,7 +554,6 @@ def train_model(args: argparse.Namespace) -> None:
     log_dir = os.path.join('runs', run_name)
     writer = SummaryWriter(log_dir=log_dir)
     print(f"TensorBoard logging enabled. Logs will be saved to {log_dir}")
-    print("pls")
 
     train_loader = prepare_data(config, args, batch_size)
 
