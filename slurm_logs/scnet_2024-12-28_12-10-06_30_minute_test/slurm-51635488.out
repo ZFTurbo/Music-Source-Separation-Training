@@ -1,0 +1,7 @@
+Running training script for model: scnet
+Namespace(model_type='scnet', config_path='configs/config_musdb18_scnet.yaml', start_check_point='', results_path='checkpoints/scnet_2024-12-28_12-10-06', data_path=['../data/MUSDB18HQ/train'], dataset_type=1, valid_path=['../data/MUSDB18HQ/validation'], num_workers=4, pin_memory=False, seed=0, device_ids=[0], use_multistft_loss=False, use_mse_loss=False, use_l1_loss=False, wandb_key='', pre_valid=False, metrics=['sdr'], metric_for_scheduler='sdr', train_lora=False, lora_checkpoint='')
+TensorBoard logging enabled. Logs will be saved to runs/experiment_20241228-121314
+Use augmentation for training
+Dataset type: 1 Processes to use: 32 
+Collecting metadata for ['../data/MUSDB18HQ/train']
+  0%|          | 0/86 [00:00<?, ?it/s]  1%|          | 1/86 [01:08<1:36:22, 68.03s/it]  2%|▏         | 2/86 [01:43<1:08:24, 48.86s/it]  3%|▎         | 3/86 [01:53<43:15, 31.27s/it]    5%|▍         | 4/86 [01:56<27:33, 20.16s/it]
