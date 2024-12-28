@@ -2,7 +2,7 @@
 #SBATCH --gres=gpu:v100l:1       # Request GPU "generic resources"
 #SBATCH --cpus-per-task=6        # Adjust based on your cluster's CPU/GPU ratio
 #SBATCH --mem=125G               # Adjust memory as needed
-#SBATCH --time=7-00:00           # DD-HH:MM:SS
+#SBATCH --time=0-00:30:00           # DD-HH:MM:SS
 #SBATCH --account=def-ichiro
 #SBATCH --output=slurm_logs/slurm-%j.out  # Use Job ID for unique output files
 
@@ -16,7 +16,7 @@ MODEL_TYPE="scnet"
 CONFIG_PATH="configs/config_musdb18_scnet.yaml"
 
 CHECKPOINTS_PATH="checkpoints/${MODEL_TYPE}_${CURRENT_DATE}"
-SLURM_LOGS_PATH="slurm_logs/${MODEL_TYPE}_${CURRENT_DATE}"
+SLURM_LOGS_PATH="slurm_logs/${MODEL_TYPE}_${CURRENT_DATE}_30_minute_test"
 
 mkdir -p "$CHECKPOINTS_PATH"
 mkdir -p "$SLURM_LOGS_PATH"
