@@ -550,7 +550,7 @@ def train_model(args: argparse.Namespace) -> None:
     wandb_init(args, config, device_ids, batch_size)
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    run_name = f"experiment_{timestamp}"
+    run_name = f"{args.model_type}_{timestamp}"
     log_dir = os.path.join('runs', run_name)
     writer = SummaryWriter(log_dir=log_dir)
     print(f"TensorBoard logging enabled. Logs will be saved to {log_dir}")
