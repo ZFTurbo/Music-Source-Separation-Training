@@ -1,0 +1,40 @@
+Looking in links: /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v3, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/generic, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic
+Requirement already satisfied: mamba_ssm in ./separation_env/lib/python3.10/site-packages (1.2.0.post1+torch22.computecanada)
+Requirement already satisfied: torch~=2.2.0 in ./separation_env/lib/python3.10/site-packages (from mamba_ssm) (2.2.1+computecanada)
+Requirement already satisfied: packaging in ./separation_env/lib/python3.10/site-packages (from mamba_ssm) (24.1+computecanada)
+Requirement already satisfied: ninja in ./separation_env/lib/python3.10/site-packages (from mamba_ssm) (1.11.1+computecanada)
+Requirement already satisfied: einops in ./separation_env/lib/python3.10/site-packages (from mamba_ssm) (0.6.1+computecanada)
+Requirement already satisfied: triton in ./separation_env/lib/python3.10/site-packages (from mamba_ssm) (3.1.0+computecanada)
+Requirement already satisfied: transformers in ./separation_env/lib/python3.10/site-packages (from mamba_ssm) (4.35.2+computecanada)
+Requirement already satisfied: filelock in ./separation_env/lib/python3.10/site-packages (from torch~=2.2.0->mamba_ssm) (3.16.1+computecanada)
+Requirement already satisfied: typing-extensions>=4.8.0 in ./separation_env/lib/python3.10/site-packages (from torch~=2.2.0->mamba_ssm) (4.12.2+computecanada)
+Requirement already satisfied: sympy in ./separation_env/lib/python3.10/site-packages (from torch~=2.2.0->mamba_ssm) (1.13.1+computecanada)
+Requirement already satisfied: networkx in ./separation_env/lib/python3.10/site-packages (from torch~=2.2.0->mamba_ssm) (3.4.2+computecanada)
+Requirement already satisfied: jinja2 in ./separation_env/lib/python3.10/site-packages (from torch~=2.2.0->mamba_ssm) (3.1.4+computecanada)
+Requirement already satisfied: fsspec in ./separation_env/lib/python3.10/site-packages (from torch~=2.2.0->mamba_ssm) (2024.10.0+computecanada)
+Requirement already satisfied: numpy<2.0,>=1.25 in ./separation_env/lib/python3.10/site-packages (from torch~=2.2.0->mamba_ssm) (1.26.4+computecanada)
+Requirement already satisfied: huggingface-hub<1.0,>=0.16.4 in ./separation_env/lib/python3.10/site-packages (from transformers->mamba_ssm) (0.26.2+computecanada)
+Requirement already satisfied: pyyaml>=5.1 in ./separation_env/lib/python3.10/site-packages (from transformers->mamba_ssm) (6.0.1+computecanada)
+Requirement already satisfied: regex!=2019.12.17 in ./separation_env/lib/python3.10/site-packages (from transformers->mamba_ssm) (2024.9.11+computecanada)
+Requirement already satisfied: requests in ./separation_env/lib/python3.10/site-packages (from transformers->mamba_ssm) (2.32.3+computecanada)
+Requirement already satisfied: tokenizers<0.19,>=0.14 in ./separation_env/lib/python3.10/site-packages (from transformers->mamba_ssm) (0.15.0+computecanada)
+Requirement already satisfied: safetensors>=0.3.1 in ./separation_env/lib/python3.10/site-packages (from transformers->mamba_ssm) (0.4.5+computecanada)
+Requirement already satisfied: tqdm>=4.27 in ./separation_env/lib/python3.10/site-packages (from transformers->mamba_ssm) (4.67.0)
+Requirement already satisfied: MarkupSafe>=2.0 in ./separation_env/lib/python3.10/site-packages (from jinja2->torch~=2.2.0->mamba_ssm) (2.1.5+computecanada)
+Requirement already satisfied: charset-normalizer<4,>=2 in ./separation_env/lib/python3.10/site-packages (from requests->transformers->mamba_ssm) (3.4.0+computecanada)
+Requirement already satisfied: idna<4,>=2.5 in ./separation_env/lib/python3.10/site-packages (from requests->transformers->mamba_ssm) (3.10+computecanada)
+Requirement already satisfied: urllib3<3,>=1.21.1 in ./separation_env/lib/python3.10/site-packages (from requests->transformers->mamba_ssm) (2.2.3+computecanada)
+Requirement already satisfied: certifi>=2017.4.17 in ./separation_env/lib/python3.10/site-packages (from requests->transformers->mamba_ssm) (2024.8.30+computecanada)
+Requirement already satisfied: mpmath<1.4,>=1.1.0 in ./separation_env/lib/python3.10/site-packages (from sympy->torch~=2.2.0->mamba_ssm) (1.3.0+computecanada)
+Running training script for model: bs_mamba2
+training without optuna now
+Exception during load Mamba2 modules: No module named 'mamba_ssm.modules.mamba2'
+Load local torch implementation!
+[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 11, 11, 11, 11, 11, 11, 11, 11, 23, 23, 23, 23, 23, 23, 23, 23, 46, 46, 46, 46, 46, 46, 46, 46, 92, 92, 121]
+[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 11, 11, 11, 11, 11, 11, 11, 11, 23, 23, 23, 23, 23, 23, 23, 23, 46, 46, 46, 46, 46, 46, 46, 46, 92, 92, 121]
+Instruments: ['drums', 'bass', 'other', 'vocals']
+Metrics for training: ['sdr']. Metric for scheduler: sdr
+Use augmentation for training
+Dataset type: 1 Processes to use: 8 
+Collecting metadata for ['../data/MUSDB18HQ/train']
+  0%|          | 0/86 [00:00<?, ?it/s]  1%|          | 1/86 [00:17<25:28, 17.98s/it]  2%|▏         | 2/86 [00:37<26:45, 19.12s/it] 13%|█▎        | 11/86 [00:45<03:46,  3.02s/it] 17%|█▋        | 15/86 [01:10<04:51,  4.11s/it] 19%|█▊        | 16/86 [01:10<04:15,  3.66s/it] 22%|██▏       | 19/86 [01:12<03:00,  2.70s/it] 23%|██▎       | 20/86 [01:17<03:21,  3.05s/it] 26%|██▌       | 22/86 [01:24<03:22,  3.16s/it] 27%|██▋       | 23/86 [01:40<05:36,  5.35s/it] 31%|███▏      | 27/86 [01:52<04:04,  4.14s/it] 38%|███▊      | 33/86 [02:04<02:39,  3.02s/it] 43%|████▎     | 37/86 [02:11<02:08,  2.63s/it] 48%|████▊     | 41/86 [02:17<01:44,  2.31s/it] 69%|██████▊   | 59/86 [02:27<00:29,  1.11s/it] 70%|██████▉   | 60/86 [02:34<00:36,  1.40s/it] 71%|███████   | 61/86 [02:40<00:42,  1.72s/it] 73%|███████▎  | 63/86 [02:49<00:50,  2.19s/it] 76%|███████▌  | 65/86 [03:01<01:00,  2.86s/it] 77%|███████▋  | 66/86 [03:16<01:26,  4.34s/it] 85%|████████▍ | 73/86 [03:34<00:44,  3.39s/it] 88%|████████▊ | 76/86 [03:36<00:26,  2.66s/it] 93%|█████████▎| 80/86 [03:37<00:11,  1.89s/it] 98%|█████████▊| 84/86 [03:46<00:04,  2.04s/it] 99%|█████████▉| 85/86 [03:50<00:02,  2.26s/it]100%|██████████| 86/86 [03:50<00:00,  2.68s/it]
