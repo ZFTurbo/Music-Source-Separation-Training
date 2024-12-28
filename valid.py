@@ -4,99 +4,19 @@ __author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
 import argparse
 import time
 from tqdm.auto import tqdm
-import sys
 import os
 import glob
-import copy
 import torch
 import librosa
 import soundfile as sf
 import numpy as np
-import torch.nn as nn
-import multiprocessing
-from utils import demix, get_metrics, get_model_from_config, prefer_target_instrument
+from utils import demix, get_model_from_config, prefer_target_instrument
+from utils import normalize_audio, denormalize_audio, apply_tta, read_audio_transposed, load_start_checkpoint
+from metrics import get_metrics
 from typing import Tuple, Dict, List, Union
 import warnings
 from ml_collections import ConfigDict
 warnings.filterwarnings("ignore")
-
-
-def read_audio_transposed(path: str, instr: str = None, skip_err: bool = False) -> Tuple[np.ndarray, int]:
-    """
-    Reads an audio file, ensuring mono audio is converted to two-dimensional format,
-    and transposes the data to have channels as the first dimension.
-    Parameters
-    ----------
-    path : str
-        Path to the audio file.
-    skip_err: bool
-        If true, not raise errors
-    instr:
-        name of instument
-    Returns
-    -------
-    Tuple[np.ndarray, int]
-        A tuple containing:
-        - Transposed audio data as a NumPy array with shape (channels, length).
-          For mono audio, the shape will be (1, length).
-        - Sampling rate (int), e.g., 44100.
-    """
-
-    try:
-        mix, sr = sf.read(path)
-    except Exception as e:
-        if skip_err:
-            print(f"No stem {instr}: skip!")
-            return None, None
-        else:
-            raise RuntimeError(f"Error reading the file at {path}: {e}")
-    else:
-        if len(mix.shape) == 1:  # For mono audio
-            mix = np.expand_dims(mix, axis=-1)
-        return mix.T, sr
-
-
-def normalize_audio(audio: np.ndarray) -> tuple[np.ndarray, Dict[str, float]]:
-    """
-    Normalize an audio signal by subtracting the mean and dividing by the standard deviation.
-
-    Parameters:
-    ----------
-    audio : np.ndarray
-        Input audio array with shape (channels, time) or (time,).
-
-    Returns:
-    -------
-    tuple[np.ndarray, dict[str, float]]
-        - Normalized audio array with the same shape as the input.
-        - Dictionary containing the mean and standard deviation of the original audio.
-    """
-
-    mono = audio.mean(0)
-    mean, std = mono.mean(), mono.std()
-    return (audio - mean) / std, {"mean": mean, "std": std}
-
-
-def denormalize_audio(audio: np.ndarray, norm_params: Dict[str, float]) -> np.ndarray:
-    """
-    Denormalize an audio signal by reversing the normalization process (multiplying by the standard deviation
-    and adding the mean).
-
-    Parameters:
-    ----------
-    audio : np.ndarray
-        Normalized audio array to be denormalized.
-    norm_params : dict[str, float]
-        Dictionary containing the 'mean' and 'std' values used for normalization.
-
-    Returns:
-    -------
-    np.ndarray
-        Denormalized audio array with the same shape as the input.
-    """
-
-    return audio * norm_params["std"] + norm_params["mean"]
-
 
 
 def logging(logs: List[str], text: str, verbose_logging: bool = False) -> None:
@@ -227,60 +147,6 @@ def update_metrics_and_pbar(
             pass
 
 
-def apply_tta(
-        config,
-        model: torch.nn.Module,
-        mix: torch.Tensor,
-        waveforms_orig: Dict[str, torch.Tensor],
-        device: torch.device,
-        model_type: str
-) -> Dict[str, torch.Tensor]:
-    """
-    Apply Test-Time Augmentation (TTA) for source separation.
-
-    This function processes the input mixture with test-time augmentations, including
-    channel inversion and polarity inversion, to enhance the separation results. The
-    results from all augmentations are averaged to produce the final output.
-
-    Parameters:
-    ----------
-    config : Any
-        Configuration object containing model and processing parameters.
-    model : torch.nn.Module
-        The trained model used for source separation.
-    mix : torch.Tensor
-        The mixed audio tensor with shape (channels, time).
-    waveforms_orig : Dict[str, torch.Tensor]
-        Dictionary of original separated waveforms (before TTA) for each instrument.
-    device : torch.device
-        Device (CPU or CUDA) on which the model will be executed.
-    model_type : str
-        Type of the model being used (e.g., "demucs", "custom_model").
-
-    Returns:
-    -------
-    Dict[str, torch.Tensor]
-        Updated dictionary of separated waveforms after applying TTA.
-    """
-    # Create augmentations: channel inversion and polarity inversion
-    track_proc_list = [mix[::-1].copy(), -1.0 * mix.copy()]
-
-    # Process each augmented mixture
-    for i, augmented_mix in enumerate(track_proc_list):
-        waveforms = demix(config, model, augmented_mix, device, model_type=model_type)
-        for el in waveforms:
-            if i == 0:
-                waveforms_orig[el] += waveforms[el][::-1].copy()
-            else:
-                waveforms_orig[el] -= waveforms[el]
-
-    # Average the results across augmentations
-    for el in waveforms_orig:
-        waveforms_orig[el] /= len(track_proc_list) + 1
-
-    return waveforms_orig
-
-
 def process_audio_files(
     mixture_paths: List[str],
     model: torch.nn.Module,
@@ -319,12 +185,13 @@ def process_audio_files(
     instruments = prefer_target_instrument(config)
 
     use_tta = getattr(args, 'use_tta', False)
-    #dir to save files, if empty no saving
+    # dir to save files, if empty no saving
     store_dir = getattr(args, 'store_dir', '')
-    #codec to save files
-    extension = getattr(config['inference'],'extension',
-                        getattr(args, 'extension',
-                                'wav') )
+    # codec to save files
+    if 'extension' in config['inference']:
+        extension = config['inference']['extension']
+    else:
+        extension = getattr(args, 'extension', 'wav')
 
     # Initialize metrics dictionary
     all_metrics = {
@@ -521,11 +388,10 @@ def valid(
     # dir to save files, if empty no saving
     store_dir = getattr(args, 'store_dir', '')
     # codec to save files
-    extension = getattr(
-        config['inference'],
-        'extension',
-        getattr(args, 'extension', 'wav')
-    )
+    if 'extension' in config['inference']:
+        extension = config['inference']['extension']
+    else:
+        extension = getattr(args, 'extension', 'wav')
 
     all_mixtures_path = get_mixture_paths(args, verbose, config, extension)
     all_metrics = process_audio_files(all_mixtures_path, model, args, config, device, verbose, not verbose)
@@ -701,11 +567,10 @@ def valid_multi_gpu(
     # dir to save files, if empty no saving
     store_dir = getattr(args, 'store_dir', '')
     # codec to save files
-    extension = getattr(
-        config['inference'],
-        'extension',
-        getattr(args, 'extension', 'wav')
-    )
+    if 'extension' in config['inference']:
+        extension = config['inference']['extension']
+    else:
+        extension = getattr(args, 'extension', 'wav')
 
     all_mixtures_path = get_mixture_paths(args, verbose, config, extension)
 
@@ -735,30 +600,26 @@ def check_validation(args):
     parser.add_argument("--store_dir", default="", type=str, help="path to store results as wav file")
     parser.add_argument("--device_ids", nargs='+', type=int, default=0, help='list of gpu ids')
     parser.add_argument("--num_workers", type=int, default=0, help="dataloader num_workers")
-    parser.add_argument("--pin_memory", type=bool, default=False, help="dataloader pin_memory")
+    parser.add_argument("--pin_memory", action='store_true', help="dataloader pin_memory")
     parser.add_argument("--extension", type=str, default='wav', help="Choose extension for validation")
     parser.add_argument("--use_tta", action='store_true', help="Flag adds test time augmentation during inference (polarity and channel inverse). While this triples the runtime, it reduces noise and slightly improves prediction quality.")
     parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"], choices=['sdr', 'l1_freq', 'si_sdr', 'neg_log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless', 'fullness'], help='List of metrics to use.')
+    parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to LoRA weights")
+
     if args is None:
         args = parser.parse_args()
     else:
         args = parser.parse_args(args)
 
     torch.backends.cudnn.benchmark = True
-    torch.multiprocessing.set_start_method('spawn')
-
+    try:
+        torch.multiprocessing.set_start_method('spawn')
+    except Exception as e:
+        pass
     model, config = get_model_from_config(args.model_type, args.config_path)
+
     if args.start_check_point:
-        print(f'Start from checkpoint: {args.start_check_point}')
-        state_dict = torch.load(args.start_check_point)
-        if args.model_type in ['htdemucs', 'apollo']:
-            # Fix for htdemucs pretrained models
-            if 'state' in state_dict:
-                state_dict = state_dict['state']
-            # Fix for apollo pretrained models
-            if 'state_dict' in state_dict:
-                state_dict = state_dict['state_dict']
-        model.load_state_dict(state_dict)
+        load_start_checkpoint(args, model, type_='valid')
 
     print(f"Instruments: {config.training.instruments}")
 

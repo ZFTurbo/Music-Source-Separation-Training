@@ -48,7 +48,11 @@ python train.py \
     --device_ids 0
 ```
 
-All training parameters are [here](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/train.py#L107).
+All training parameters are [here](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/train.py#L45).
+
+### Training with LoRA
+
+Look here: [LoRA training](docs/LoRA.md)
 
 ## How to: Inference
 
@@ -63,7 +67,7 @@ python inference.py \
     --store_dir separation_results/
 ```
 
-All inference parameters are [here](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/inference.py#L123).
+All inference parameters are [here](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/inference.py#L108).
 
 ## Useful notes
 
