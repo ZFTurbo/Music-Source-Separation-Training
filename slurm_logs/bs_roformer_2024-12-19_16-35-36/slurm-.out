@@ -1,0 +1,17 @@
+Running training script for model: bs_roformer
+TensorBoard logging enabled. Logs will be saved to checkpoints/bs_roformer_2024-12-19_16-35-36/runs/experiment_20241219-163541
+pls
+Use augmentation for training
+Dataset type: 1 Processes to use: 8 
+Collecting metadata for ['../data/MUSDB18HQ/train']
+  0%|          | 0/80 [00:00<?, ?it/s]  1%|▏         | 1/80 [00:09<13:03,  9.92s/it] 28%|██▊       | 22/80 [00:10<00:18,  3.07it/s] 45%|████▌     | 36/80 [00:10<00:07,  5.79it/s] 65%|██████▌   | 52/80 [00:10<00:02, 10.03it/s] 82%|████████▎ | 66/80 [00:10<00:00, 14.94it/s]100%|██████████| 80/80 [00:10<00:00,  7.68it/s]
+Found tracks in dataset: 80
+CUDA is not available. Running on CPU.
+Traceback (most recent call last):
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train.py", line 670, in <module>
+    train_model(None)
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train.py", line 633, in train_model
+    optimizer = get_optimizer(config, model)
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train.py", line 290, in get_optimizer
+    optimizer = Adam(model.parameters(), lr=config.training.lr, **optim_params)
+AttributeError: 'tuple' object has no attribute 'parameters'

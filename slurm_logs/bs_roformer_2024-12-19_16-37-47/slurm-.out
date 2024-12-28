@@ -1,0 +1,17 @@
+Running training script for model: bs_roformer
+TensorBoard logging enabled. Logs will be saved to checkpoints/bs_roformer_2024-12-19_16-37-47/runs/experiment_20241219-163753
+pls
+Use augmentation for training
+Dataset type: 1 Processes to use: 8 
+Collecting metadata for ['../data/MUSDB18HQ/train']
+  0%|          | 0/80 [00:00<?, ?it/s]  1%|▏         | 1/80 [00:08<10:49,  8.22s/it] 24%|██▍       | 19/80 [00:08<00:19,  3.19it/s] 39%|███▉      | 31/80 [00:08<00:08,  5.94it/s] 59%|█████▉    | 47/80 [00:08<00:03, 10.90it/s] 74%|███████▍  | 59/80 [00:08<00:01, 15.66it/s] 90%|█████████ | 72/80 [00:08<00:00, 22.39it/s]100%|██████████| 80/80 [00:08<00:00,  9.06it/s]
+Found tracks in dataset: 80
+CUDA is not available. Running on CPU.
+Traceback (most recent call last):
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train.py", line 670, in <module>
+    train_model(None)
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train.py", line 633, in train_model
+    optimizer = get_optimizer(config, model)
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train.py", line 290, in get_optimizer
+    optimizer = Adam(model.parameters(), lr=config.training.lr, **optim_params)
+AttributeError: 'tuple' object has no attribute 'parameters'

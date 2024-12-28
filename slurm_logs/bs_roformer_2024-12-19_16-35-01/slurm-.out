@@ -1,0 +1,15 @@
+Running training script for model: bs_roformer
+Use augmentation for training
+Dataset type: 1 Processes to use: 8 
+Collecting metadata for ['../data/MUSDB18HQ/train']
+  0%|          | 0/80 [00:00<?, ?it/s]  1%|▏         | 1/80 [00:08<11:26,  8.69s/it] 20%|██        | 16/80 [00:08<00:25,  2.53it/s] 38%|███▊      | 30/80 [00:08<00:08,  5.62it/s] 54%|█████▍    | 43/80 [00:09<00:03,  9.49it/s] 74%|███████▍  | 59/80 [00:09<00:01, 15.86it/s] 99%|█████████▉| 79/80 [00:09<00:00, 26.34it/s]100%|██████████| 80/80 [00:09<00:00,  8.67it/s]
+Found tracks in dataset: 80
+CUDA is not available. Running on CPU.
+Traceback (most recent call last):
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train.py", line 629, in <module>
+    train_model(None)
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train.py", line 596, in train_model
+    optimizer = get_optimizer(config, model)
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train.py", line 288, in get_optimizer
+    optimizer = Adam(model.parameters(), lr=config.training.lr, **optim_params)
+AttributeError: 'tuple' object has no attribute 'parameters'

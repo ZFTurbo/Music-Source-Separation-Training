@@ -1,0 +1,149 @@
+Running training script for model: bs_roformer
+Namespace(model_type='bs_roformer', config_path='configs/config_musdb18_bs_roformer.yaml', start_check_point='', results_path='checkpoints/bs_roformer_2024-12-19_16-43-34', data_path=['../data/MUSDB18HQ/train'], dataset_type=1, valid_path=['../data/MUSDB18HQ/validation'], num_workers=4, pin_memory=False, seed=0, device_ids=[0], use_multistft_loss=False, use_mse_loss=False, use_l1_loss=False, wandb_key='', pre_valid=False, metrics=['sdr'], metric_for_scheduler='sdr')
+TensorBoard logging enabled. Logs will be saved to runs/experiment_20241219-164340
+pls
+Use augmentation for training
+Dataset type: 1 Processes to use: 8 
+Collecting metadata for ['../data/MUSDB18HQ/train']
+  0%|          | 0/80 [00:00<?, ?it/s]  1%|▏         | 1/80 [00:08<11:43,  8.90s/it] 22%|██▎       | 18/80 [00:09<00:22,  2.79it/s] 41%|████▏     | 33/80 [00:09<00:07,  6.01it/s] 60%|██████    | 48/80 [00:09<00:03, 10.36it/s] 80%|████████  | 64/80 [00:09<00:00, 16.53it/s]100%|██████████| 80/80 [00:09<00:00, 24.53it/s]100%|██████████| 80/80 [00:09<00:00,  8.47it/s]
+Found tracks in dataset: 80
+CUDA is not available. Running on CPU.
+('cpu', BSRoformer(
+  (layers): ModuleList(
+    (0-7): 8 x ModuleList(
+      (0-1): 2 x Transformer(
+        (layers): ModuleList(
+          (0): ModuleList(
+            (0): Attention(
+              (rotary_embed): RotaryEmbedding()
+              (attend): Attend(
+                (attn_dropout): Dropout(p=0.1, inplace=False)
+              )
+              (norm): RMSNorm()
+              (to_qkv): Linear(in_features=384, out_features=1536, bias=False)
+              (to_gates): Linear(in_features=384, out_features=8, bias=True)
+              (to_out): Sequential(
+                (0): Linear(in_features=512, out_features=384, bias=False)
+                (1): Dropout(p=0.1, inplace=False)
+              )
+            )
+            (1): FeedForward(
+              (net): Sequential(
+                (0): RMSNorm()
+                (1): Linear(in_features=384, out_features=1536, bias=True)
+                (2): GELU(approximate='none')
+                (3): Dropout(p=0.1, inplace=False)
+                (4): Linear(in_features=1536, out_features=384, bias=True)
+                (5): Dropout(p=0.1, inplace=False)
+              )
+            )
+          )
+        )
+        (norm): Identity()
+      )
+    )
+  )
+  (final_norm): RMSNorm()
+  (band_split): BandSplit(
+    (to_features): ModuleList(
+      (0-23): 24 x Sequential(
+        (0): RMSNorm()
+        (1): Linear(in_features=8, out_features=384, bias=True)
+      )
+      (24-35): 12 x Sequential(
+        (0): RMSNorm()
+        (1): Linear(in_features=16, out_features=384, bias=True)
+      )
+      (36-43): 8 x Sequential(
+        (0): RMSNorm()
+        (1): Linear(in_features=48, out_features=384, bias=True)
+      )
+      (44-51): 8 x Sequential(
+        (0): RMSNorm()
+        (1): Linear(in_features=96, out_features=384, bias=True)
+      )
+      (52-59): 8 x Sequential(
+        (0): RMSNorm()
+        (1): Linear(in_features=192, out_features=384, bias=True)
+      )
+      (60): Sequential(
+        (0): RMSNorm()
+        (1): Linear(in_features=512, out_features=384, bias=True)
+      )
+      (61): Sequential(
+        (0): RMSNorm()
+        (1): Linear(in_features=516, out_features=384, bias=True)
+      )
+    )
+  )
+  (mask_estimators): ModuleList(
+    (0-3): 4 x MaskEstimator(
+      (to_freqs): ModuleList(
+        (0-23): 24 x Sequential(
+          (0): Sequential(
+            (0): Linear(in_features=384, out_features=768, bias=True)
+            (1): Tanh()
+            (2): Linear(in_features=768, out_features=16, bias=True)
+          )
+          (1): GLU(dim=-1)
+        )
+        (24-35): 12 x Sequential(
+          (0): Sequential(
+            (0): Linear(in_features=384, out_features=768, bias=True)
+            (1): Tanh()
+            (2): Linear(in_features=768, out_features=32, bias=True)
+          )
+          (1): GLU(dim=-1)
+        )
+        (36-43): 8 x Sequential(
+          (0): Sequential(
+            (0): Linear(in_features=384, out_features=768, bias=True)
+            (1): Tanh()
+            (2): Linear(in_features=768, out_features=96, bias=True)
+          )
+          (1): GLU(dim=-1)
+        )
+        (44-51): 8 x Sequential(
+          (0): Sequential(
+            (0): Linear(in_features=384, out_features=768, bias=True)
+            (1): Tanh()
+            (2): Linear(in_features=768, out_features=192, bias=True)
+          )
+          (1): GLU(dim=-1)
+        )
+        (52-59): 8 x Sequential(
+          (0): Sequential(
+            (0): Linear(in_features=384, out_features=768, bias=True)
+            (1): Tanh()
+            (2): Linear(in_features=768, out_features=384, bias=True)
+          )
+          (1): GLU(dim=-1)
+        )
+        (60): Sequential(
+          (0): Sequential(
+            (0): Linear(in_features=384, out_features=768, bias=True)
+            (1): Tanh()
+            (2): Linear(in_features=768, out_features=1024, bias=True)
+          )
+          (1): GLU(dim=-1)
+        )
+        (61): Sequential(
+          (0): Sequential(
+            (0): Linear(in_features=384, out_features=768, bias=True)
+            (1): Tanh()
+            (2): Linear(in_features=768, out_features=1032, bias=True)
+          )
+          (1): GLU(dim=-1)
+        )
+      )
+    )
+  )
+))
+Traceback (most recent call last):
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train.py", line 674, in <module>
+    train_model(None)
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train.py", line 637, in train_model
+    optimizer = get_optimizer(config, model)
+  File "/Users/kaimikkelsen/canada_compute/Music-Source-Separation-Training/train.py", line 292, in get_optimizer
+    optimizer = Adam(model.parameters(), lr=config.training.lr, **optim_params)
+AttributeError: 'tuple' object has no attribute 'parameters'

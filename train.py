@@ -285,6 +285,8 @@ def get_optimizer(config: ConfigDict, model: torch.nn.Module) -> torch.optim.Opt
 
     name_optimizer = getattr(config.training, 'optimizer',
                              'No optimizer in config')
+    
+    print(model)
 
     if name_optimizer == 'adam':
         optimizer = Adam(model.parameters(), lr=config.training.lr, **optim_params)
@@ -602,6 +604,8 @@ def train_model(args: argparse.Namespace) -> None:
 
     args = parse_args(args)
 
+    print(args)
+
     initialize_environment(args.seed, args.results_path)
     model, config = get_model_from_config(args.model_type, args.config_path)
     use_amp = config.training.get(key='use_amp', default=True)
@@ -612,9 +616,10 @@ def train_model(args: argparse.Namespace) -> None:
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     run_name = f"experiment_{timestamp}"
-    log_dir = os.path.join(args.results_path, 'runs', run_name)
+    log_dir = os.path.join('runs', run_name)
     writer = SummaryWriter(log_dir=log_dir)
     print(f"TensorBoard logging enabled. Logs will be saved to {log_dir}")
+    print("pls")
 
     train_loader = prepare_data(config, args, batch_size)
 

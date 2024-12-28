@@ -28,7 +28,7 @@ source separation_env/bin/activate
 
 echo "Running training script for model: $MODEL_TYPE"
 
-python train_tensorboard.py \
+python train.py \
   --model_type "$MODEL_TYPE" \
   --config_path "$CONFIG_PATH" \
   --results_path "$CHECKPOINTS_PATH" \
