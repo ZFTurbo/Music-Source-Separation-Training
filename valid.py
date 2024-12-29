@@ -3,19 +3,19 @@ __author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
 
 import argparse
 import time
-from tqdm.auto import tqdm
 import os
 import glob
 import torch
 import librosa
-import soundfile as sf
 import numpy as np
+import soundfile as sf
+from tqdm.auto import tqdm
+from ml_collections import ConfigDict
+from typing import Tuple, Dict, List, Union
 from utils import demix, get_model_from_config, prefer_target_instrument, draw_spectrogram
 from utils import normalize_audio, denormalize_audio, apply_tta, read_audio_transposed, load_start_checkpoint
 from metrics import get_metrics
-from typing import Tuple, Dict, List, Union
 import warnings
-from ml_collections import ConfigDict
 
 warnings.filterwarnings("ignore")
 

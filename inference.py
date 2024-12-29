@@ -4,12 +4,12 @@ __author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
 import argparse
 import time
 import librosa
-from tqdm.auto import tqdm
 import sys
 import os
 import glob
 import torch
 import soundfile as sf
+from tqdm.auto import tqdm
 import torch.nn as nn
 
 # Using the embedded version of Python can also correctly import the utils module.
@@ -104,7 +104,6 @@ def run_folder(model, args, config, device, verbose: bool = False):
             if args.draw_spectro > 0:
                 output_img_path = os.path.join(output_dir, f"{instr}.jpg")
                 draw_spectrogram(estimates.T, sr, args.draw_spectro, output_img_path)
-
 
     print(f"Elapsed time: {time.time() - start_time:.2f} seconds.")
 
