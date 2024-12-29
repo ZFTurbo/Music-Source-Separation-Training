@@ -1,0 +1,948 @@
+Looking in links: /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/x86-64-v3, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/gentoo2023/generic, /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic
+Requirement already satisfied: mamba_ssm in ./separation_env/lib/python3.10/site-packages (1.2.0.post1+torch22.computecanada)
+Requirement already satisfied: torch~=2.2.0 in ./separation_env/lib/python3.10/site-packages (from mamba_ssm) (2.2.1+computecanada)
+Requirement already satisfied: packaging in ./separation_env/lib/python3.10/site-packages (from mamba_ssm) (24.1+computecanada)
+Requirement already satisfied: ninja in ./separation_env/lib/python3.10/site-packages (from mamba_ssm) (1.11.1+computecanada)
+Requirement already satisfied: einops in ./separation_env/lib/python3.10/site-packages (from mamba_ssm) (0.6.1+computecanada)
+Requirement already satisfied: triton in ./separation_env/lib/python3.10/site-packages (from mamba_ssm) (3.1.0+computecanada)
+Requirement already satisfied: transformers in ./separation_env/lib/python3.10/site-packages (from mamba_ssm) (4.35.2+computecanada)
+Requirement already satisfied: filelock in ./separation_env/lib/python3.10/site-packages (from torch~=2.2.0->mamba_ssm) (3.16.1+computecanada)
+Requirement already satisfied: typing-extensions>=4.8.0 in ./separation_env/lib/python3.10/site-packages (from torch~=2.2.0->mamba_ssm) (4.12.2+computecanada)
+Requirement already satisfied: sympy in ./separation_env/lib/python3.10/site-packages (from torch~=2.2.0->mamba_ssm) (1.13.1+computecanada)
+Requirement already satisfied: networkx in ./separation_env/lib/python3.10/site-packages (from torch~=2.2.0->mamba_ssm) (3.4.2+computecanada)
+Requirement already satisfied: jinja2 in ./separation_env/lib/python3.10/site-packages (from torch~=2.2.0->mamba_ssm) (3.1.4+computecanada)
+Requirement already satisfied: fsspec in ./separation_env/lib/python3.10/site-packages (from torch~=2.2.0->mamba_ssm) (2024.10.0+computecanada)
+Requirement already satisfied: numpy<2.0,>=1.25 in ./separation_env/lib/python3.10/site-packages (from torch~=2.2.0->mamba_ssm) (1.26.4+computecanada)
+Requirement already satisfied: huggingface-hub<1.0,>=0.16.4 in ./separation_env/lib/python3.10/site-packages (from transformers->mamba_ssm) (0.26.2+computecanada)
+Requirement already satisfied: pyyaml>=5.1 in ./separation_env/lib/python3.10/site-packages (from transformers->mamba_ssm) (6.0.1+computecanada)
+Requirement already satisfied: regex!=2019.12.17 in ./separation_env/lib/python3.10/site-packages (from transformers->mamba_ssm) (2024.9.11+computecanada)
+Requirement already satisfied: requests in ./separation_env/lib/python3.10/site-packages (from transformers->mamba_ssm) (2.32.3+computecanada)
+Requirement already satisfied: tokenizers<0.19,>=0.14 in ./separation_env/lib/python3.10/site-packages (from transformers->mamba_ssm) (0.15.0+computecanada)
+Requirement already satisfied: safetensors>=0.3.1 in ./separation_env/lib/python3.10/site-packages (from transformers->mamba_ssm) (0.4.5+computecanada)
+Requirement already satisfied: tqdm>=4.27 in ./separation_env/lib/python3.10/site-packages (from transformers->mamba_ssm) (4.67.0)
+Requirement already satisfied: MarkupSafe>=2.0 in ./separation_env/lib/python3.10/site-packages (from jinja2->torch~=2.2.0->mamba_ssm) (2.1.5+computecanada)
+Requirement already satisfied: charset-normalizer<4,>=2 in ./separation_env/lib/python3.10/site-packages (from requests->transformers->mamba_ssm) (3.4.0+computecanada)
+Requirement already satisfied: idna<4,>=2.5 in ./separation_env/lib/python3.10/site-packages (from requests->transformers->mamba_ssm) (3.10+computecanada)
+Requirement already satisfied: urllib3<3,>=1.21.1 in ./separation_env/lib/python3.10/site-packages (from requests->transformers->mamba_ssm) (2.2.3+computecanada)
+Requirement already satisfied: certifi>=2017.4.17 in ./separation_env/lib/python3.10/site-packages (from requests->transformers->mamba_ssm) (2024.8.30+computecanada)
+Requirement already satisfied: mpmath<1.4,>=1.1.0 in ./separation_env/lib/python3.10/site-packages (from sympy->torch~=2.2.0->mamba_ssm) (1.3.0+computecanada)
+Running training script for model: bs_mamba2
+Namespace(model_type='bs_mamba2', config_path='configs/config_musdb18_bs_mamba2.yaml', start_check_point='', results_path='checkpoints/bs_mamba2_2024-12-29_10-52-22', data_path=['../data/MUSDB18HQ/train'], dataset_type=1, valid_path=['../data/MUSDB18HQ/validation'], num_workers=4, pin_memory=False, seed=0, device_ids=[0], use_multistft_loss=False, use_mse_loss=False, use_l1_loss=False, wandb_key='', pre_valid=False, metrics=['sdr'], metric_for_scheduler='sdr', train_lora=False, lora_checkpoint='')
+Exception during load Mamba2 modules: No module named 'mamba_ssm.modules.mamba2'
+Load local torch implementation!
+[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 11, 11, 11, 11, 11, 11, 11, 11, 23, 23, 23, 23, 23, 23, 23, 23, 46, 46, 46, 46, 46, 46, 46, 46, 92, 92, 121]
+TensorBoard logging enabled. Logs will be saved to runs/bs_mamba2_20241229-105333
+Use augmentation for training
+Dataset type: 1 Processes to use: 8 
+Collecting metadata for ['../data/MUSDB18HQ/train']
+  0%|          | 0/86 [00:00<?, ?it/s]  1%|          | 1/86 [00:17<24:57, 17.61s/it]  2%|▏         | 2/86 [00:28<19:27, 13.90s/it]  3%|▎         | 3/86 [00:30<11:11,  8.10s/it]  9%|▉         | 8/86 [00:31<02:45,  2.13s/it] 10%|█         | 9/86 [00:36<03:23,  2.65s/it] 13%|█▎        | 11/86 [00:46<04:20,  3.48s/it] 15%|█▌        | 13/86 [00:51<03:50,  3.15s/it] 17%|█▋        | 15/86 [00:59<04:01,  3.41s/it] 19%|█▊        | 16/86 [01:09<05:25,  4.65s/it] 23%|██▎       | 20/86 [01:17<03:31,  3.21s/it] 26%|██▌       | 22/86 [01:25<03:41,  3.46s/it] 27%|██▋       | 23/86 [01:46<06:40,  6.35s/it] 31%|███▏      | 27/86 [01:51<03:44,  3.81s/it] 38%|███▊      | 33/86 [02:01<02:27,  2.79s/it] 43%|████▎     | 37/86 [02:02<01:32,  1.89s/it] 44%|████▍     | 38/86 [02:07<01:50,  2.31s/it] 45%|████▌     | 39/86 [02:15<02:22,  3.04s/it] 48%|████▊     | 41/86 [02:18<01:53,  2.52s/it] 69%|██████▊   | 59/86 [02:24<00:22,  1.21it/s] 70%|██████▉   | 60/86 [02:34<00:35,  1.36s/it] 71%|███████   | 61/86 [02:39<00:42,  1.69s/it] 73%|███████▎  | 63/86 [02:46<00:45,  1.99s/it] 76%|███████▌  | 65/86 [03:09<01:22,  3.91s/it] 81%|████████▏ | 70/86 [03:15<00:43,  2.75s/it] 85%|████████▍ | 73/86 [03:23<00:35,  2.75s/it] 87%|████████▋ | 75/86 [03:29<00:30,  2.79s/it] 88%|████████▊ | 76/86 [03:35<00:32,  3.23s/it] 97%|█████████▋| 83/86 [03:36<00:04,  1.47s/it] 98%|█████████▊| 84/86 [03:42<00:03,  1.97s/it] 99%|█████████▉| 85/86 [03:48<00:02,  2.47s/it]100%|██████████| 86/86 [03:48<00:00,  2.66s/it]
+Found tracks in dataset: 86
+Separator(
+  (BN_mask): ModuleList(
+    (0-19): 20 x Sequential(
+      (0): GroupNorm(1, 4, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(4, 128, kernel_size=(1,), stride=(1,))
+    )
+    (20-29): 10 x Sequential(
+      (0): GroupNorm(1, 8, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(8, 128, kernel_size=(1,), stride=(1,))
+    )
+    (30-37): 8 x Sequential(
+      (0): GroupNorm(1, 22, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(22, 128, kernel_size=(1,), stride=(1,))
+    )
+    (38-45): 8 x Sequential(
+      (0): GroupNorm(1, 46, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(46, 128, kernel_size=(1,), stride=(1,))
+    )
+    (46-53): 8 x Sequential(
+      (0): GroupNorm(1, 92, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(92, 128, kernel_size=(1,), stride=(1,))
+    )
+    (54-55): 2 x Sequential(
+      (0): GroupNorm(1, 184, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(184, 128, kernel_size=(1,), stride=(1,))
+    )
+    (56): Sequential(
+      (0): GroupNorm(1, 242, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(242, 128, kernel_size=(1,), stride=(1,))
+    )
+  )
+  (BN_map): ModuleList(
+    (0-19): 20 x Sequential(
+      (0): GroupNorm(1, 4, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(4, 128, kernel_size=(1,), stride=(1,))
+    )
+    (20-29): 10 x Sequential(
+      (0): GroupNorm(1, 8, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(8, 128, kernel_size=(1,), stride=(1,))
+    )
+    (30-37): 8 x Sequential(
+      (0): GroupNorm(1, 22, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(22, 128, kernel_size=(1,), stride=(1,))
+    )
+    (38-45): 8 x Sequential(
+      (0): GroupNorm(1, 46, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(46, 128, kernel_size=(1,), stride=(1,))
+    )
+    (46-53): 8 x Sequential(
+      (0): GroupNorm(1, 92, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(92, 128, kernel_size=(1,), stride=(1,))
+    )
+    (54-55): 2 x Sequential(
+      (0): GroupNorm(1, 184, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(184, 128, kernel_size=(1,), stride=(1,))
+    )
+    (56): Sequential(
+      (0): GroupNorm(1, 242, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(242, 128, kernel_size=(1,), stride=(1,))
+    )
+  )
+  (separator_mask): Sequential(
+    (0): BSNet(
+      (band_rnn): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (band_comm): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (channel_comm): TAC(
+        (input_norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (TAC_input): Sequential(
+          (0): Linear(in_features=128, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_mean): Sequential(
+          (0): Linear(in_features=384, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_output): Sequential(
+          (0): Linear(in_features=768, out_features=128, bias=True)
+          (1): Tanh()
+        )
+      )
+    )
+    (1): BSNet(
+      (band_rnn): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (band_comm): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (channel_comm): TAC(
+        (input_norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (TAC_input): Sequential(
+          (0): Linear(in_features=128, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_mean): Sequential(
+          (0): Linear(in_features=384, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_output): Sequential(
+          (0): Linear(in_features=768, out_features=128, bias=True)
+          (1): Tanh()
+        )
+      )
+    )
+    (2): BSNet(
+      (band_rnn): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (band_comm): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (channel_comm): TAC(
+        (input_norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (TAC_input): Sequential(
+          (0): Linear(in_features=128, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_mean): Sequential(
+          (0): Linear(in_features=384, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_output): Sequential(
+          (0): Linear(in_features=768, out_features=128, bias=True)
+          (1): Tanh()
+        )
+      )
+    )
+    (3): BSNet(
+      (band_rnn): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (band_comm): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (channel_comm): TAC(
+        (input_norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (TAC_input): Sequential(
+          (0): Linear(in_features=128, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_mean): Sequential(
+          (0): Linear(in_features=384, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_output): Sequential(
+          (0): Linear(in_features=768, out_features=128, bias=True)
+          (1): Tanh()
+        )
+      )
+    )
+    (4): BSNet(
+      (band_rnn): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (band_comm): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (channel_comm): TAC(
+        (input_norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (TAC_input): Sequential(
+          (0): Linear(in_features=128, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_mean): Sequential(
+          (0): Linear(in_features=384, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_output): Sequential(
+          (0): Linear(in_features=768, out_features=128, bias=True)
+          (1): Tanh()
+        )
+      )
+    )
+    (5): BSNet(
+      (band_rnn): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (band_comm): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (channel_comm): TAC(
+        (input_norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (TAC_input): Sequential(
+          (0): Linear(in_features=128, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_mean): Sequential(
+          (0): Linear(in_features=384, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_output): Sequential(
+          (0): Linear(in_features=768, out_features=128, bias=True)
+          (1): Tanh()
+        )
+      )
+    )
+    (6): BSNet(
+      (band_rnn): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (band_comm): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (channel_comm): TAC(
+        (input_norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (TAC_input): Sequential(
+          (0): Linear(in_features=128, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_mean): Sequential(
+          (0): Linear(in_features=384, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_output): Sequential(
+          (0): Linear(in_features=768, out_features=128, bias=True)
+          (1): Tanh()
+        )
+      )
+    )
+    (7): BSNet(
+      (band_rnn): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (band_comm): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (channel_comm): TAC(
+        (input_norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (TAC_input): Sequential(
+          (0): Linear(in_features=128, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_mean): Sequential(
+          (0): Linear(in_features=384, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_output): Sequential(
+          (0): Linear(in_features=768, out_features=128, bias=True)
+          (1): Tanh()
+        )
+      )
+    )
+  )
+  (separator_map): Sequential(
+    (0): BSNet(
+      (band_rnn): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (band_comm): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (channel_comm): TAC(
+        (input_norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (TAC_input): Sequential(
+          (0): Linear(in_features=128, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_mean): Sequential(
+          (0): Linear(in_features=384, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_output): Sequential(
+          (0): Linear(in_features=768, out_features=128, bias=True)
+          (1): Tanh()
+        )
+      )
+    )
+    (1): BSNet(
+      (band_rnn): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (band_comm): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (channel_comm): TAC(
+        (input_norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (TAC_input): Sequential(
+          (0): Linear(in_features=128, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_mean): Sequential(
+          (0): Linear(in_features=384, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_output): Sequential(
+          (0): Linear(in_features=768, out_features=128, bias=True)
+          (1): Tanh()
+        )
+      )
+    )
+    (2): BSNet(
+      (band_rnn): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (band_comm): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (channel_comm): TAC(
+        (input_norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (TAC_input): Sequential(
+          (0): Linear(in_features=128, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_mean): Sequential(
+          (0): Linear(in_features=384, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_output): Sequential(
+          (0): Linear(in_features=768, out_features=128, bias=True)
+          (1): Tanh()
+        )
+      )
+    )
+    (3): BSNet(
+      (band_rnn): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (band_comm): ResMamba(
+        (norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (dropout): Dropout(p=0.0, inplace=False)
+        (rnn): MambaBlock(
+          (forward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+          (backward_mamba2): Mamba2(
+            (in_proj): Linear(in_features=128, out_features=1288, bias=False)
+            (conv1d): Conv1d(768, 768, kernel_size=(4,), stride=(1,), padding=(3,), groups=768)
+            (norm): RMSNorm()
+            (out_proj): Linear(in_features=512, out_features=128, bias=False)
+          )
+        )
+        (proj): Linear(in_features=256, out_features=128, bias=True)
+      )
+      (channel_comm): TAC(
+        (input_norm): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+        (TAC_input): Sequential(
+          (0): Linear(in_features=128, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_mean): Sequential(
+          (0): Linear(in_features=384, out_features=384, bias=True)
+          (1): Tanh()
+        )
+        (TAC_output): Sequential(
+          (0): Linear(in_features=768, out_features=128, bias=True)
+          (1): Tanh()
+        )
+      )
+    )
+  )
+  (in_conv): Conv1d(256, 128, kernel_size=(1,), stride=(1,))
+  (Tanh): Tanh()
+  (mask): ModuleList(
+    (0-19): 20 x Sequential(
+      (0): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(128, 512, kernel_size=(1,), stride=(1,))
+      (2): Tanh()
+      (3): Conv1d(512, 512, kernel_size=(1,), stride=(1,), groups=4)
+      (4): Tanh()
+      (5): Conv1d(512, 32, kernel_size=(1,), stride=(1,), groups=4)
+    )
+    (20-29): 10 x Sequential(
+      (0): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(128, 512, kernel_size=(1,), stride=(1,))
+      (2): Tanh()
+      (3): Conv1d(512, 512, kernel_size=(1,), stride=(1,), groups=4)
+      (4): Tanh()
+      (5): Conv1d(512, 64, kernel_size=(1,), stride=(1,), groups=4)
+    )
+    (30-37): 8 x Sequential(
+      (0): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(128, 512, kernel_size=(1,), stride=(1,))
+      (2): Tanh()
+      (3): Conv1d(512, 512, kernel_size=(1,), stride=(1,), groups=4)
+      (4): Tanh()
+      (5): Conv1d(512, 176, kernel_size=(1,), stride=(1,), groups=4)
+    )
+    (38-45): 8 x Sequential(
+      (0): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(128, 512, kernel_size=(1,), stride=(1,))
+      (2): Tanh()
+      (3): Conv1d(512, 512, kernel_size=(1,), stride=(1,), groups=4)
+      (4): Tanh()
+      (5): Conv1d(512, 368, kernel_size=(1,), stride=(1,), groups=4)
+    )
+    (46-53): 8 x Sequential(
+      (0): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(128, 512, kernel_size=(1,), stride=(1,))
+      (2): Tanh()
+      (3): Conv1d(512, 512, kernel_size=(1,), stride=(1,), groups=4)
+      (4): Tanh()
+      (5): Conv1d(512, 736, kernel_size=(1,), stride=(1,), groups=4)
+    )
+    (54-55): 2 x Sequential(
+      (0): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(128, 512, kernel_size=(1,), stride=(1,))
+      (2): Tanh()
+      (3): Conv1d(512, 512, kernel_size=(1,), stride=(1,), groups=4)
+      (4): Tanh()
+      (5): Conv1d(512, 1472, kernel_size=(1,), stride=(1,), groups=4)
+    )
+    (56): Sequential(
+      (0): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(128, 512, kernel_size=(1,), stride=(1,))
+      (2): Tanh()
+      (3): Conv1d(512, 512, kernel_size=(1,), stride=(1,), groups=4)
+      (4): Tanh()
+      (5): Conv1d(512, 1936, kernel_size=(1,), stride=(1,), groups=4)
+    )
+  )
+  (map): ModuleList(
+    (0-19): 20 x Sequential(
+      (0): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(128, 512, kernel_size=(1,), stride=(1,))
+      (2): Tanh()
+      (3): Conv1d(512, 512, kernel_size=(1,), stride=(1,), groups=4)
+      (4): Tanh()
+      (5): Conv1d(512, 32, kernel_size=(1,), stride=(1,), groups=4)
+    )
+    (20-29): 10 x Sequential(
+      (0): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(128, 512, kernel_size=(1,), stride=(1,))
+      (2): Tanh()
+      (3): Conv1d(512, 512, kernel_size=(1,), stride=(1,), groups=4)
+      (4): Tanh()
+      (5): Conv1d(512, 64, kernel_size=(1,), stride=(1,), groups=4)
+    )
+    (30-37): 8 x Sequential(
+      (0): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(128, 512, kernel_size=(1,), stride=(1,))
+      (2): Tanh()
+      (3): Conv1d(512, 512, kernel_size=(1,), stride=(1,), groups=4)
+      (4): Tanh()
+      (5): Conv1d(512, 176, kernel_size=(1,), stride=(1,), groups=4)
+    )
+    (38-45): 8 x Sequential(
+      (0): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(128, 512, kernel_size=(1,), stride=(1,))
+      (2): Tanh()
+      (3): Conv1d(512, 512, kernel_size=(1,), stride=(1,), groups=4)
+      (4): Tanh()
+      (5): Conv1d(512, 368, kernel_size=(1,), stride=(1,), groups=4)
+    )
+    (46-53): 8 x Sequential(
+      (0): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(128, 512, kernel_size=(1,), stride=(1,))
+      (2): Tanh()
+      (3): Conv1d(512, 512, kernel_size=(1,), stride=(1,), groups=4)
+      (4): Tanh()
+      (5): Conv1d(512, 736, kernel_size=(1,), stride=(1,), groups=4)
+    )
+    (54-55): 2 x Sequential(
+      (0): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(128, 512, kernel_size=(1,), stride=(1,))
+      (2): Tanh()
+      (3): Conv1d(512, 512, kernel_size=(1,), stride=(1,), groups=4)
+      (4): Tanh()
+      (5): Conv1d(512, 1472, kernel_size=(1,), stride=(1,), groups=4)
+    )
+    (56): Sequential(
+      (0): GroupNorm(1, 128, eps=1.1920928955078125e-07, affine=True)
+      (1): Conv1d(128, 512, kernel_size=(1,), stride=(1,))
+      (2): Tanh()
+      (3): Conv1d(512, 512, kernel_size=(1,), stride=(1,), groups=4)
+      (4): Tanh()
+      (5): Conv1d(512, 1936, kernel_size=(1,), stride=(1,), groups=4)
+    )
+  )
+)
+Instruments: ['drums', 'bass', 'other', 'vocals']
+Metrics for training: ['sdr']. Metric for scheduler: sdr
+Patience: 2 Reduce factor: 0.95
+Batch size: 2 Grad accum steps: 1 Effective batch size: 2
+Dataset type: 1
+Optimizer: prodigy
+Train for: 1000 epochs
+Train epoch: 0 Learning rate: 1.0
+  0%|          | 0/1000 [00:00<?, ?it/s]  0%|          | 0/1000 [00:10<?, ?it/s]
+Traceback (most recent call last):
+  File "/project/6002780/kaim/Music-Source-Separation-Training/train.py", line 613, in <module>
+    train_model(None)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/train.py", line 602, in train_model
+    train_one_epoch(model, config, args, optimizer, device, device_ids, epoch,
+  File "/project/6002780/kaim/Music-Source-Separation-Training/train.py", line 409, in train_one_epoch
+    y_ = model(x)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/models/ts_bs_mamba2.py", line 264, in forward
+    sep_output = checkpoint_sequential(self.separator_mask, 2, subband_feature_mask.view(batch_size, nch, self.nband*self.feature_dim, -1))  # B, nband*N, T
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/utils/checkpoint.py", line 575, in checkpoint_sequential
+    input = checkpoint(
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/_compile.py", line 24, in inner
+    return torch._dynamo.disable(fn, recursive)(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 489, in _fn
+    return fn(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/_dynamo/external_utils.py", line 17, in inner
+    return fn(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/utils/checkpoint.py", line 482, in checkpoint
+    return CheckpointFunction.apply(function, preserve, *args)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/autograd/function.py", line 553, in apply
+    return super().apply(*args, **kwargs)  # type: ignore[misc]
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/utils/checkpoint.py", line 261, in forward
+    outputs = run_function(*args)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/utils/checkpoint.py", line 562, in forward
+    input = functions[j](input)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/models/ts_bs_mamba2.py", line 128, in forward
+    band_output = self.band_rnn(input.view(B*nch*self.nband, self.feature_dim, -1)).view(B*nch, self.nband, -1, T)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/models/ts_bs_mamba2.py", line 106, in forward
+    rnn_output =  self.rnn(self.dropout(self.norm(input)).transpose(1, 2).contiguous())
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/models/ts_bs_mamba2.py", line 37, in forward
+    forward_f_output = self.forward_mamba2(forward_f)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1511, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1520, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/models/ex_bi_mamba2.py", line 82, in forward
+    y = self.ssd(x * dt.unsqueeze(-1),
+  File "/project/6002780/kaim/Music-Source-Separation-Training/models/ex_bi_mamba2.py", line 112, in ssd
+    x = x.reshape(x.shape[0], x.shape[1] // chunk_size, chunk_size, x.shape[2], x.shape[3], )
+RuntimeError: shape '[228, 4, 64, 8, 64]' is invalid for input of size 30234624

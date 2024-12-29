@@ -1,0 +1,28 @@
+Running training script for model: htdemucs
+Namespace(model_type='htdemucs', config_path='configs/config_musdb18_htdemucs.yaml', start_check_point='', results_path='checkpoints/htdemucs_2024-12-29_10-46-52', data_path=['../data/MUSDB18HQ/train'], dataset_type=1, valid_path=['../data/MUSDB18HQ/validation'], num_workers=4, pin_memory=False, seed=0, device_ids=[0], use_multistft_loss=False, use_mse_loss=False, use_l1_loss=False, wandb_key='', pre_valid=False, metrics=['sdr'], metric_for_scheduler='sdr', train_lora=False, lora_checkpoint='')
+Traceback (most recent call last):
+  File "/project/6002780/kaim/Music-Source-Separation-Training/train.py", line 613, in <module>
+    train_model(None)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/train.py", line 545, in train_model
+    model, config = get_model_from_config(args.model_type, args.config_path)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/utils.py", line 84, in get_model_from_config
+    from models.demucs4ht import get_model
+  File "/project/6002780/kaim/Music-Source-Separation-Training/models/demucs4ht.py", line 11, in <module>
+    from demucs.hdemucs import HDemucs
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/demucs/hdemucs.py", line 13, in <module>
+    from openunmix.filtering import wiener
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/openunmix/__init__.py", line 9, in <module>
+    from openunmix import utils
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/openunmix/utils.py", line 6, in <module>
+    import torchaudio
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torchaudio/__init__.py", line 2, in <module>
+    from . import _extension  # noqa  # usort: skip
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torchaudio/_extension/__init__.py", line 38, in <module>
+    _load_lib("libtorchaudio")
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torchaudio/_extension/utils.py", line 60, in _load_lib
+    torch.ops.load_library(path)
+  File "/project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torch/_ops.py", line 933, in load_library
+    ctypes.CDLL(path)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Compiler/gcccore/python/3.10.13/lib/python3.10/ctypes/__init__.py", line 374, in __init__
+    self._handle = _dlopen(self._name, mode)
+OSError: /project/6002780/kaim/Music-Source-Separation-Training/separation_env/lib/python3.10/site-packages/torchaudio/lib/libtorchaudio.so: undefined symbol: _ZNK3c105Error4whatEv
