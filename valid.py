@@ -263,6 +263,8 @@ def process_audio_files(
                 if args.draw_spectro > 0:
                     out_img_name = f"{store_dir}/{os.path.basename(folder)}_{instr}.jpg"
                     draw_spectrogram(estimates.T, sr, args.draw_spectro, out_img_name)
+                    out_img_name_orig = f"{store_dir}/{os.path.basename(folder)}_{instr}_orig.jpg"
+                    draw_spectrogram(track.T, sr, args.draw_spectro, out_img_name_orig)
 
             track_metrics = get_metrics(
                 args.metrics,
