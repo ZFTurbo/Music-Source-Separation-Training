@@ -391,7 +391,7 @@ def demix(
                     x = model(arr)
 
                     if mode == "generic":
-                        window = windowing_array
+                        window = windowing_array.clone() # using clone() fixes the clicks at chunk edges when using batch_size=1
                         if i - step == 0:  # First audio chunk, no fadein
                             window[:fade_size] = 1
                         elif i >= mix.shape[1]:  # Last audio chunk, no fadeout
