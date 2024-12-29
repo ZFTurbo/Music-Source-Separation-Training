@@ -10,12 +10,13 @@ import torch
 import librosa
 import soundfile as sf
 import numpy as np
-from utils import demix, get_model_from_config, prefer_target_instrument
+from utils import demix, get_model_from_config, prefer_target_instrument, draw_spectrogram
 from utils import normalize_audio, denormalize_audio, apply_tta, read_audio_transposed, load_start_checkpoint
 from metrics import get_metrics
 from typing import Tuple, Dict, List, Union
 import warnings
 from ml_collections import ConfigDict
+
 warnings.filterwarnings("ignore")
 
 
@@ -259,6 +260,9 @@ def process_audio_files(
                 os.makedirs(store_dir, exist_ok=True)
                 out_wav_name = f"{store_dir}/{os.path.basename(folder)}_{instr}.wav"
                 sf.write(out_wav_name, estimates.T, sr, subtype='FLOAT')
+                if args.draw_spectro > 0:
+                    out_img_name = f"{store_dir}/{os.path.basename(folder)}_{instr}.jpg"
+                    draw_spectrogram(estimates.T, sr, args.draw_spectro, out_img_name)
 
             track_metrics = get_metrics(
                 args.metrics,
@@ -594,13 +598,14 @@ def valid_multi_gpu(
 def check_validation(args):
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_type", type=str, default='mdx23c', help="One of mdx23c, htdemucs, segm_models, mel_band_roformer, bs_roformer, swin_upernet, bandit")
-    parser.add_argument("--config_path", type=str, help="path to config file")
+    parser.add_argument("--config_path", type=str, help="Path to config file")
     parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint to valid weights")
-    parser.add_argument("--valid_path", nargs="+", type=str, help="validate path")
-    parser.add_argument("--store_dir", default="", type=str, help="path to store results as wav file")
-    parser.add_argument("--device_ids", nargs='+', type=int, default=0, help='list of gpu ids')
-    parser.add_argument("--num_workers", type=int, default=0, help="dataloader num_workers")
-    parser.add_argument("--pin_memory", action='store_true', help="dataloader pin_memory")
+    parser.add_argument("--valid_path", nargs="+", type=str, help="Validate path")
+    parser.add_argument("--store_dir", type=str, default="", help="Path to store results as wav file")
+    parser.add_argument("--draw_spectro", type=float, default=0, help="If --store_dir is set then code will generate spectrograms for resulted stems as well. Value defines for how many seconds os track spectrogram will be generated.")
+    parser.add_argument("--device_ids", nargs='+', type=int, default=0, help='List of gpu ids')
+    parser.add_argument("--num_workers", type=int, default=0, help="Dataloader num_workers")
+    parser.add_argument("--pin_memory", action='store_true', help="Dataloader pin_memory")
     parser.add_argument("--extension", type=str, default='wav', help="Choose extension for validation")
     parser.add_argument("--use_tta", action='store_true', help="Flag adds test time augmentation during inference (polarity and channel inverse). While this triples the runtime, it reduces noise and slightly improves prediction quality.")
     parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"], choices=['sdr', 'l1_freq', 'si_sdr', 'neg_log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless', 'fullness'], help='List of metrics to use.')

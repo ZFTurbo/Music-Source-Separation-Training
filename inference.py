@@ -16,7 +16,7 @@ import torch.nn as nn
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from utils import demix, get_model_from_config, normalize_audio, denormalize_audio
+from utils import demix, get_model_from_config, normalize_audio, denormalize_audio, draw_spectrogram
 from utils import prefer_target_instrument, apply_tta, load_start_checkpoint, load_lora_weights
 
 import warnings
@@ -101,6 +101,10 @@ def run_folder(model, args, config, device, verbose: bool = False):
 
             output_path = os.path.join(output_dir, f"{instr}.{codec}")
             sf.write(output_path, estimates.T, sr, subtype=subtype)
+            if args.draw_spectro > 0:
+                output_img_path = os.path.join(output_dir, f"{instr}.jpg")
+                draw_spectrogram(estimates.T, sr, args.draw_spectro, output_img_path)
+
 
     print(f"Elapsed time: {time.time() - start_time:.2f} seconds.")
 
@@ -111,7 +115,8 @@ def proc_folder(args):
     parser.add_argument("--config_path", type=str, help="path to config file")
     parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint to valid weights")
     parser.add_argument("--input_folder", type=str, help="folder with mixtures to process")
-    parser.add_argument("--store_dir", default="", type=str, help="path to store results as wav file")
+    parser.add_argument("--store_dir", type=str, default="", help="path to store results as wav file")
+    parser.add_argument("--draw_spectro", type=float, default=0, help="Code will generate spectrograms for resulted stems. Value defines for how many seconds os track spectrogram will be generated.")
     parser.add_argument("--device_ids", nargs='+', type=int, default=0, help='list of gpu ids')
     parser.add_argument("--extract_instrumental", action='store_true', help="invert vocals to get instrumental if provided")
     parser.add_argument("--disable_detailed_pbar", action='store_true', help="disable detailed progress bar")

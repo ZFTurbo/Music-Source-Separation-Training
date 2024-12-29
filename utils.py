@@ -6,11 +6,13 @@ import numpy as np
 import torch
 import torch.nn as nn
 import yaml
+import os
 import soundfile as sf
 from ml_collections import ConfigDict
 from omegaconf import OmegaConf
 from tqdm.auto import tqdm
 from typing import Dict, List, Tuple, Any, Union
+import matplotlib.pyplot as plt
 import loralib as lora
 
 
@@ -634,3 +636,26 @@ def bind_lora_to_model(config: Dict[str, Any], model: nn.Module) -> nn.Module:
         print(f"Number of layers replaced with LoRA: {replaced_layers}")
 
     return model
+
+
+def draw_spectrogram(waveform, sample_rate, length, output_file):
+    import librosa.display
+
+    # Cut only required part of spectorgram
+    x = waveform[:int(length * sample_rate), :]
+    X = librosa.stft(x.mean(axis=-1))  # perform short-term fourier transform on mono signal
+    Xdb = librosa.amplitude_to_db(np.abs(X), ref=np.max)  # convert an amplitude spectrogram to dB-scaled spectrogram.
+    fig, ax = plt.subplots()
+    # plt.figure(figsize=(30, 10))  # initialize the fig size
+    img = librosa.display.specshow(
+        Xdb,
+        cmap='plasma',
+        sr=sample_rate,
+        x_axis='time',
+        y_axis='linear',
+        ax=ax
+    )
+    ax.set(title='File: ' + os.path.basename(output_file))
+    fig.colorbar(img, ax=ax, format="%+2.f dB")
+    if output_file is not None:
+        plt.savefig(output_file)
