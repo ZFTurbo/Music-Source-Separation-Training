@@ -9,6 +9,7 @@ import os
 import glob
 import torch
 import soundfile as sf
+import numpy as np
 from tqdm.auto import tqdm
 import torch.nn as nn
 
@@ -68,6 +69,14 @@ def run_folder(model, args, config, device, verbose: bool = False):
             print(f'Cannot read track: {format(path)}')
             print(f'Error message: {str(e)}')
             continue
+
+        # If mono audio we must adjust it depending on model
+        if len(mix.shape) == 1:
+            mix = np.expand_dims(mix, axis=0)
+            if 'num_channels' in config.audio:
+                if config.audio['num_channels'] == 2:
+                    print(f'Convert mono track to stereo...')
+                    mix = np.concatenate([mix, mix], axis=0)
 
         mix_orig = mix.copy()
         if 'normalize' in config.inference:
