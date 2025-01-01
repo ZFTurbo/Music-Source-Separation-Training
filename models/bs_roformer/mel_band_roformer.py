@@ -513,12 +513,12 @@ class MelBandRoformer(Module):
 
         stft_window = self.stft_window_fn(device=device)
 
-        stft_repr = torch.stft(raw_audio, **self.stft_kwargs, window=stft_window, return_complex=True)
-        stft_repr = torch.view_as_real(stft_repr)
+        stft_repr = torch.stft(raw_audio, **self.stft_kwargs, window=stft_window, return_complex=False)
 
         stft_repr = unpack_one(stft_repr, batch_audio_channel_packed_shape, '* f t c')
-        stft_repr = rearrange(stft_repr,
-                              'b s f t c -> b (f s) t c')  # merge stereo / mono into the frequency, with frequency leading dimension, for band splitting
+
+        # merge stereo / mono into the frequency, with frequency leading dimension, for band splitting
+        stft_repr = rearrange(stft_repr,'b s f t c -> b (f s) t c')
 
         # index out all frequencies for all frequency ranges across bands ascending in one go
 
