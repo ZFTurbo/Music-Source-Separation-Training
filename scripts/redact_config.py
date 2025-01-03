@@ -3,7 +3,7 @@ import os
 import sys
 import argparse
 from omegaconf import OmegaConf
-from typing import Union, List
+from typing import Union, List, Dict
 from ml_collections import ConfigDict
 
 
@@ -33,9 +33,11 @@ def save_config(config: Union[ConfigDict, OmegaConf], save_path: str):
             elif isinstance(config, OmegaConf):
                 OmegaConf.save(config, save_path)
             else:
-                raise ValueError("Unsupported configuration type. Supported types: ConfigDict, OmegaConf.")
+                OmegaConf.save(config, save_path)
     except Exception as e:
-        raise ValueError(f"Error saving configuration: {e}")
+        raise ValueError(f"Error saving configuration: {e}."
+                         f"Unsupported configuration type. Supported types: ConfigDict, OmegaConf."
+                         f"Config type is {type(config)}")
 
 
 def create_test_config(original_config_path: str, new_config_path: str, model_type: str):
@@ -69,12 +71,12 @@ def create_test_config(original_config_path: str, new_config_path: str, model_ty
     print(f"Test config created at: {new_config_path}")
 
 
-def parse_args(args: Union[List[str], None]) -> argparse.Namespace:
+def parse_args(dict_args: Union[Dict, None]) -> argparse.Namespace:
     """
     Parse command-line arguments for configuring the model, dataset, and training parameters.
 
     Args:
-        args: List of command-line arguments. If None, arguments will be parsed from sys.argv.
+        dict_args: Dict of command-line arguments. If None, arguments will be parsed from sys.argv.
 
     Returns:
         Namespace object containing parsed arguments and their values.
@@ -85,15 +87,18 @@ def parse_args(args: Union[List[str], None]) -> argparse.Namespace:
     parser.add_argument("--model_type", type=str, default="", help="Model type")
     parser.add_argument("--new_config", type=str, default="", help="Path to save the new test configuration file.")
 
-    if args is None:
-        args = parser.parse_args()
+    if dict_args is not None:
+        args = parser.parse_args([])
+        args_dict = vars(args)
+        args_dict.update(dict_args)
+        args = argparse.Namespace(**args_dict)
     else:
-        args = parser.parse_args(args)
+        args = parser.parse_args()
 
     # Determine the default path for the new configuration if not provided
     if not args.new_config:
         original_dir = os.path.dirname(args.orig_config)
-        tests_dir = os.path.join("tests", original_dir)
+        tests_dir = os.path.join("tests_cache", original_dir)
         os.makedirs(tests_dir, exist_ok=True)
         args.new_config = os.path.join(tests_dir, os.path.basename(args.orig_config))
 
@@ -112,8 +117,4 @@ def redact_config(args):
 
 
 if __name__ == '__main__':
-    args = [
-        '--orig_config', 'configs/config_musdb18_scnet_large_starrytong.yaml',
-        '--model_type', 'scnet'
-    ]
     redact_config(None)
