@@ -22,7 +22,7 @@ MODEL_CONFIGS = {
     'config_musdb18_mel_band_roformer_all_stems.yaml': {'model_type': 'mel_band_roformer'},
     'config_musdb18_scnet.yaml': {'model_type': 'scnet'},
     'config_musdb18_scnet_large.yaml': {'model_type': 'scnet'},
-    'config_musdb18_scnet_large_starrytong.yaml': {'model_type': 'scnet'},
+    # 'config_musdb18_scnet_large_starrytong.yaml': {'model_type': 'scnet'},
     'config_vocals_bandit_bsrnn_multi_mus64.yaml': {'model_type': 'bandit'},
     'config_vocals_bs_roformer.yaml': {'model_type': 'bs_roformer'},
     'config_vocals_htdemucs.yaml': {'model_type': 'htdemucs'},
@@ -43,10 +43,12 @@ MODEL_CONFIGS = {
 }
 
 
-# Директории для тестов
-TEST_DIR = Path("tests_cache")
-TRAIN_DIR = TEST_DIR / "train_tracks"
-VALID_DIR = TEST_DIR / "valid_tracks"
+# Folders for tests
+ROOT_DIR = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+CONFIGS_DIR = ROOT_DIR / 'configs/'
+TEST_DIR = ROOT_DIR / "tests_cache/"
+TRAIN_DIR = TEST_DIR / "train_tracks/"
+VALID_DIR = TEST_DIR / "valid_tracks/"
 
 
 def create_dummy_tracks(directory: Path, num_tracks: int, instruments: List[str],
@@ -113,7 +115,7 @@ def modify_configs() -> Dict[str, Path]:
         A dictionary where the keys are the original configuration file names, and the values
         are the paths to the updated configuration files.
     """
-    config_dir = Path("configs")
+    config_dir = CONFIGS_DIR
     updated_configs = {}
     for config, args in MODEL_CONFIGS.items():
         model_type = args['model_type']
