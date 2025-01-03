@@ -23,7 +23,7 @@ base_args = {
     'store_dir': 'tests/valid_inference_result',
     'input_folder': '',
     'metrics': ['neg_log_wmse', 'l1_freq', 'si_sdr', 'sdr', 'aura_stft', 'aura_mrstft', 'bleedless', 'fullness'],
-    'max_folders': '2'
+    'max_folders': 2
 }
 
 
@@ -74,16 +74,19 @@ def parse_args(dict_args):
                         help="If --store_dir is set then code will generate spectrograms for resulted stems as well."
                              " Value defines for how many seconds os track spectrogram will be generated.")
 
-    args = parser.parse_args()
-
     if dict_args is not None:
-        for key, value in dict_args.items():
-            setattr(args, key, value)
+        args = parser.parse_args([])
+        args_dict = vars(args)
+        args_dict.update(dict_args)
+        args = argparse.Namespace(**args_dict)
+    else:
+        args = parser.parse_args()
 
     return args
 
 
 def test_settings(dict_args, test_type):
+
     # Parse from cmd
     cli_args = parse_args(dict_args)
 
@@ -104,22 +107,24 @@ def test_settings(dict_args, test_type):
 
         # Replace config
         base_args['config_path'] = redact_config({'orig_config': base_args['config_path'],
-                                                  'model_type': base_args['model_type']})
+                                                  'model_type': base_args['model_type'],
+                                                  'new_config': ''})
+
         # Trim train
-        trim_args_train = ['--input_directory', base_args['data_path'],
-                           '--max_folders', base_args['max_folders']]
+        trim_args_train = {'input_directory': base_args['data_path'],
+                           'max_folders': base_args['max_folders']}
         base_args['data_path'] = trim_directory(trim_args_train)
         # Trim valid
-        trim_args_valid = ['--input_directory', base_args['valid_path'],
-                           '--max_folders', base_args['max_folders']]
+        trim_args_valid = {'input_directory': base_args['valid_path'],
+                           'max_folders': base_args['max_folders']}
         base_args['valid_path'] = trim_directory(trim_args_valid)
     # Valid to inference
     if not base_args['input_folder']:
         tests_dir = os.path.join(os.path.dirname(base_args['valid_path']), 'for_inference')
         base_args['input_folder'] = tests_dir
-    val_to_inf_args = ['--valid_path', base_args['valid_path'],
-                       '--inference_dir', base_args['input_folder'],
-                       '--max_mixtures', '1']
+    val_to_inf_args = {'valid_path': base_args['valid_path'],
+                       'inference_dir': base_args['input_folder'],
+                       'max_mixtures': 1}
     copying_files(val_to_inf_args)
 
     if base_args['check_valid']:

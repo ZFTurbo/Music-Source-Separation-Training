@@ -631,10 +631,13 @@ def parse_args(dict_args: Union[Dict, None]) -> argparse.Namespace:
                                  'fullness'], help='List of metrics to use.')
     parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to LoRA weights")
 
-    if dict_args is None:
-        args = parser.parse_args()
+    if dict_args is not None:
+        args = parser.parse_args([])
+        args_dict = vars(args)
+        args_dict.update(dict_args)
+        args = argparse.Namespace(**args_dict)
     else:
-        args = argparse.Namespace(**dict_args)
+        args = parser.parse_args()
 
     return args
 

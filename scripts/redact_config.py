@@ -87,10 +87,13 @@ def parse_args(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser.add_argument("--model_type", type=str, default="", help="Model type")
     parser.add_argument("--new_config", type=str, default="", help="Path to save the new test configuration file.")
 
-    if dict_args is None:
-        args = parser.parse_args()
+    if dict_args is not None:
+        args = parser.parse_args([])
+        args_dict = vars(args)
+        args_dict.update(dict_args)
+        args = argparse.Namespace(**args_dict)
     else:
-        args = argparse.Namespace(**dict_args)
+        args = parser.parse_args()
 
     # Determine the default path for the new configuration if not provided
     if not args.new_config:
