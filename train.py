@@ -31,12 +31,12 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-def parse_args(args: Union[List[str], None]) -> argparse.Namespace:
+def parse_args(dict_args: Union[Dict, None]) -> argparse.Namespace:
     """
     Parse command-line arguments for configuring the model, dataset, and training parameters.
 
     Args:
-        args: List of command-line arguments. If None, arguments will be parsed from sys.argv.
+        dict_args: Dict of command-line arguments. If None, arguments will be parsed from sys.argv.
 
     Returns:
         Namespace object containing parsed arguments and their values.
@@ -71,10 +71,10 @@ def parse_args(args: Union[List[str], None]) -> argparse.Namespace:
     parser.add_argument("--train_lora", action='store_true', help="Train with LoRA")
     parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to LoRA weights")
 
-    if args is None:
+    if dict_args is None:
         args = parser.parse_args()
     else:
-        args = parser.parse_args(args)
+        args = argparse.Namespace(**dict_args)
 
     if args.metric_for_scheduler not in args.metrics:
         args.metrics += [args.metric_for_scheduler]
@@ -187,7 +187,7 @@ def initialize_model_and_device(model: torch.nn.Module, device_ids: List[int]) -
             model = nn.DataParallel(model, device_ids=device_ids).to(device)
     else:
         device = 'cpu'
-        model = device, model.to(device)
+        model = model.to(device)
         print("CUDA is not available. Running on CPU.")
 
     return device, model
@@ -560,7 +560,7 @@ def train_model(args: argparse.Namespace) -> None:
     for epoch in range(config.training.num_epochs):
 
         train_one_epoch(model, config, args, optimizer, device, device_ids, epoch,
-                         use_amp, scaler, gradient_accumulation_steps, train_loader, multi_loss)
+                        use_amp, scaler, gradient_accumulation_steps, train_loader, multi_loss)
         save_last_weights(args, model, device_ids)
         best_metric = compute_epoch_metrics(model, args, config, device, device_ids, best_metric, epoch, scheduler)
 

@@ -13,7 +13,7 @@ from scripts.valid_to_inference import copying_files
 from scripts.trim import trim_directory
 
 base_args = {
-    'device_ids': 0,
+    'device_ids': '0',
     'model_type': '',
     'start_check_point': '',
     'config_path': '',
@@ -27,21 +27,7 @@ base_args = {
 }
 
 
-def create_args(**kwargs):
-    args = []
-    for key, value in kwargs.items():
-        # for action_true
-        if isinstance(value, bool):
-            if value:
-                args.extend([f'--{key}'])
-        elif isinstance(value, (list, tuple)):
-            args.extend([f'--{key}'] + [str(v) for v in value])
-        else:
-            args.extend([f'--{key}', str(value)])
-    return args
-
-
-def parse_args(args):
+def parse_args(dict_args):
     parser = argparse.ArgumentParser()
     parser.add_argument("--check_train", action='store_true', help="Check train or not")
     parser.add_argument("--check_valid", action='store_true', help="Check train or not")
@@ -84,44 +70,49 @@ def parse_args(args):
     parser.add_argument("--flac_file", action='store_true', help="Output flac file instead of wav")
     parser.add_argument("--pcm_type", type=str, choices=['PCM_16', 'PCM_24'], default='PCM_24',
                         help="PCM type for FLAC files (PCM_16 or PCM_24)")
+    parser.add_argument("--draw_spectro", type=float, default=0,
+                        help="If --store_dir is set then code will generate spectrograms for resulted stems as well."
+                             " Value defines for how many seconds os track spectrogram will be generated.")
 
-    if args is None:
-        args = parser.parse_args()
-    else:
-        args = parser.parse_args(args)
+    args = parser.parse_args()
+
+    if dict_args is not None:
+        for key, value in dict_args.items():
+            setattr(args, key, value)
 
     return args
 
 
-def test_settings(args):
+def test_settings(dict_args, test_type):
     # Parse from cmd
-    cli_args = parse_args(args)
+    cli_args = parse_args(dict_args)
 
     # If args from cmd, add or replace in base_args
     for key, value in vars(cli_args).items():
         if value is not None:
             base_args[key] = value
 
-    # Check required arguments
-    missing_args = [arg for arg in ['model_type', 'config_path', 'start_check_point', 'data_path', 'valid_path'] if
-                    not base_args[arg]]
-    if missing_args:
-        missing_args_str = ', '.join(f'--{arg}' for arg in missing_args)
-        raise ValueError(
-            f"The following arguments are required but missing: {missing_args_str}."
-            f" Please specify them either via command-line arguments or directly in `base_args`.")
+    if test_type == 'user':
+        # Check required arguments
+        missing_args = [arg for arg in ['model_type', 'config_path', 'start_check_point', 'data_path', 'valid_path'] if
+                        not base_args[arg]]
+        if missing_args:
+            missing_args_str = ', '.join(f'--{arg}' for arg in missing_args)
+            raise ValueError(
+                f"The following arguments are required but missing: {missing_args_str}."
+                f" Please specify them either via command-line arguments or directly in `base_args`.")
 
-    # Replace config
-    base_args['config_path'] = redact_config(['--orig_config', base_args['config_path'],
-                                              '--model_type', base_args['model_type']])
-    # Trim train
-    trim_args_train = ['--input_directory', base_args['data_path'],
-                       '--max_folders', base_args['max_folders']]
-    base_args['data_path'] = trim_directory(trim_args_train)
-    # Trim valid
-    trim_args_valid = ['--input_directory', base_args['valid_path'],
-                       '--max_folders', base_args['max_folders']]
-    base_args['valid_path'] = trim_directory(trim_args_valid)
+        # Replace config
+        base_args['config_path'] = redact_config({'orig_config': base_args['config_path'],
+                                                  'model_type': base_args['model_type']})
+        # Trim train
+        trim_args_train = ['--input_directory', base_args['data_path'],
+                           '--max_folders', base_args['max_folders']]
+        base_args['data_path'] = trim_directory(trim_args_train)
+        # Trim valid
+        trim_args_valid = ['--input_directory', base_args['valid_path'],
+                           '--max_folders', base_args['max_folders']]
+        base_args['valid_path'] = trim_directory(trim_args_valid)
     # Valid to inference
     if not base_args['input_folder']:
         tests_dir = os.path.join(os.path.dirname(base_args['valid_path']), 'for_inference')
@@ -132,48 +123,36 @@ def test_settings(args):
     copying_files(val_to_inf_args)
 
     if base_args['check_valid']:
-        valid_args = create_args(
-            **{key: base_args[key] for key in ['model_type', 'config_path', 'start_check_point', 'valid_path',
+        valid_args = {key: base_args[key] for key in ['model_type', 'config_path', 'start_check_point',
                                                'store_dir', 'device_ids', 'num_workers', 'pin_memory', 'extension',
-                                               'use_tta', 'metrics', 'lora_checkpoint']
-               }
-        )
-        print('Start validation:')
+                                               'use_tta', 'metrics', 'lora_checkpoint', 'draw_spectro']}
+        valid_args['valid_path'] = [base_args['valid_path']]
+        print('Start validation.')
         check_validation(valid_args)
         print(f'Validation ended. See results in {base_args["store_dir"]}')
 
     if base_args['check_inference']:
-        inference_args = create_args(
-            **{key: base_args[key] for key in ['model_type', 'config_path', 'start_check_point', 'input_folder',
+        inference_args = {key: base_args[key] for key in ['model_type', 'config_path', 'start_check_point', 'input_folder',
                                                'store_dir', 'device_ids', 'extract_instrumental',
                                                'disable_detailed_pbar', 'force_cpu', 'flac_file', 'pcm_type',
-                                               'use_tta', 'lora_checkpoint']
-               }
-        )
+                                               'use_tta', 'lora_checkpoint', 'draw_spectro']}
 
-        print(inference_args)
-
-        print('Start inference')
+        print('Start inference.')
         proc_folder(inference_args)
         print(f'Inference ended. See results in {base_args["store_dir"]}')
 
     if base_args['check_train']:
-        train_args = create_args(
-            **{key: base_args[key] for key in ['model_type', 'config_path', 'start_check_point', 'results_path',
+        train_args = {key: base_args[key] for key in ['model_type', 'config_path', 'start_check_point', 'results_path',
                                                'data_path', 'dataset_type', 'valid_path', 'num_workers', 'pin_memory',
                                                'seed', 'device_ids', 'use_multistft_loss', 'use_mse_loss',
                                                'use_l1_loss', 'wandb_key', 'pre_valid', 'metrics',
-                                               'metric_for_scheduler', 'train_lora', 'lora_checkpoint']
-               }
-        )
+                                               'metric_for_scheduler', 'train_lora', 'lora_checkpoint']}
 
-        print(train_args)
-
-        print('Start train')
+        print('Start train.')
         train_model(train_args)
 
     print('End!')
 
 
 if __name__ == "__main__":
-    test_settings(None)
+    test_settings(None, 'user')

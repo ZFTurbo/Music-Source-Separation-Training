@@ -1,32 +1,31 @@
 import os
 import shutil
 import argparse
-from typing import List, Optional
+from typing import List, Optional, Union, Dict
 
-def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
+
+def parse_args(dict_args: Union[Dict, None]) -> argparse.Namespace:
     """
-    Parse command-line arguments.
+    Parse command-line arguments for configuring the model, dataset, and training parameters.
 
-    Parameters:
-    ----------
-    args : Optional[List[str]]
-        List of arguments passed from the command line. If None, uses sys.argv.
+    Args:
+        dict_args: Dict of command-line arguments. If None, arguments will be parsed from sys.argv.
 
     Returns:
-    -------
-    argparse.Namespace
-        The parsed arguments containing valid_path, inference_dir, and mixture_name.
+        Namespace object containing parsed arguments and their values.
     """
+
     parser = argparse.ArgumentParser(description="Copy mixture files from VALID_PATH to INFERENCE_DIR")
     parser.add_argument('--valid_path', type=str, required=True, help="Directory with valid tracks")
     parser.add_argument('--inference_dir', type=str, required=True, help="Directory to save inference tracks")
     parser.add_argument('--mixture_name', type=str, default='mixture.wav', help="Name of mixture tracks (default: 'mixture.wav')")
     parser.add_argument('--max_mixtures', type=int, default=float('inf'), help="Maximum number of mixtures to process.")
 
-    if args is None:
+    if dict_args is None:
         args = parser.parse_args()
     else:
-        args = parser.parse_args(args)
+        args = argparse.Namespace(**dict_args)
+
     return args
 
 
