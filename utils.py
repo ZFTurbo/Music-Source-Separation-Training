@@ -118,6 +118,9 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple:
     elif model_type == 'bs_mamba2':
         from models.ts_bs_mamba2 import Separator
         model = Separator(**config.model)
+    elif model_type == 'experimental_mdx23c_stht':
+        from models.mdx23c_tfc_tdf_v3_with_STHT import TFC_TDF_net
+        model = TFC_TDF_net(config)
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 

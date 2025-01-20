@@ -1,0 +1,182 @@
+audio:
+  chunk_size: 261120
+  dim_f: 4096
+  dim_t: 256
+  hop_length: 1024
+  n_fft: 8192
+  num_channels: 2
+  sample_rate: 44100
+  min_mean_abs: 0.001
+
+model:
+  act: gelu
+  bottleneck_factor: 4
+  growth: 128
+  norm: InstanceNorm
+  num_blocks_per_scale: 2
+  num_channels: 128
+  num_scales: 5
+  num_subbands: 4
+  scale:
+  - 2
+  - 2
+
+training:
+  batch_size: 6
+  gradient_accumulation_steps: 1
+  grad_clip: 0
+  instruments:
+  - vocals
+  - bass
+  - drums
+  - other
+  lr: 9.0e-05
+  patience: 2
+  reduce_factor: 0.95
+  target_instrument: null
+  num_epochs: 1000
+  num_steps: 1000
+  q: 0.95
+  coarse_loss_clip: true
+  ema_momentum: 0.999
+  optimizer: adam
+  other_fix: false # it's needed for checking on multisong dataset if other is actually instrumental
+  use_amp: true # enable or disable usage of mixed precision (float16) - usually it must be true
+
+augmentations:
+  enable: true # enable or disable all augmentations (to fast disable if needed)
+  loudness: true # randomly change loudness of each stem on the range (loudness_min; loudness_max)
+  loudness_min: 0.5
+  loudness_max: 1.5
+  mixup: true # mix several stems of same type with some probability (only works for dataset types: 1, 2, 3)
+  mixup_probs: !!python/tuple # 2 additional stems of the same type (1st with prob 0.2, 2nd with prob 0.02)
+    - 0.2
+    - 0.02
+  mixup_loudness_min: 0.5
+  mixup_loudness_max: 1.5
+
+  # apply mp3 compression to mixture only (emulate downloading mp3 from internet)
+  mp3_compression_on_mixture: 0.01
+  mp3_compression_on_mixture_bitrate_min: 32
+  mp3_compression_on_mixture_bitrate_max: 320
+  mp3_compression_on_mixture_backend: "lameenc"
+
+  all:
+    channel_shuffle: 0.5 # Set 0 or lower to disable
+    random_inverse: 0.1 # inverse track (better lower probability)
+    random_polarity: 0.5 # polarity change (multiply waveform to -1)
+    mp3_compression: 0.01
+    mp3_compression_min_bitrate: 32
+    mp3_compression_max_bitrate: 320
+    mp3_compression_backend: "lameenc"
+
+    # pedalboard reverb block
+    pedalboard_reverb: 0.01
+    pedalboard_reverb_room_size_min: 0.1
+    pedalboard_reverb_room_size_max: 0.9
+    pedalboard_reverb_damping_min: 0.1
+    pedalboard_reverb_damping_max: 0.9
+    pedalboard_reverb_wet_level_min: 0.1
+    pedalboard_reverb_wet_level_max: 0.9
+    pedalboard_reverb_dry_level_min: 0.1
+    pedalboard_reverb_dry_level_max: 0.9
+    pedalboard_reverb_width_min: 0.9
+    pedalboard_reverb_width_max: 1.0
+
+    # pedalboard chorus block
+    pedalboard_chorus: 0.01
+    pedalboard_chorus_rate_hz_min: 1.0
+    pedalboard_chorus_rate_hz_max: 7.0
+    pedalboard_chorus_depth_min: 0.25
+    pedalboard_chorus_depth_max: 0.95
+    pedalboard_chorus_centre_delay_ms_min: 3
+    pedalboard_chorus_centre_delay_ms_max: 10
+    pedalboard_chorus_feedback_min: 0.0
+    pedalboard_chorus_feedback_max: 0.5
+    pedalboard_chorus_mix_min: 0.1
+    pedalboard_chorus_mix_max: 0.9
+
+    # pedalboard phazer block
+    pedalboard_phazer: 0.01
+    pedalboard_phazer_rate_hz_min: 1.0
+    pedalboard_phazer_rate_hz_max: 10.0
+    pedalboard_phazer_depth_min: 0.25
+    pedalboard_phazer_depth_max: 0.95
+    pedalboard_phazer_centre_frequency_hz_min: 200
+    pedalboard_phazer_centre_frequency_hz_max: 12000
+    pedalboard_phazer_feedback_min: 0.0
+    pedalboard_phazer_feedback_max: 0.5
+    pedalboard_phazer_mix_min: 0.1
+    pedalboard_phazer_mix_max: 0.9
+
+    # pedalboard distortion block
+    pedalboard_distortion: 0.01
+    pedalboard_distortion_drive_db_min: 1.0
+    pedalboard_distortion_drive_db_max: 25.0
+
+    # pedalboard pitch shift block
+    pedalboard_pitch_shift: 0.01
+    pedalboard_pitch_shift_semitones_min: -7
+    pedalboard_pitch_shift_semitones_max: 7
+
+    # pedalboard resample block
+    pedalboard_resample: 0.01
+    pedalboard_resample_target_sample_rate_min: 4000
+    pedalboard_resample_target_sample_rate_max: 44100
+
+    # pedalboard bitcrash block
+    pedalboard_bitcrash: 0.01
+    pedalboard_bitcrash_bit_depth_min: 4
+    pedalboard_bitcrash_bit_depth_max: 16
+
+    # pedalboard mp3 compressor block
+    pedalboard_mp3_compressor: 0.01
+    pedalboard_mp3_compressor_pedalboard_mp3_compressor_min: 0
+    pedalboard_mp3_compressor_pedalboard_mp3_compressor_max: 9.999
+
+  vocals:
+    pitch_shift: 0.1
+    pitch_shift_min_semitones: -5
+    pitch_shift_max_semitones: 5
+    seven_band_parametric_eq: 0.25
+    seven_band_parametric_eq_min_gain_db: -9
+    seven_band_parametric_eq_max_gain_db: 9
+    tanh_distortion: 0.1
+    tanh_distortion_min: 0.1
+    tanh_distortion_max: 0.7
+  bass:
+    pitch_shift: 0.1
+    pitch_shift_min_semitones: -2
+    pitch_shift_max_semitones: 2
+    seven_band_parametric_eq: 0.25
+    seven_band_parametric_eq_min_gain_db: -3
+    seven_band_parametric_eq_max_gain_db: 6
+    tanh_distortion: 0.2
+    tanh_distortion_min: 0.1
+    tanh_distortion_max: 0.5
+  drums:
+    pitch_shift: 0.33
+    pitch_shift_min_semitones: -5
+    pitch_shift_max_semitones: 5
+    seven_band_parametric_eq: 0.25
+    seven_band_parametric_eq_min_gain_db: -9
+    seven_band_parametric_eq_max_gain_db: 9
+    tanh_distortion: 0.33
+    tanh_distortion_min: 0.1
+    tanh_distortion_max: 0.6
+  other:
+    pitch_shift: 0.1
+    pitch_shift_min_semitones: -4
+    pitch_shift_max_semitones: 4
+    gaussian_noise: 0.1
+    gaussian_noise_min_amplitude: 0.001
+    gaussian_noise_max_amplitude: 0.015
+    time_stretch: 0.01
+    time_stretch_min_rate: 0.8
+    time_stretch_max_rate: 1.25
+
+
+inference:
+  batch_size: 1
+  dim_t: 256
+  num_overlap: 4
