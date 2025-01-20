@@ -306,7 +306,10 @@ class MSSDataset(torch.utils.data.Dataset):
 
     def load_aligned_data(self):
         track_path, track_length = random.choice(self.metadata)
-        common_offset = np.random.randint(track_length - self.chunk_size + 1)
+        if track_length >= self.chunk_size:
+            common_offset = np.random.randint(track_length - self.chunk_size + 1)
+        else:
+            common_offset = None
         res = []
         for i in self.instruments:
             attempts = 10
