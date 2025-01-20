@@ -306,6 +306,7 @@ class MSSDataset(torch.utils.data.Dataset):
 
     def load_aligned_data(self):
         track_path, track_length = random.choice(self.metadata)
+        common_offset = np.random.randint(track_length - self.chunk_size + 1)
         res = []
         for i in self.instruments:
             attempts = 10
@@ -314,7 +315,7 @@ class MSSDataset(torch.utils.data.Dataset):
                     path_to_audio_file = track_path + '/{}.{}'.format(i, extension)
                     if os.path.isfile(path_to_audio_file):
                         try:
-                            source = load_chunk(path_to_audio_file, track_length, self.chunk_size)
+                            source = load_chunk(path_to_audio_file, track_length, self.chunk_size, offset=common_offset)
                         except Exception as e:
                             # Sometimes error during FLAC reading, catch it and use zero stem
                             print('Error: {} Path: {}'.format(e, path_to_audio_file))
