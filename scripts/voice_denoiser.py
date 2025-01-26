@@ -43,19 +43,10 @@ def parse_args(dict_args: Union[Dict, None]) -> argparse.Namespace:
                              " scnet, scnet_unofficial, segm_models, swin_upernet, torchseg")
     parser.add_argument("--config_path", type=str, help="path to config file")
     parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint to valid weights")
-    parser.add_argument("--input_folder", type=str, help="folder with mixtures to process")
-    parser.add_argument("--store_dir", type=str, default="", help="path to store results as wav file")
-    parser.add_argument("--draw_spectro", type=float, default=0,
-                        help="Code will generate spectrograms for resulted stems."
-                             " Value defines for how many seconds os track spectrogram will be generated.")
+    parser.add_argument("--out_dir", type=str, default="", help="Path to directory with results as wav file")
+    parser.add_argument("--out_name", type=str, default="final", help="Path to directory with results as wav file")
     parser.add_argument("--device_ids", nargs='+', type=int, default=0, help='list of gpu ids')
-    parser.add_argument("--extract_instrumental", action='store_true',
-                        help="invert vocals to get instrumental if provided")
-    parser.add_argument("--disable_detailed_pbar", action='store_true', help="disable detailed progress bar")
     parser.add_argument("--force_cpu", action='store_true', help="Force the use of CPU even if CUDA is available")
-    parser.add_argument("--flac_file", action='store_true', help="Output flac file instead of wav")
-    parser.add_argument("--pcm_type", type=str, choices=['PCM_16', 'PCM_24'], default='PCM_24',
-                        help="PCM type for FLAC files (PCM_16 or PCM_24)")
     parser.add_argument("--use_tta", action='store_true',
                         help="Flag adds test time augmentation during inference (polarity and channel inverse)."
                         "While this triples the runtime, it reduces noise and slightly improves prediction quality.")
@@ -207,7 +198,7 @@ def process_audio_chunks(
     audio_array = np.concatenate([audio_array, audio_array], axis=0)  # Make stereo
 
     # Save raw audio data
-    output_path = os.path.abspath(os.path.join(kornevaya_dir, '..', 'script_test', 'raw_audio.wav'))
+    output_path = os.path.abspath(os.path.join(kornevaya_dir, '..', args.out_dir, 'raw_audio.wav'))
     sf.write(output_path, audio_array.T, RATE, 'FLOAT')
 
     # Process audio using the model
@@ -216,7 +207,7 @@ def process_audio_chunks(
         waveforms_orig = apply_tta(config, model, audio_array, waveforms_orig, device, args.model_type)
     waveforms_orig =  waveforms_orig['vocals']
     # Save processed audio data
-    output_path = os.path.abspath(os.path.join(kornevaya_dir, '..', 'script_test', 'final.wav'))
+    output_path = os.path.abspath(os.path.join(kornevaya_dir, '..', args.out_dir, f'{args.out_name}.wav'))
     sf.write(output_path, waveforms_orig.T, RATE, 'FLOAT')
     print(f"Processing completed. Output saved to {output_path}. Time taken: {time.time() - start_time:.2f} seconds")
 
@@ -231,7 +222,7 @@ def main() -> None:
     device = initialize_device(args)
     print("Using device:", device)
 
-    os.makedirs("script_test", exist_ok=True)
+    os.makedirs(args.out_dir, exist_ok=True)
     model, config = load_model(args, device)
 
     p, stream_input = initialize_audio_streams()
