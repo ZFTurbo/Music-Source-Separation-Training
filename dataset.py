@@ -661,9 +661,9 @@ class MSSDataset(torch.utils.data.Dataset):
                     mix = mix[..., :required_shape[-1]]
                 mix = torch.tensor(mix, dtype=torch.float32)
 
-        # If we need only given stem (for roformers)
+        # If we need to optimize only given stem
         if self.config.training.target_instrument is not None:
             index = self.config.training.instruments.index(self.config.training.target_instrument)
-            return res[index], mix
+            return res[index:index+1], mix
 
         return res, mix
