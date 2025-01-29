@@ -362,7 +362,7 @@ def valid(
     config: ConfigDict,
     device: torch.device,
     verbose: bool = False
-) -> dict:
+) -> Tuple[dict, dict]:
     """
     Validate a trained model on a set of audio mixtures and compute metrics.
 
@@ -403,7 +403,7 @@ def valid(
     all_metrics = process_audio_files(all_mixtures_path, model, args, config, device, verbose, not verbose)
     instruments = prefer_target_instrument(config)
 
-    return compute_metric_avg(store_dir, args, instruments, config, all_metrics, start_time)
+    return compute_metric_avg(store_dir, args, instruments, config, all_metrics, start_time), all_metrics
 
 
 def validate_in_subprocess(
@@ -544,7 +544,7 @@ def valid_multi_gpu(
     config: ConfigDict,
     device_ids: List[int],
     verbose: bool = False
-) -> Dict[str, float]:
+) -> Tuple[Dict[str, float], dict]:
     """
     Perform validation across multiple GPUs, processing mixtures and computing metrics using parallel processes.
     The results from each GPU are aggregated and the average metrics are computed.
@@ -594,7 +594,7 @@ def valid_multi_gpu(
 
     instruments = prefer_target_instrument(config)
 
-    return compute_metric_avg(store_dir, args, instruments, config, all_metrics, start_time)
+    return compute_metric_avg(store_dir, args, instruments, config, all_metrics, start_time), all_metrics
 
 
 def parse_args(dict_args: Union[Dict, None]) -> argparse.Namespace:
