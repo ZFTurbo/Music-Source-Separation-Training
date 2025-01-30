@@ -1,5 +1,5 @@
 audio:
-  chunk_size: 485100 # samplerate * segment
+  chunk_size: 1764000 # samplerate * segment
   min_mean_abs: 0.000
   hop_length: 1024
 
@@ -7,7 +7,7 @@ training:
   batch_size: 8
   gradient_accumulation_steps: 1
   grad_clip: 0
-  segment: 11
+  segment: 40
   shift: 1
   samplerate: 44100
   channels: 2
