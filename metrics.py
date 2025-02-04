@@ -118,7 +118,7 @@ def L1Freq_metric(
     return ret
 
 
-def NegLogWMSE_metric(
+def LogWMSE_metric(
         reference: np.ndarray,
         estimate: np.ndarray,
         mixture: np.ndarray,
@@ -164,7 +164,7 @@ def NegLogWMSE_metric(
     mixture = torch.from_numpy(mixture).unsqueeze(0).to(device)
 
     res = log_wmse(mixture, reference, estimate)
-    return -float(res.cpu().numpy())
+    return float(res.cpu().numpy())
 
 
 def AuraSTFT_metric(
@@ -403,7 +403,7 @@ def get_metrics(
         result['l1_freq'] = L1Freq_metric(reference, estimate, device=device)
 
     if 'neg_log_wmse' in metrics:
-        result['neg_log_wmse'] = NegLogWMSE_metric(reference, estimate, mix, device)
+        result['neg_log_wmse'] = LogWMSE_metric(reference, estimate, mix, device)
 
     if 'aura_stft' in metrics:
         result['aura_stft'] = AuraSTFT_metric(reference, estimate, device)
