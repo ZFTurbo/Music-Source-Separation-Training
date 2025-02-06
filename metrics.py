@@ -402,8 +402,8 @@ def get_metrics(
     if 'l1_freq' in metrics:
         result['l1_freq'] = L1Freq_metric(reference, estimate, device=device)
 
-    if 'neg_log_wmse' in metrics:
-        result['neg_log_wmse'] = LogWMSE_metric(reference, estimate, mix, device)
+    if 'log_wmse' in metrics:
+        result['log_wmse'] = LogWMSE_metric(reference, estimate, mix, device)
 
     if 'aura_stft' in metrics:
         result['aura_stft'] = AuraSTFT_metric(reference, estimate, device)
