@@ -13,7 +13,7 @@ pedalboard~=0.8.1
 omegaconf==2.2.3
 beartype==0.14.1
 rotary_embedding_torch==0.3.5
-einops==0.6.1
+einops==0.8.1
 librosa
 demucs==4.0.0
 transformers~=4.35.0
@@ -35,3 +35,4 @@ pyaudio
 wxpython==4.2.2
 keyboard
 matplotlib
+hyper_connections==0.1.11
