@@ -6,6 +6,7 @@ import random
 import argparse
 from tqdm.auto import tqdm
 import os
+import time
 import torch
 import wandb
 import numpy as np
@@ -119,6 +120,14 @@ def initialize_environment(seed: int, results_path: str) -> None:
         pass
     os.makedirs(results_path, exist_ok=True)
 
+
+def gen_wandb_name(args, config):
+    instrum = '-'.join(config['training']['instruments'])
+    time_str = time.strftime("%Y-%m-%d")
+    name = '{}_[{}]_{}'.format(args.model_type, instrum, time_str)
+    return name
+
+
 def wandb_init(args: argparse.Namespace, config: Dict, device_ids: List[int], batch_size: int) -> None:
     """
     Initialize the Weights & Biases (wandb) logging system.
@@ -134,7 +143,11 @@ def wandb_init(args: argparse.Namespace, config: Dict, device_ids: List[int], ba
         wandb.init(mode='disabled')
     else:
         wandb.login(key=args.wandb_key)
-        wandb.init(project='msst', config={'config': config, 'args': args, 'device_ids': device_ids, 'batch_size': batch_size })
+        wandb.init(
+            project='msst',
+            name=gen_wandb_name(args, config),
+            config={'config': config, 'args': args, 'device_ids': device_ids, 'batch_size': batch_size }
+        )
 
 
 def prepare_data(config: Dict, args: argparse.Namespace, batch_size: int) -> DataLoader:
