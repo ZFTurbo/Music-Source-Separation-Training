@@ -60,6 +60,10 @@ def parse_args(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser.add_argument("--device_ids", nargs='+', type=int, default=[0], help='list of gpu ids')
     parser.add_argument("--loss", type=str, nargs='+', choices=['masked_loss', 'mse_loss', 'l1_loss', 'multistft_loss'],
                         default=['masked_loss'], help="List of loss functions to use")
+    parser.add_argument("--masked_loss_coef", type=float, default=1., help="Coef for loss")
+    parser.add_argument("--mse_loss_coef", type=float, default=1., help="Coef for loss")
+    parser.add_argument("--l1_loss_coef", type=float, default=1., help="Coef for loss")
+    parser.add_argument("--multistft_loss_coef", type=float, default=0.001, help="Coef for loss")
     parser.add_argument("--wandb_key", type=str, default='', help='wandb API Key')
     parser.add_argument("--pre_valid", action='store_true', help='Run validation before training')
     parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"],
@@ -291,15 +295,15 @@ def choice_loss(args: argparse.Namespace, config: ConfigDict) -> Callable[[Any, 
     loss_fns = []
     if 'masked_loss' in args.loss:
         loss_fns.append(
-            lambda y_, y: masked_loss(y_, y, q=config['training']['q'], coarse=config['training']['coarse_loss_clip']))
+            lambda y_, y: masked_loss(y_, y, q=config['training']['q'], coarse=config['training']['coarse_loss_clip']) * args.masked_loss_coef)
     if 'mse_loss' in args.loss:
-        loss_fns.append(nn.MSELoss())
+        loss_fns.append(lambda y_, y: nn.MSELoss()(y_, y) * args.mse_loss_coef)
     if 'l1_loss' in args.loss:
-        loss_fns.append(F.l1_loss)
+        loss_fns.append(lambda y_, y: F.l1_loss(y_, y) * args.l1_loss_coef)
     if 'multistft_loss' in args.loss:
         loss_options = dict(config.get('loss_multistft', {}))
         loss_multistft = auraloss.freq.MultiResolutionSTFTLoss(**loss_options)
-        loss_fns.append(lambda y_, y: multistft_loss(y_, y, loss_multistft) / 1000)
+        loss_fns.append(lambda y_, y: multistft_loss(y_, y, loss_multistft) * args.multistft_loss_coef)
 
     def multi_loss(y_, y):
         return sum(loss_fn(y_, y) for loss_fn in loss_fns)
