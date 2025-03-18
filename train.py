@@ -257,14 +257,17 @@ def get_optimizer(config: ConfigDict, model: torch.nn.Module) -> torch.optim.Opt
     return optimizer
 
 
-def multistft_loss(y: torch.Tensor, y_: torch.Tensor,
+def multistft_loss(y_: torch.Tensor, y: torch.Tensor,
                    loss_multistft: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]) -> torch.Tensor:
     if len(y_.shape) == 4:
         y1_ = y_.reshape(y_.shape[0], y_.shape[1] * y_.shape[2], y_.shape[3])
+    elif len(y_.shape) == 3:
+        y1_ = y_
+    if len(y.shape) == 4:
         y1 = y.reshape(y.shape[0], y.shape[1] * y.shape[2], y.shape[3])
     elif len(y_.shape) == 3:
-        y1_, y1 = y_, y
-    else:
+        y1 = y
+    if len(y_.shape) not in [3, 4]:
         raise ValueError(f"Invalid shape for predicted array: {y_.shape}. Expected 3 or 4 dimensions.")
     return loss_multistft(y1_, y1)
 
