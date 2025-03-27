@@ -375,7 +375,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
             x, y = normalize_batch(x, y)
 
         with torch.cuda.amp.autocast(enabled=use_amp):
-            if args.model_type in ['mel_band_roformer', 'bs_roformer']:
+            if 'roformer' in args.model_type:
                 # loss is computed in forward pass
                 loss = model(x, y)
                 if isinstance(device_ids, (list, tuple)):

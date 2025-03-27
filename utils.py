@@ -94,8 +94,14 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple:
     elif model_type == 'mel_band_roformer':
         from models.bs_roformer import MelBandRoformer
         model = MelBandRoformer(**dict(config.model))
+    elif model_type == 'mel_band_roformer_experimental':
+        from models.bs_roformer.mel_band_roformer_experimental import MelBandRoformer
+        model = MelBandRoformer(**dict(config.model))
     elif model_type == 'bs_roformer':
         from models.bs_roformer import BSRoformer
+        model = BSRoformer(**dict(config.model))
+    elif model_type == 'bs_roformer_experimental':
+        from models.bs_roformer.bs_roformer_experimental import BSRoformer
         model = BSRoformer(**dict(config.model))
     elif model_type == 'swin_upernet':
         from models.upernet_swin_transformers import Swin_UperNet_Model
