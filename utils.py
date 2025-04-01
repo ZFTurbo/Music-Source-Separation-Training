@@ -77,7 +77,7 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple:
         If the `model_type` is unknown or an error occurs during model initialization.
     """
 
-    config = load_config(model_type, config_path)
+    config = load_config(model_type, config_path)   # config in json format
 
     if model_type == 'mdx23c':
         from models.mdx23c_tfc_tdf_v3 import TFC_TDF_net

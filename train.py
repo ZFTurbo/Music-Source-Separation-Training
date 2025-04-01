@@ -491,6 +491,10 @@ def train_model(args: argparse.Namespace) -> None:
 
     initialize_environment(args.seed, args.results_path)
     model, config = get_model_from_config(args.model_type, args.config_path)
+
+    #print(model.eval())
+    #exit(1)
+
     use_amp = getattr(config.training, 'use_amp', True)
     device_ids = args.device_ids
     batch_size = config.training.batch_size * len(device_ids)

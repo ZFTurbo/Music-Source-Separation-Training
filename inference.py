@@ -85,7 +85,7 @@ def run_folder(model, args, config, device, verbose: bool = False):
             if config.inference['normalize'] is True:
                 mix, norm_params = normalize_audio(mix)
 
-        waveforms_orig = demix(config, model, mix, device, model_type=args.model_type, pbar=detailed_pbar)
+        waveforms_orig = demix(config, model, mix, device, model_type=args.model_type, pbar=detailed_pbar)  # Demixing
 
         if args.use_tta:
             waveforms_orig = apply_tta(config, model, mix, waveforms_orig, device, args.model_type)
@@ -165,8 +165,8 @@ def parse_args(dict_args: Union[Dict, None]) -> argparse.Namespace:
 
 
 def proc_folder(dict_args):
-    args = parse_args(dict_args)
-    device = "cpu"
+    args = parse_args(dict_args)    # Parse command-line arguments
+    device = "cpu"                  # Get device for model inference (default is CPU)
     if args.force_cpu:
         device = "cpu"
     elif torch.cuda.is_available():
@@ -182,7 +182,7 @@ def proc_folder(dict_args):
 
     model, config = get_model_from_config(args.model_type, args.config_path)
 
-    if args.start_check_point != '':
+    if args.start_check_point != '':        # Load checkpoint for model
         load_start_checkpoint(args, model, type_='inference')
 
     print("Instruments: {}".format(config.training.instruments))
