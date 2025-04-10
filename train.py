@@ -58,12 +58,13 @@ def parse_args(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser.add_argument("--pin_memory", action='store_true', help="dataloader pin_memory")
     parser.add_argument("--seed", type=int, default=0, help="random seed")
     parser.add_argument("--device_ids", nargs='+', type=int, default=[0], help='list of gpu ids')
-    parser.add_argument("--loss", type=str, nargs='+', choices=['masked_loss', 'mse_loss', 'l1_loss', 'multistft_loss'],
+    parser.add_argument("--loss", type=str, nargs='+', choices=['masked_loss', 'mse_loss', 'l1_loss', 'multistft_loss', 'spec_masked_loss'],
                         default=['masked_loss'], help="List of loss functions to use")
     parser.add_argument("--masked_loss_coef", type=float, default=1., help="Coef for loss")
     parser.add_argument("--mse_loss_coef", type=float, default=1., help="Coef for loss")
     parser.add_argument("--l1_loss_coef", type=float, default=1., help="Coef for loss")
     parser.add_argument("--multistft_loss_coef", type=float, default=0.001, help="Coef for loss")
+    parser.add_argument("--spec_masked_loss_coef", type=float, default=1, help="Coef for loss")
     parser.add_argument("--wandb_key", type=str, default='', help='wandb API Key')
     parser.add_argument("--pre_valid", action='store_true', help='Run validation before training')
     parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"],
@@ -282,6 +283,43 @@ def masked_loss(y_: torch.Tensor, y: torch.Tensor, q: float, coarse: bool = True
     return (loss * mask).mean()
 
 
+def spec_masked_loss(estimate, sources, stft_config, q: float = 0.9, coarse: bool = True):
+    _, _, _, lenc = estimate.shape
+    spec_estimate = estimate.view(-1, lenc)
+    spec_sources = sources.view(-1, lenc)
+
+    spec_estimate = torch.stft(spec_estimate, **stft_config, return_complex=True)
+    spec_sources = torch.stft(spec_sources, **stft_config, return_complex=True)
+
+    spec_estimate = torch.view_as_real(spec_estimate)
+    spec_sources = torch.view_as_real(spec_sources)
+
+    new_shape = estimate.shape[:-1] + spec_estimate.shape[-3:]
+    spec_estimate = spec_estimate.view(*new_shape)
+    spec_sources = spec_sources.view(*new_shape)
+
+    loss = F.mse_loss(spec_estimate, spec_sources, reduction='none')
+
+    if coarse:
+        loss = loss.mean(dim=(-3, -2))
+
+    loss = loss.reshape(loss.shape[0], -1)
+
+    quantile = torch.quantile(
+        loss.detach(),
+        q,
+        interpolation='linear',
+        dim=1,
+        keepdim=True
+    )
+
+    mask = loss < quantile
+
+    masked_loss = (loss * mask).mean()
+
+    return masked_loss
+
+
 def choice_loss(args: argparse.Namespace, config: ConfigDict) -> Callable[[Any, Any], int]:
     """
     Select and return the appropriate loss function based on the configuration and arguments.
@@ -307,7 +345,16 @@ def choice_loss(args: argparse.Namespace, config: ConfigDict) -> Callable[[Any, 
         loss_options = dict(config.get('loss_multistft', {}))
         loss_multistft = auraloss.freq.MultiResolutionSTFTLoss(**loss_options)
         loss_fns.append(lambda y_, y: multistft_loss(y_, y, loss_multistft) * args.multistft_loss_coef)
-
+    if 'spec_masked_loss' in args.loss:
+        stft_config = {
+            'n_fft': getattr(config.model, 'nfft', 4096),
+            'hop_length': getattr(config.model, 'hop_size', 1024),
+            'win_length': getattr(config.model, 'win_size', 4096),
+            'center': True,
+            'normalized': getattr(config.model, 'normalized', True)
+        }
+        loss_fns.append(
+            lambda y_, y: spec_masked_loss(y_, y, stft_config, q=config['training']['q'], coarse=config['training']['coarse_loss_clip']) * args.spec_masked_loss_coef)
     def multi_loss(y_, y):
         return sum(loss_fn(y_, y) for loss_fn in loss_fns)
 
