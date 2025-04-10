@@ -20,6 +20,7 @@ Available models for training:
 * BandIt v2 [[Paper](https://arxiv.org/abs/2407.07275), [Repository](https://github.com/kwatcharasupat/bandit-v2)] Key: `bandit_v2`.
 * Apollo [[Paper](https://arxiv.org/html/2409.08514v1), [Repository](https://github.com/JusperLee/Apollo)] Key: `apollo`.
 * TS BSMamba2 [[Paper](https://arxiv.org/pdf/2409.06245), [Repository](https://github.com/baijinglin/TS-BSmamba2)] Key: `bs_mamba2`.
+* SCNet Tran Key: `scnet_tran`.
 
 1. **Note 1**: For `segm_models` there are many different encoders is possible. [Look here](https://github.com/qubvel/segmentation_models.pytorch#encoders-).
 2. **Note 2**: Thanks to [@lucidrains](https://github.com/lucidrains) for recreating the RoFormer models based on papers.
