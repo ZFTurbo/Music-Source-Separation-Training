@@ -460,15 +460,28 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
         metrics_avg, all_metrics = valid_multi_gpu(model, args, config, args.device_ids, verbose=False)
     else:
         metrics_avg, all_metrics = valid(model, args, config, device, verbose=False)
+
+    # Log the average metric for the scheduler
     metric_avg = metrics_avg[args.metric_for_scheduler]
+    wandb.log({'metric_main': metric_avg, 'best_metric': best_metric})
+
+    # Log metrics for each instrument
+    for metric_name, instrument_metrics in all_metrics.items():
+        for instrument, values in instrument_metrics.items():
+            avg_value = sum(values) / len(values) if values else 0.0
+            wandb.log({f'{metric_name}_{instrument}_avg': avg_value})
+
+    # Save model weights if the metric improves
     if metric_avg > best_metric:
         store_path = f'{args.results_path}/model_{args.model_type}_ep_{epoch}_{args.metric_for_scheduler}_{metric_avg:.4f}.ckpt'
         print(f'Store weights: {store_path}')
         train_lora = args.train_lora
         save_weights(store_path, model, device_ids, train_lora)
         best_metric = metric_avg
+
     scheduler.step(metric_avg)
-    wandb.log({'metric_main': metric_avg, 'best_metric': best_metric})
+
+    # Log overall metrics
     for metric_name in metrics_avg:
         wandb.log({f'metric_{metric_name}': metrics_avg[metric_name]})
 
