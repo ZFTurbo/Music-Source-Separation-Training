@@ -40,7 +40,7 @@ model: htdemucs
 
 htdemucs:  # see demucs/htdemucs.py for a detailed description
   # Channels
-  channels: 24  # Reduced from 48
+  channels: 12  # Reduced from 48
   channels_time:
   growth: 2
   # STFT
@@ -74,7 +74,7 @@ htdemucs:  # see demucs/htdemucs.py for a detailed description
   dconv_comp: 8
   dconv_init: 1e-3
   # Before the Transformer
-  bottom_channels: 256  # Reduced from 512
+  bottom_channels: 128  # Reduced from 512
   # CrossTransformer
   # ------ Common to all
   # Regular parameters
