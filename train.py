@@ -4,6 +4,8 @@ __version__ = '1.0.4'
 
 import random
 import argparse
+
+from torch_log_wmse import LogWMSE
 from tqdm.auto import tqdm
 import os
 import time
@@ -18,7 +20,7 @@ from torch.cuda.amp.grad_scaler import GradScaler
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from ml_collections import ConfigDict
 import torch.nn.functional as F
-from typing import List, Tuple, Dict, Union, Callable, Any
+from typing import List, Tuple, Dict, Union, Callable, Any, Optional
 
 from dataset import MSSDataset
 from utils import get_model_from_config
@@ -58,11 +60,12 @@ def parse_args(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser.add_argument("--pin_memory", action='store_true', help="dataloader pin_memory")
     parser.add_argument("--seed", type=int, default=0, help="random seed")
     parser.add_argument("--device_ids", nargs='+', type=int, default=[0], help='list of gpu ids')
-    parser.add_argument("--loss", type=str, nargs='+', choices=['masked_loss', 'mse_loss', 'l1_loss', 'multistft_loss', 'spec_masked_loss'],
+    parser.add_argument("--loss", type=str, nargs='+', choices=['masked_loss', 'mse_loss', 'l1_loss', 'multistft_loss', 'spec_masked_loss', 'log_wmse_loss'],
                         default=['masked_loss'], help="List of loss functions to use")
     parser.add_argument("--masked_loss_coef", type=float, default=1., help="Coef for loss")
     parser.add_argument("--mse_loss_coef", type=float, default=1., help="Coef for loss")
     parser.add_argument("--l1_loss_coef", type=float, default=1., help="Coef for loss")
+    parser.add_argument("--log_wmse_loss_coef", type=float, default=1., help="Coef for loss")
     parser.add_argument("--multistft_loss_coef", type=float, default=0.001, help="Coef for loss")
     parser.add_argument("--spec_masked_loss_coef", type=float, default=1, help="Coef for loss")
     parser.add_argument("--wandb_key", type=str, default='', help='wandb API Key')
@@ -320,7 +323,7 @@ def spec_masked_loss(estimate, sources, stft_config, q: float = 0.9, coarse: boo
     return masked_loss
 
 
-def choice_loss(args: argparse.Namespace, config: ConfigDict) -> Callable[[Any, Any], int]:
+def choice_loss(args: argparse.Namespace, config: ConfigDict) -> Callable[..., torch.Tensor]:
     """
     Select and return the appropriate loss function based on the configuration and arguments.
 
@@ -334,17 +337,48 @@ def choice_loss(args: argparse.Namespace, config: ConfigDict) -> Callable[[Any, 
 
     print(f'Losses for training: {args.loss}')
     loss_fns = []
+
     if 'masked_loss' in args.loss:
         loss_fns.append(
-            lambda y_, y: masked_loss(y_, y, q=config['training']['q'], coarse=config['training']['coarse_loss_clip']) * args.masked_loss_coef)
+            lambda y_pred, y_true, x=None:
+            masked_loss(y_pred, y_true,
+                        q=config['training']['q'],
+                        coarse=config['training']['coarse_loss_clip'])
+            * args.masked_loss_coef
+        )
+
     if 'mse_loss' in args.loss:
-        loss_fns.append(lambda y_, y: nn.MSELoss()(y_, y) * args.mse_loss_coef)
+        mse = nn.MSELoss()
+        loss_fns.append(
+            lambda y_pred, y_true, x=None: mse(y_pred, y_true) * args.mse_loss_coef
+        )
+
     if 'l1_loss' in args.loss:
-        loss_fns.append(lambda y_, y: F.l1_loss(y_, y) * args.l1_loss_coef)
+        loss_fns.append(
+            lambda y_pred, y_true, x=None: F.l1_loss(y_pred, y_true) * args.l1_loss_coef
+        )
+
     if 'multistft_loss' in args.loss:
         loss_options = dict(config.get('loss_multistft', {}))
-        loss_multistft = auraloss.freq.MultiResolutionSTFTLoss(**loss_options)
-        loss_fns.append(lambda y_, y: multistft_loss(y_, y, loss_multistft) * args.multistft_loss_coef)
+        stft_loss = auraloss.freq.MultiResolutionSTFTLoss(**loss_options)
+        loss_fns.append(
+            lambda y_pred, y_true, x=None: multistft_loss(y_pred, y_true, stft_loss)
+                                           * args.multistft_loss_coef
+        )
+
+    if 'log_wmse_loss' in args.loss:
+        log_wmse = LogWMSE(
+            audio_length=getattr(config.audio, 'chunk_size', 485100)
+                         // getattr(config.audio, 'sample_rate', 44100),
+            sample_rate=getattr(config.audio, 'sample_rate', 44100),
+            return_as_loss=True,
+            bypass_filter=getattr(config.training, 'bypass_filter', False),
+        )
+        loss_fns.append(
+            lambda y_pred, y_true, x: log_wmse(x, y_pred, y_true)
+                                           * args.log_wmse_loss_coef
+        )
+
     if 'spec_masked_loss' in args.loss:
         stft_config = {
             'n_fft': getattr(config.model, 'nfft', 4096),
@@ -354,9 +388,18 @@ def choice_loss(args: argparse.Namespace, config: ConfigDict) -> Callable[[Any, 
             'normalized': getattr(config.model, 'normalized', True)
         }
         loss_fns.append(
-            lambda y_, y: spec_masked_loss(y_, y, stft_config, q=config['training']['q'], coarse=config['training']['coarse_loss_clip']) * args.spec_masked_loss_coef)
-    def multi_loss(y_, y):
-        return sum(loss_fn(y_, y) for loss_fn in loss_fns)
+            lambda y_pred, y_true, x=None: spec_masked_loss(y_pred, y_true,
+                                                            stft_config,
+                                                            q=config['training']['q'],
+                                                            coarse=config['training']['coarse_loss_clip'])
+                                           * args.spec_masked_loss_coef
+        )
+
+    def multi_loss(y_pred: Any, y_true: Any, x: Optional[Any] = None) -> torch.Tensor:
+        total = 0
+        for fn in loss_fns:
+            total = total + fn(y_pred, y_true, x)
+        return total
 
     return multi_loss
 
@@ -430,7 +473,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
                     loss = loss.mean()
             else:
                 y_ = model(x)
-                loss = multi_loss(y_, y)
+                loss = multi_loss(y_, y, x)
 
         loss /= gradient_accumulation_steps
         scaler.scale(loss).backward()
