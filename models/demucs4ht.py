@@ -17,7 +17,8 @@ from torch.nn import functional as F
 from fractions import Fraction
 from einops import rearrange
 
-from demucs.transformer import CrossTransformerEncoder
+#from demucs.transformer import CrossTransformerEncoder
+from custom_updates.CustomCrossTransformerEncoder import CrossTransformerEncoder
 
 from demucs.demucs import rescale_module
 from demucs.states import capture_init
