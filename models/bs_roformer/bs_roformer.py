@@ -6,6 +6,10 @@ from torch.nn import Module, ModuleList
 import torch.nn.functional as F
 
 from models.bs_roformer.attend import Attend
+try:
+    from models.bs_roformer.attend_sage import Attend as AttendSage
+except:
+    pass
 from torch.utils.checkpoint import checkpoint
 
 from beartype.typing import Tuple, Optional, List, Callable
@@ -82,7 +86,8 @@ class Attention(Module):
             dim_head=64,
             dropout=0.,
             rotary_embed=None,
-            flash=True
+            flash=True,
+            sage_attention=False,
     ):
         super().__init__()
         self.heads = heads
@@ -91,7 +96,10 @@ class Attention(Module):
 
         self.rotary_embed = rotary_embed
 
-        self.attend = Attend(flash=flash, dropout=dropout)
+        if sage_attention:
+            self.attend = AttendSage(flash=flash, dropout=dropout)
+        else:
+            self.attend = Attend(flash=flash, dropout=dropout)
 
         self.norm = RMSNorm(dim)
         self.to_qkv = nn.Linear(dim, dim_inner * 3, bias=False)
@@ -135,7 +143,8 @@ class LinearAttention(Module):
             heads=8,
             scale=8,
             flash=False,
-            dropout=0.
+            dropout=0.,
+            sage_attention=False,
     ):
         super().__init__()
         dim_inner = dim_head * heads
@@ -148,11 +157,18 @@ class LinearAttention(Module):
 
         self.temperature = nn.Parameter(torch.ones(heads, 1, 1))
 
-        self.attend = Attend(
-            scale=scale,
-            dropout=dropout,
-            flash=flash
-        )
+        if sage_attention:
+            self.attend = AttendSage(
+                scale=scale,
+                dropout=dropout,
+                flash=flash
+            )
+        else:
+            self.attend = Attend(
+                scale=scale,
+                dropout=dropout,
+                flash=flash
+            )
 
         self.to_out = nn.Sequential(
             Rearrange('b h d n -> b n (h d)'),
@@ -189,17 +205,32 @@ class Transformer(Module):
             norm_output=True,
             rotary_embed=None,
             flash_attn=True,
-            linear_attn=False
+            linear_attn=False,
+            sage_attention=False,
     ):
         super().__init__()
         self.layers = ModuleList([])
 
         for _ in range(depth):
             if linear_attn:
-                attn = LinearAttention(dim=dim, dim_head=dim_head, heads=heads, dropout=attn_dropout, flash=flash_attn)
+                attn = LinearAttention(
+                    dim=dim,
+                    dim_head=dim_head,
+                    heads=heads,
+                    dropout=attn_dropout,
+                    flash=flash_attn,
+                    sage_attention=sage_attention
+                )
             else:
-                attn = Attention(dim=dim, dim_head=dim_head, heads=heads, dropout=attn_dropout,
-                                 rotary_embed=rotary_embed, flash=flash_attn)
+                attn = Attention(
+                    dim=dim,
+                    dim_head=dim_head,
+                    heads=heads,
+                    dropout=attn_dropout,
+                    rotary_embed=rotary_embed,
+                    flash=flash_attn,
+                    sage_attention=sage_attention
+                )
 
             self.layers.append(ModuleList([
                 attn,
@@ -360,6 +391,7 @@ class BSRoformer(Module):
             mlp_expansion_factor=4,
             use_torch_checkpoint=False,
             skip_connection=False,
+            sage_attention=False,
     ):
         super().__init__()
 
@@ -371,6 +403,9 @@ class BSRoformer(Module):
 
         self.layers = ModuleList([])
 
+        if sage_attention:
+            print("Use Sage Attention")
+
         transformer_kwargs = dict(
             dim=dim,
             heads=heads,
@@ -378,7 +413,8 @@ class BSRoformer(Module):
             attn_dropout=attn_dropout,
             ff_dropout=ff_dropout,
             flash_attn=flash_attn,
-            norm_output=False
+            norm_output=False,
+            sage_attention=sage_attention,
         )
 
         time_rotary_embed = RotaryEmbedding(dim=dim_head)

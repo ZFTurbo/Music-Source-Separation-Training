@@ -1,0 +1,197 @@
+audio:
+  chunk_size: 485100
+  dim_f: 1024
+  dim_t: 801 # don't work (use in model)
+  hop_length: 441 # don't work (use in model)
+  n_fft: 2048
+  num_channels: 2
+  sample_rate: 44100
+  min_mean_abs: 0.000
+
+model:
+  dim: 384
+  depth: 8
+  stereo: true
+  num_stems: 4
+  time_transformer_depth: 1
+  freq_transformer_depth: 1
+  linear_transformer_depth: 0
+  freqs_per_bands: !!python/tuple
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+    - 4
+    - 4
+    - 4
+    - 4
+    - 4
+    - 4
+    - 4
+    - 4
+    - 4
+    - 4
+    - 4
+    - 4
+    - 12
+    - 12
+    - 12
+    - 12
+    - 12
+    - 12
+    - 12
+    - 12
+    - 24
+    - 24
+    - 24
+    - 24
+    - 24
+    - 24
+    - 24
+    - 24
+    - 48
+    - 48
+    - 48
+    - 48
+    - 48
+    - 48
+    - 48
+    - 48
+    - 128
+    - 129
+  dim_head: 64
+  heads: 8
+  attn_dropout: 0.1
+  ff_dropout: 0.1
+  flash_attn: true
+  dim_freqs_in: 1025
+  stft_n_fft: 2048
+  stft_hop_length: 441
+  stft_win_length: 2048
+  stft_normalized: false
+  mask_estimator_depth: 2
+  multi_stft_resolution_loss_weight: 1.0
+  multi_stft_resolutions_window_sizes: !!python/tuple
+  - 4096
+  - 2048
+  - 1024
+  - 512
+  - 256
+  multi_stft_hop_size: 147
+  multi_stft_normalized: False
+  mlp_expansion_factor: 2
+  use_torch_checkpoint: False # it allows to greatly reduce GPU memory consumption during training (not fully tested)
+  skip_connection: False # Enable skip connection between transformer blocks - can solve problem with gradients and probably faster training
+  sage_attention: True
+
+training:
+  batch_size: 1
+  gradient_accumulation_steps: 1
+  grad_clip: 0
+  instruments: ['drums', 'bass', 'other', 'vocals']
+  patience: 3
+  reduce_factor: 0.95
+  target_instrument: null
+  num_epochs: 1000
+  num_steps: 1000
+  augmentation: false # enable augmentations by audiomentations and pedalboard
+  augmentation_type: simple1
+  use_mp3_compress: false # Deprecated
+  augmentation_mix: true # Mix several stems of the same type with some probability
+  augmentation_loudness: true # randomly change loudness of each stem
+  augmentation_loudness_type: 1 # Type 1 or 2
+  augmentation_loudness_min: 0.5
+  augmentation_loudness_max: 1.5
+  q: 0.95
+  coarse_loss_clip: true
+  ema_momentum: 0.999
+  # optimizer: prodigy
+  optimizer: adam
+  # lr: 1.0
+  lr: 1.0e-5
+  other_fix: false # it's needed for checking on multisong dataset if other is actually instrumental
+  use_amp: true # enable or disable usage of mixed precision (float16) - usually it must be true
+
+augmentations:
+  enable: true # enable or disable all augmentations (to fast disable if needed)
+  loudness: true # randomly change loudness of each stem on the range (loudness_min; loudness_max)
+  loudness_min: 0.5
+  loudness_max: 1.5
+  mixup: true # mix several stems of same type with some probability (only works for dataset types: 1, 2, 3)
+  mixup_probs: !!python/tuple # 2 additional stems of the same type (1st with prob 0.2, 2nd with prob 0.02)
+    - 0.2
+    - 0.02
+  mixup_loudness_min: 0.5
+  mixup_loudness_max: 1.5
+
+  all:
+    channel_shuffle: 0.5 # Set 0 or lower to disable
+    random_inverse: 0.1 # inverse track (better lower probability)
+    random_polarity: 0.5 # polarity change (multiply waveform to -1)
+
+  vocals:
+      pitch_shift: 0.1
+      pitch_shift_min_semitones: -5
+      pitch_shift_max_semitones: 5
+      seven_band_parametric_eq: 0.1
+      seven_band_parametric_eq_min_gain_db: -9
+      seven_band_parametric_eq_max_gain_db: 9
+      tanh_distortion: 0.1
+      tanh_distortion_min: 0.1
+      tanh_distortion_max: 0.7
+  bass:
+    pitch_shift: 0.1
+    pitch_shift_min_semitones: -2
+    pitch_shift_max_semitones: 2
+    seven_band_parametric_eq: 0.1
+    seven_band_parametric_eq_min_gain_db: -3
+    seven_band_parametric_eq_max_gain_db: 6
+    tanh_distortion: 0.1
+    tanh_distortion_min: 0.1
+    tanh_distortion_max: 0.5
+  drums:
+    pitch_shift: 0.1
+    pitch_shift_min_semitones: -5
+    pitch_shift_max_semitones: 5
+    seven_band_parametric_eq: 0.1
+    seven_band_parametric_eq_min_gain_db: -9
+    seven_band_parametric_eq_max_gain_db: 9
+    tanh_distortion: 0.1
+    tanh_distortion_min: 0.1
+    tanh_distortion_max: 0.6
+  other:
+    pitch_shift: 0.1
+    pitch_shift_min_semitones: -4
+    pitch_shift_max_semitones: 4
+    gaussian_noise: 0.1
+    gaussian_noise_min_amplitude: 0.001
+    gaussian_noise_max_amplitude: 0.015
+    time_stretch: 0.1
+    time_stretch_min_rate: 0.8
+    time_stretch_max_rate: 1.25
+
+
+inference:
+  batch_size: 2
+  dim_t: 1101
+  num_overlap: 2
