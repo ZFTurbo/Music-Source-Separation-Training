@@ -1,8 +1,7 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from functools import partial
-from utils import prefer_target_instrument
+from utils.model_utils import prefer_target_instrument
 
 class STFT:
     def __init__(self, config):

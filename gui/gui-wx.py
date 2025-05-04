@@ -127,8 +127,8 @@ class MainFrame(wx.Frame):
         self.Center()
 
         # Set Poppins font for the entire application
-        font_path = "gui/Poppins Regular 400.ttf"
-        bold_font_path = "gui/Poppins Bold 700.ttf"
+        font_path = "Poppins Regular 400.ttf"
+        bold_font_path = "Poppins Bold 700.ttf"
         wx.Font.AddPrivateFont(font_path)
         wx.Font.AddPrivateFont(bold_font_path)
         self.font = wx.Font(9, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL, False, "Poppins")

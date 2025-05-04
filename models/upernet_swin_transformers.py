@@ -2,7 +2,7 @@ from functools import partial
 import torch
 import torch.nn as nn
 from transformers import UperNetForSemanticSegmentation
-from utils import prefer_target_instrument
+from utils.model_utils import prefer_target_instrument
 
 class STFT:
     def __init__(self, config):
