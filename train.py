@@ -190,6 +190,7 @@ def train_model(args: argparse.Namespace) -> None:
 
     print(
         f"Instruments: {config.training.instruments}\n"
+        f"Losses for training: {args.loss}\n"
         f"Metrics for training: {args.metrics}. Metric for scheduler: {args.metric_for_scheduler}\n"
         f"Patience: {config.training.patience} "
         f"Reduce factor: {config.training.reduce_factor}\n"

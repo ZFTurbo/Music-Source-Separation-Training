@@ -34,6 +34,29 @@ def masked_loss(y_: torch.Tensor, y: torch.Tensor, q: float, coarse: bool = True
     return (loss * mask).mean()
 
 
+def spec_rmse_loss(estimate, sources, stft_config):
+    _, _, _, lenc = estimate.shape
+    spec_estimate = estimate.view(-1, lenc)
+    spec_sources = sources.view(-1, lenc)
+
+    spec_estimate = torch.stft(spec_estimate, **stft_config, return_complex=True)
+    spec_sources = torch.stft(spec_sources, **stft_config, return_complex=True)
+
+    spec_estimate = torch.view_as_real(spec_estimate)
+    spec_sources = torch.view_as_real(spec_sources)
+
+    new_shape = estimate.shape[:-1] + spec_estimate.shape[-3:]
+    spec_estimate = spec_estimate.view(*new_shape)
+    spec_sources = spec_sources.view(*new_shape)
+
+    loss = F.mse_loss(spec_estimate, spec_sources, reduction='none')
+
+    dims = tuple(range(2, loss.dim()))
+    loss = loss.mean(dims).sqrt().mean(dim=(0, 1))
+
+    return loss
+
+
 def spec_masked_loss(estimate, sources, stft_config, q: float = 0.9, coarse: bool = True):
     _, _, _, lenc = estimate.shape
     spec_estimate = estimate.view(-1, lenc)
@@ -83,7 +106,6 @@ def choice_loss(args: argparse.Namespace, config: ConfigDict) -> Callable[..., t
         A loss function that can be applied to the predicted and ground truth tensors.
     """
 
-    print(f'Losses for training: {args.loss}')
     loss_fns = []
 
     if 'masked_loss' in args.loss:
@@ -116,9 +138,9 @@ def choice_loss(args: argparse.Namespace, config: ConfigDict) -> Callable[..., t
 
     if 'log_wmse_loss' in args.loss:
         log_wmse = LogWMSE(
-            audio_length=getattr(config.audio, 'chunk_size', 485100)
-                         // getattr(config.audio, 'sample_rate', 44100),
-            sample_rate=getattr(config.audio, 'sample_rate', 44100),
+            audio_length=int(getattr(config.audio, 'chunk_size', 485100))
+                         // int(getattr(config.audio, 'sample_rate', 44100)),
+            sample_rate=int(getattr(config.audio, 'sample_rate', 44100)),
             return_as_loss=True,
             bypass_filter=getattr(config.training, 'bypass_filter', False),
         )
@@ -126,6 +148,18 @@ def choice_loss(args: argparse.Namespace, config: ConfigDict) -> Callable[..., t
             lambda y_pred, y_true, x: log_wmse(x, y_pred, y_true)
                                            * args.log_wmse_loss_coef
         )
+
+    if 'spec_rmse_loss' in args.loss:
+        stft_config = {
+            'n_fft': getattr(config.model, 'nfft', 4096),
+            'hop_length': getattr(config.model, 'hop_size', 1024),
+            'win_length': getattr(config.model, 'win_size', 4096),
+            'center': True,
+            'normalized': getattr(config.model, 'normalized', True)
+        }
+        loss_fns.append(
+            lambda y_pred, y_true, x=None: spec_rmse_loss(y_pred, y_true, stft_config) *
+                                           args.spec_rmse_loss_coef)
 
     if 'spec_masked_loss' in args.loss:
         stft_config = {

@@ -57,7 +57,7 @@ def create_test_config(original_config_path: str, new_config_path: str, model_ty
     -------
     None
     """
-    from utils.model_utils import load_config
+    from utils.settings import load_config
 
     config = load_config(model_type=model_type, config_path=original_config_path)
 

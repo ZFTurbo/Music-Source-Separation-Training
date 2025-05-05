@@ -216,8 +216,12 @@ def process_audio_files(
 
             if store_dir:
                 os.makedirs(store_dir, exist_ok=True)
-                out_wav_name = f"{store_dir}/{os.path.basename(folder)}_{instr}.wav"
-                sf.write(out_wav_name, estimates.T, sr, subtype='FLOAT')
+                if np.abs(estimates).max() <= 1.0:
+                    out_wav_name = f"{store_dir}/{os.path.basename(folder)}_{instr}.flac"
+                    sf.write(out_wav_name, estimates.T, sr, subtype='PCM_16')
+                else:
+                    out_wav_name = f"{store_dir}/{os.path.basename(folder)}_{instr}.wav"
+                    sf.write(out_wav_name, estimates.T, sr, subtype='FLOAT')
                 if args.draw_spectro > 0:
                     out_img_name = f"{store_dir}/{os.path.basename(folder)}_{instr}.jpg"
                     draw_spectrogram(estimates.T, sr, args.draw_spectro, out_img_name)

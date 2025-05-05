@@ -9,6 +9,12 @@ import argparse
 from typing import Dict, List, Tuple, Union
 from omegaconf import OmegaConf
 from ml_collections import ConfigDict
+import torch.distributed as dist
+import loralib as lora
+from torch.optim import Adam, AdamW, SGD, RAdam, RMSprop
+from torch.utils.data import DataLoader
+from torch.utils.data.distributed import DistributedSampler
+from utils.dataset import MSSDataset
 
 
 def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
@@ -37,7 +43,8 @@ def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser.add_argument("--pin_memory", action='store_true', help="dataloader pin_memory")
     parser.add_argument("--seed", type=int, default=0, help="random seed")
     parser.add_argument("--device_ids", nargs='+', type=int, default=[0], help='list of gpu ids')
-    parser.add_argument("--loss", type=str, nargs='+', choices=['masked_loss', 'mse_loss', 'l1_loss', 'multistft_loss', 'spec_masked_loss', 'log_wmse_loss'],
+    parser.add_argument("--loss", type=str, nargs='+', choices=['masked_loss', 'mse_loss', 'l1_loss',
+                        'multistft_loss', 'spec_masked_loss', 'spec_rmse_loss_coef', 'log_wmse_loss'],
                         default=['masked_loss'], help="List of loss functions to use")
     parser.add_argument("--masked_loss_coef", type=float, default=1., help="Coef for loss")
     parser.add_argument("--mse_loss_coef", type=float, default=1., help="Coef for loss")
@@ -45,6 +52,7 @@ def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser.add_argument("--log_wmse_loss_coef", type=float, default=1., help="Coef for loss")
     parser.add_argument("--multistft_loss_coef", type=float, default=0.001, help="Coef for loss")
     parser.add_argument("--spec_masked_loss_coef", type=float, default=1, help="Coef for loss")
+    parser.add_argument("--spec_rmse_loss_coef", type=float, default=1, help="Coef for loss")
     parser.add_argument("--wandb_key", type=str, default='', help='wandb API Key')
     parser.add_argument("--pre_valid", action='store_true', help='Run validation before training')
     parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"],
@@ -55,6 +63,11 @@ def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
                                  'fullness'], help='Metric which will be used for scheduler.')
     parser.add_argument("--train_lora", action='store_true', help="Train with LoRA")
     parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to LoRA weights")
+    parser.add_argument("--save_metrics", action='store_true', help="Save metrics in csv file or not")
+    parser.add_argument("--each_metrics_in_name", action='store_true',
+                        help="Naming checkpoints consist only of vocal metric")
+    parser.add_argument("--more_metrics_wandb", action='store_true',
+                        help="Show metric_for_scheduler for all instuments")
 
     if dict_args is not None:
         args = parser.parse_args([])
@@ -92,13 +105,13 @@ def parse_args_valid(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser.add_argument("--draw_spectro", type=float, default=0,
                         help="If --store_dir is set then code will generate spectrograms for resulted stems as well."
                              " Value defines for how many seconds os track spectrogram will be generated.")
-    parser.add_argument("--device_ids", nargs='+', default=[0], help='List of gpu ids')
+    parser.add_argument("--device_ids", nargs='+', type=int, default=[0], help='List of gpu ids')
     parser.add_argument("--num_workers", type=int, default=0, help="Dataloader num_workers")
     parser.add_argument("--pin_memory", action='store_true', help="Dataloader pin_memory")
     parser.add_argument("--extension", type=str, default='wav', help="Choose extension for validation")
     parser.add_argument("--use_tta", action='store_true',
                         help="Flag adds test time augmentation during inference (polarity and channel inverse)."
-                        "While this triples the runtime, it reduces noise and slightly improves prediction quality.")
+                             "While this triples the runtime, it reduces noise and slightly improves prediction quality.")
     parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"],
                         choices=['sdr', 'l1_freq', 'si_sdr', 'neg_log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
                                  'fullness'], help='List of metrics to use.')
@@ -293,7 +306,7 @@ def manual_seed(seed: int) -> None:
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)  # if multi-GPU
-    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.deterministic = False
     os.environ["PYTHONHASHSEED"] = str(seed)
 
 
@@ -388,3 +401,149 @@ def write_results_in_file(store_dir: str, logs: List[str]) -> None:
             out.write(item + "\n")
 
 
+def setup_ddp(rank: int, world_size: int):
+    """Initialize process DDP."""
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '12355'  # We can change and use another
+    os.environ["USE_LIBUV"] = "0"
+    try:
+        dist.init_process_group("nccl", rank=rank, world_size=world_size)
+    except:
+        print(f'NCCL are not available. Using "gloo" backend.')
+        dist.init_process_group("gloo", rank=rank, world_size=world_size)
+
+    torch.cuda.set_device(rank)
+
+
+def cleanup_ddp():
+    """Finishing DDP process."""
+    dist.destroy_process_group()
+
+
+def initialize_environment_ddp(rank: int, world_size: int, seed: int=0, resuls_path: str=None) -> None:
+
+    setup_ddp(rank, world_size)
+    manual_seed(seed)
+
+    try:
+        torch.multiprocessing.set_start_method('spawn', force=True)  # force=True prevent errors
+    except RuntimeError as e:
+        if "context has already been set" not in str(e):
+            raise
+    if not(resuls_path is None):
+        os.makedirs(resuls_path, exist_ok=True)
+
+def wandb_init_ddp(args: argparse.Namespace, config: Dict, batch_size: int) -> None:
+    """
+    Initialize the Weights & Biases (wandb) logging system.
+
+    Args:
+        args: Parsed command-line arguments containing the wandb key.
+        config: Configuration dictionary for the experiment.
+        device_ids: List of GPU device IDs used for training.
+        batch_size: Batch size for training.
+    """
+    if dist.get_rank() == 0:
+        if not args.wandb_key or args.wandb_key.strip() == '':
+            print("WandB key is not provided. Disabling WandB logging.")
+            wandb.init(mode='disabled')
+        else:
+            try:
+                wandb.login(key=args.wandb_key)
+                wandb.init(project='msst',
+                           config={'config': config, 'args': args, 'device_ids': args.device_ids,
+                                   'batch_size': batch_size})
+            except Exception as e:
+                print(f"Error initializing WandB: {e}")
+                wandb.init(mode='disabled')
+
+
+def prepare_data_ddp(config: Dict, args: argparse.Namespace, batch_size: int, rank: int, world_size: int) -> DataLoader:
+    trainset = MSSDataset(
+        config,
+        args.data_path,
+        batch_size=batch_size, # to use self.config.training.num_steps without reduction
+        metadata_path=os.path.join(args.results_path, f'metadata_{args.dataset_type}.pkl'),
+        dataset_type=args.dataset_type,
+    )
+
+    sampler = DistributedSampler(trainset, num_replicas=world_size, rank=rank, shuffle=True)
+
+    train_loader = DataLoader(
+        trainset,
+        batch_size=batch_size,
+        sampler=sampler,
+        num_workers=args.num_workers,
+        pin_memory=args.pin_memory
+    )
+    return train_loader
+
+
+def get_optimizer_ddp(config: ConfigDict, model: torch.nn.Module) -> torch.optim.Optimizer:
+    """
+    Initializes an optimizer based on the configuration.
+
+    Args:
+        config: Configuration object containing training parameters.
+        model: PyTorch model whose parameters will be optimized.
+
+    Returns:
+        A PyTorch optimizer object configured based on the specified settings.
+    """
+
+    optim_params = dict()
+    if 'optimizer' in config:
+        optim_params = dict(config['optimizer'])
+        if dist.get_rank() == 0:
+            print(f'Optimizer params from config:\n{optim_params}')
+
+    name_optimizer = getattr(config.training, 'optimizer',
+                             'No optimizer in config')
+
+    if name_optimizer == 'adam':
+        optimizer = Adam(model.parameters(), lr=config.training.lr, **optim_params)
+    elif name_optimizer == 'adamw':
+        optimizer = AdamW(model.parameters(), lr=config.training.lr, **optim_params)
+    elif name_optimizer == 'radam':
+        optimizer = RAdam(model.parameters(), lr=config.training.lr, **optim_params)
+    elif name_optimizer == 'rmsprop':
+        optimizer = RMSprop(model.parameters(), lr=config.training.lr, **optim_params)
+    elif name_optimizer == 'prodigy':
+        from prodigyopt import Prodigy
+        # you can choose weight decay value based on your problem, 0 by default
+        # We recommend using lr=1.0 (default) for all networks.
+        optimizer = Prodigy(model.parameters(), lr=config.training.lr, **optim_params)
+    elif name_optimizer == 'adamw8bit':
+        import bitsandbytes as bnb
+        optimizer = bnb.optim.AdamW8bit(model.parameters(), lr=config.training.lr, **optim_params)
+    elif name_optimizer == 'sgd':
+        if dist.get_rank() == 0:
+            print('Use SGD optimizer')
+        optimizer = SGD(model.parameters(), lr=config.training.lr, **optim_params)
+    else:
+        if dist.get_rank() == 0:
+            print(f'Unknown optimizer: {name_optimizer}')
+        exit()
+    return optimizer
+
+
+def save_weights_ddp(store_path: str, model: torch.nn.Module, train_lora: bool) -> None:
+    """
+    Save model's weights. Save only if rank==0.
+
+    Args:
+        store_path (str): Path to save.
+        model (torch.nn.Module): Your model to save.
+        train_lora (bool): If we used LoRA.
+    """
+    if dist.get_rank() == 0:  # Только главный процесс сохраняет
+        if train_lora:
+            torch.save(lora.lora_state_dict(model), store_path)
+        else:
+            torch.save(model.module.state_dict(), store_path)  # model.module всегда нужен в DDP
+
+
+def save_last_weights_ddp(args: argparse.Namespace, model: torch.nn.Module) -> None:
+
+    store_path = f'{args.results_path}/last_{args.model_type}.ckpt'
+    save_weights_ddp(store_path, model, args.train_lora)
