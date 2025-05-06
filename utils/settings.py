@@ -450,9 +450,11 @@ def wandb_init_ddp(args: argparse.Namespace, config: Dict, batch_size: int) -> N
         else:
             try:
                 wandb.login(key=args.wandb_key)
-                wandb.init(project='msst',
-                           config={'config': config, 'args': args, 'device_ids': args.device_ids,
-                                   'batch_size': batch_size})
+                wandb.init(
+                    project='msst',
+                    name=gen_wandb_name(args, config),
+                    config={'config': config, 'args': args, 'device_ids': args.device_ids, 'batch_size': batch_size}
+                )
             except Exception as e:
                 print(f"Error initializing WandB: {e}")
                 wandb.init(mode='disabled')
