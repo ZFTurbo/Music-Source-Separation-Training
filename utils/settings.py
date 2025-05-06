@@ -464,7 +464,7 @@ def prepare_data_ddp(config: Dict, args: argparse.Namespace, batch_size: int, ra
     trainset = MSSDataset(
         config,
         args.data_path,
-        batch_size=batch_size, # to use self.config.training.num_steps without reduction
+        batch_size=world_size * batch_size, # to use self.config.training.num_steps without reduction
         metadata_path=os.path.join(args.results_path, f'metadata_{args.dataset_type}.pkl'),
         dataset_type=args.dataset_type,
     )
