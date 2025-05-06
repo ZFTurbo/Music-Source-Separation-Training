@@ -1,427 +1,30 @@
 # coding: utf-8
 __author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
-__version__ = '1.0.4'
+__version__ = '1.0.5'
 
-import random
 import argparse
-
-from torch_log_wmse import LogWMSE
 from tqdm.auto import tqdm
-import os
-import time
 import torch
 import wandb
-import numpy as np
-import auraloss
 import torch.nn as nn
-from torch.optim import Adam, AdamW, SGD, RAdam, RMSprop
 from torch.utils.data import DataLoader
 from torch.cuda.amp.grad_scaler import GradScaler
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from ml_collections import ConfigDict
-import torch.nn.functional as F
-from typing import List, Tuple, Dict, Union, Callable, Any, Optional
-
-from dataset import MSSDataset
-from utils import get_model_from_config
-from valid import valid_multi_gpu, valid
-
-from utils import bind_lora_to_model, load_start_checkpoint
+from typing import List, Callable
 import loralib as lora
 
+from utils.audio_utils import prepare_data
+from utils.settings import parse_args_train, initialize_environment, wandb_init, get_model_from_config
+from utils.model_utils import bind_lora_to_model, load_start_checkpoint, save_weights, normalize_batch, \
+    initialize_model_and_device, get_optimizer, save_last_weights
+
+from utils.losses import choice_loss
+from valid import valid_multi_gpu, valid
+
+
 import warnings
-
 warnings.filterwarnings("ignore")
-
-
-def parse_args(dict_args: Union[Dict, None]) -> argparse.Namespace:
-    """
-    Parse command-line arguments for configuring the model, dataset, and training parameters.
-
-    Args:
-        dict_args: Dict of command-line arguments. If None, arguments will be parsed from sys.argv.
-
-    Returns:
-        Namespace object containing parsed arguments and their values.
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model_type", type=str, default='mdx23c',
-                        help="One of mdx23c, htdemucs, segm_models, mel_band_roformer, bs_roformer, swin_upernet, bandit")
-    parser.add_argument("--config_path", type=str, help="path to config file")
-    parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint to start training")
-    parser.add_argument("--results_path", type=str,
-                        help="path to folder where results will be stored (weights, metadata)")
-    parser.add_argument("--data_path", nargs="+", type=str, help="Dataset data paths. You can provide several folders.")
-    parser.add_argument("--dataset_type", type=int, default=1,
-                        help="Dataset type. Must be one of: 1, 2, 3 or 4. Details here: https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/dataset_types.md")
-    parser.add_argument("--valid_path", nargs="+", type=str,
-                        help="validation data paths. You can provide several folders.")
-    parser.add_argument("--num_workers", type=int, default=0, help="dataloader num_workers")
-    parser.add_argument("--pin_memory", action='store_true', help="dataloader pin_memory")
-    parser.add_argument("--seed", type=int, default=0, help="random seed")
-    parser.add_argument("--device_ids", nargs='+', type=int, default=[0], help='list of gpu ids')
-    parser.add_argument("--loss", type=str, nargs='+', choices=['masked_loss', 'mse_loss', 'l1_loss', 'multistft_loss', 'spec_masked_loss', 'log_wmse_loss'],
-                        default=['masked_loss'], help="List of loss functions to use")
-    parser.add_argument("--masked_loss_coef", type=float, default=1., help="Coef for loss")
-    parser.add_argument("--mse_loss_coef", type=float, default=1., help="Coef for loss")
-    parser.add_argument("--l1_loss_coef", type=float, default=1., help="Coef for loss")
-    parser.add_argument("--log_wmse_loss_coef", type=float, default=1., help="Coef for loss")
-    parser.add_argument("--multistft_loss_coef", type=float, default=0.001, help="Coef for loss")
-    parser.add_argument("--spec_masked_loss_coef", type=float, default=1, help="Coef for loss")
-    parser.add_argument("--wandb_key", type=str, default='', help='wandb API Key')
-    parser.add_argument("--pre_valid", action='store_true', help='Run validation before training')
-    parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"],
-                        choices=['sdr', 'l1_freq', 'si_sdr', 'log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
-                                 'fullness'], help='List of metrics to use.')
-    parser.add_argument("--metric_for_scheduler", default="sdr",
-                        choices=['sdr', 'l1_freq', 'si_sdr', 'log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
-                                 'fullness'], help='Metric which will be used for scheduler.')
-    parser.add_argument("--train_lora", action='store_true', help="Train with LoRA")
-    parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to LoRA weights")
-
-    if dict_args is not None:
-        args = parser.parse_args([])
-        args_dict = vars(args)
-        args_dict.update(dict_args)
-        args = argparse.Namespace(**args_dict)
-    else:
-        args = parser.parse_args()
-
-    if args.metric_for_scheduler not in args.metrics:
-        args.metrics += [args.metric_for_scheduler]
-
-    return args
-
-
-def manual_seed(seed: int) -> None:
-    """
-    Set the random seed for reproducibility across Python, NumPy, and PyTorch.
-
-    Args:
-        seed: The seed value to set.
-    """
-
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)  # if multi-GPU
-    torch.backends.cudnn.deterministic = True
-    os.environ["PYTHONHASHSEED"] = str(seed)
-
-
-def initialize_environment(seed: int, results_path: str) -> None:
-    """
-    Initialize the environment by setting the random seed, configuring PyTorch settings,
-    and creating the results directory.
-
-    Args:
-        seed: The seed value for reproducibility.
-        results_path: Path to the directory where results will be stored.
-    """
-
-    manual_seed(seed)
-    torch.backends.cudnn.deterministic = False
-    try:
-        torch.multiprocessing.set_start_method('spawn')
-    except Exception as e:
-        pass
-    os.makedirs(results_path, exist_ok=True)
-
-
-def gen_wandb_name(args, config):
-    instrum = '-'.join(config['training']['instruments'])
-    time_str = time.strftime("%Y-%m-%d")
-    name = '{}_[{}]_{}'.format(args.model_type, instrum, time_str)
-    return name
-
-
-def wandb_init(args: argparse.Namespace, config: Dict, device_ids: List[int], batch_size: int) -> None:
-    """
-    Initialize the Weights & Biases (wandb) logging system.
-
-    Args:
-        args: Parsed command-line arguments containing the wandb key.
-        config: Configuration dictionary for the experiment.
-        device_ids: List of GPU device IDs used for training.
-        batch_size: Batch size for training.
-    """
-
-    if args.wandb_key is None or args.wandb_key.strip() == '':
-        wandb.init(mode='disabled')
-    else:
-        wandb.login(key=args.wandb_key)
-        wandb.init(
-            project='msst',
-            name=gen_wandb_name(args, config),
-            config={'config': config, 'args': args, 'device_ids': device_ids, 'batch_size': batch_size }
-        )
-
-
-def prepare_data(config: Dict, args: argparse.Namespace, batch_size: int) -> DataLoader:
-    """
-    Prepare the training dataset and data loader.
-
-    Args:
-        config: Configuration dictionary for the dataset.
-        args: Parsed command-line arguments containing dataset paths and settings.
-        batch_size: Batch size for training.
-
-    Returns:
-        DataLoader object for the training dataset.
-    """
-
-    trainset = MSSDataset(
-        config,
-        args.data_path,
-        batch_size=batch_size,
-        metadata_path=os.path.join(args.results_path, f'metadata_{args.dataset_type}.pkl'),
-        dataset_type=args.dataset_type,
-    )
-
-    train_loader = DataLoader(
-        trainset,
-        batch_size=batch_size,
-        shuffle=True,
-        num_workers=args.num_workers,
-        pin_memory=args.pin_memory
-    )
-    return train_loader
-
-
-def initialize_model_and_device(model: torch.nn.Module, device_ids: List[int]) -> Tuple[Union[torch.device, str], torch.nn.Module]:
-    """
-    Initialize the model and assign it to the appropriate device (GPU or CPU).
-
-    Args:
-        model: The PyTorch model to be initialized.
-        device_ids: List of GPU device IDs to use for parallel processing.
-
-    Returns:
-        A tuple containing the device and the model moved to that device.
-    """
-
-    if torch.cuda.is_available():
-        if len(device_ids) <= 1:
-            device = torch.device(f'cuda:{device_ids[0]}')
-            model = model.to(device)
-        else:
-            device = torch.device(f'cuda:{device_ids[0]}')
-            model = nn.DataParallel(model, device_ids=device_ids).to(device)
-    else:
-        device = 'cpu'
-        model = model.to(device)
-        print("CUDA is not available. Running on CPU.")
-
-    return device, model
-
-
-def get_optimizer(config: ConfigDict, model: torch.nn.Module) -> torch.optim.Optimizer:
-    """
-    Initializes an optimizer based on the configuration.
-
-    Args:
-        config: Configuration object containing training parameters.
-        model: PyTorch model whose parameters will be optimized.
-
-    Returns:
-        A PyTorch optimizer object configured based on the specified settings.
-    """
-
-    optim_params = dict()
-    if 'optimizer' in config:
-        optim_params = dict(config['optimizer'])
-        print(f'Optimizer params from config:\n{optim_params}')
-
-    name_optimizer = getattr(config.training, 'optimizer',
-                             'No optimizer in config')
-
-    if name_optimizer == 'adam':
-        optimizer = Adam(model.parameters(), lr=config.training.lr, **optim_params)
-    elif name_optimizer == 'adamw':
-        optimizer = AdamW(model.parameters(), lr=config.training.lr, **optim_params)
-    elif name_optimizer == 'radam':
-        optimizer = RAdam(model.parameters(), lr=config.training.lr, **optim_params)
-    elif name_optimizer == 'rmsprop':
-        optimizer = RMSprop(model.parameters(), lr=config.training.lr, **optim_params)
-    elif name_optimizer == 'prodigy':
-        from prodigyopt import Prodigy
-        # you can choose weight decay value based on your problem, 0 by default
-        # We recommend using lr=1.0 (default) for all networks.
-        optimizer = Prodigy(model.parameters(), lr=config.training.lr, **optim_params)
-    elif name_optimizer == 'adamw8bit':
-        import bitsandbytes as bnb
-        optimizer = bnb.optim.AdamW8bit(model.parameters(), lr=config.training.lr, **optim_params)
-    elif name_optimizer == 'sgd':
-        print('Use SGD optimizer')
-        optimizer = SGD(model.parameters(), lr=config.training.lr, **optim_params)
-    else:
-        print(f'Unknown optimizer: {name_optimizer}')
-        exit()
-    return optimizer
-
-
-def multistft_loss(y_: torch.Tensor, y: torch.Tensor,
-                   loss_multistft: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]) -> torch.Tensor:
-    if len(y_.shape) == 4:
-        y1_ = y_.reshape(y_.shape[0], y_.shape[1] * y_.shape[2], y_.shape[3])
-    elif len(y_.shape) == 3:
-        y1_ = y_
-    if len(y.shape) == 4:
-        y1 = y.reshape(y.shape[0], y.shape[1] * y.shape[2], y.shape[3])
-    elif len(y_.shape) == 3:
-        y1 = y
-    if len(y_.shape) not in [3, 4]:
-        raise ValueError(f"Invalid shape for predicted array: {y_.shape}. Expected 3 or 4 dimensions.")
-    return loss_multistft(y1_, y1)
-
-
-def masked_loss(y_: torch.Tensor, y: torch.Tensor, q: float, coarse: bool = True) -> torch.Tensor:
-    loss = torch.nn.MSELoss(reduction='none')(y_, y).transpose(0, 1)
-    if coarse:
-        loss = loss.mean(dim=(-1, -2))
-    loss = loss.reshape(loss.shape[0], -1)
-    quantile = torch.quantile(loss.detach(), q, interpolation='linear', dim=1, keepdim=True)
-    mask = loss < quantile
-    return (loss * mask).mean()
-
-
-def spec_masked_loss(estimate, sources, stft_config, q: float = 0.9, coarse: bool = True):
-    _, _, _, lenc = estimate.shape
-    spec_estimate = estimate.view(-1, lenc)
-    spec_sources = sources.view(-1, lenc)
-
-    spec_estimate = torch.stft(spec_estimate, **stft_config, return_complex=True)
-    spec_sources = torch.stft(spec_sources, **stft_config, return_complex=True)
-
-    spec_estimate = torch.view_as_real(spec_estimate)
-    spec_sources = torch.view_as_real(spec_sources)
-
-    new_shape = estimate.shape[:-1] + spec_estimate.shape[-3:]
-    spec_estimate = spec_estimate.view(*new_shape)
-    spec_sources = spec_sources.view(*new_shape)
-
-    loss = F.mse_loss(spec_estimate, spec_sources, reduction='none')
-
-    if coarse:
-        loss = loss.mean(dim=(-3, -2))
-
-    loss = loss.reshape(loss.shape[0], -1)
-
-    quantile = torch.quantile(
-        loss.detach(),
-        q,
-        interpolation='linear',
-        dim=1,
-        keepdim=True
-    )
-
-    mask = loss < quantile
-
-    masked_loss = (loss * mask).mean()
-
-    return masked_loss
-
-
-def choice_loss(args: argparse.Namespace, config: ConfigDict) -> Callable[..., torch.Tensor]:
-    """
-    Select and return the appropriate loss function based on the configuration and arguments.
-
-    Args:
-        args: Parsed command-line arguments containing flags for different loss functions.
-        config: Configuration object containing loss settings and parameters.
-
-    Returns:
-        A loss function that can be applied to the predicted and ground truth tensors.
-    """
-
-    print(f'Losses for training: {args.loss}')
-    loss_fns = []
-
-    if 'masked_loss' in args.loss:
-        loss_fns.append(
-            lambda y_pred, y_true, x=None:
-            masked_loss(y_pred, y_true,
-                        q=config['training']['q'],
-                        coarse=config['training']['coarse_loss_clip'])
-            * args.masked_loss_coef
-        )
-
-    if 'mse_loss' in args.loss:
-        mse = nn.MSELoss()
-        loss_fns.append(
-            lambda y_pred, y_true, x=None: mse(y_pred, y_true) * args.mse_loss_coef
-        )
-
-    if 'l1_loss' in args.loss:
-        loss_fns.append(
-            lambda y_pred, y_true, x=None: F.l1_loss(y_pred, y_true) * args.l1_loss_coef
-        )
-
-    if 'multistft_loss' in args.loss:
-        loss_options = dict(config.get('loss_multistft', {}))
-        stft_loss = auraloss.freq.MultiResolutionSTFTLoss(**loss_options)
-        loss_fns.append(
-            lambda y_pred, y_true, x=None: multistft_loss(y_pred, y_true, stft_loss)
-                                           * args.multistft_loss_coef
-        )
-
-    if 'log_wmse_loss' in args.loss:
-        log_wmse = LogWMSE(
-            audio_length=getattr(config.audio, 'chunk_size', 485100)
-                         // getattr(config.audio, 'sample_rate', 44100),
-            sample_rate=getattr(config.audio, 'sample_rate', 44100),
-            return_as_loss=True,
-            bypass_filter=getattr(config.training, 'bypass_filter', False),
-        )
-        loss_fns.append(
-            lambda y_pred, y_true, x: log_wmse(x, y_pred, y_true)
-                                           * args.log_wmse_loss_coef
-        )
-
-    if 'spec_masked_loss' in args.loss:
-        stft_config = {
-            'n_fft': getattr(config.model, 'nfft', 4096),
-            'hop_length': getattr(config.model, 'hop_size', 1024),
-            'win_length': getattr(config.model, 'win_size', 4096),
-            'center': True,
-            'normalized': getattr(config.model, 'normalized', True)
-        }
-        loss_fns.append(
-            lambda y_pred, y_true, x=None: spec_masked_loss(y_pred, y_true,
-                                                            stft_config,
-                                                            q=config['training']['q'],
-                                                            coarse=config['training']['coarse_loss_clip'])
-                                           * args.spec_masked_loss_coef
-        )
-
-    def multi_loss(y_pred: Any, y_true: Any, x: Optional[Any] = None) -> torch.Tensor:
-        total = 0
-        for fn in loss_fns:
-            total = total + fn(y_pred, y_true, x)
-        return total
-
-    return multi_loss
-
-
-def normalize_batch(x: torch.Tensor, y: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-    """
-    Normalize a batch of tensors (x and y) by subtracting the mean and dividing by the standard deviation.
-
-    Args:
-        x: Tensor to normalize.
-        y: Tensor to normalize (same as x, typically).
-
-    Returns:
-        A tuple of normalized tensors (x, y).
-    """
-
-    mean = x.mean()
-    std = x.std()
-    if std != 0:
-        x = (x - mean) / std
-        y = (y - mean) / std
-    return x, y
 
 
 def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.Namespace, optimizer: torch.optim.Optimizer,
@@ -496,36 +99,6 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
     wandb.log({'train_loss': loss_val / total, 'epoch': epoch, 'learning_rate': optimizer.param_groups[0]['lr']})
 
 
-def save_weights(store_path, model, device_ids, train_lora):
-
-    if train_lora:
-        torch.save(lora.lora_state_dict(model), store_path)
-    else:
-        state_dict = model.state_dict() if len(device_ids) <= 1 else model.module.state_dict()
-        torch.save(
-            state_dict,
-            store_path
-        )
-
-
-def save_last_weights(args: argparse.Namespace, model: torch.nn.Module, device_ids: List[int]) -> None:
-    """
-    Save the model's state_dict to a file for later use.
-
-    Args:
-        args: Command-line arguments containing the results path and model type.
-        model: The model whose weights will be saved.
-        device_ids: List of GPU device IDs if using multiple GPUs.
-
-    Returns:
-        None
-    """
-
-    store_path = f'{args.results_path}/last_{args.model_type}.ckpt'
-    train_lora = args.train_lora
-    save_weights(store_path, model, device_ids, train_lora)
-
-
 def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, config: ConfigDict,
                           device: torch.device, device_ids: List[int], best_metric: float,
                           epoch: int, scheduler: torch.optim.lr_scheduler._LRScheduler) -> float:
@@ -577,7 +150,7 @@ def train_model(args: argparse.Namespace) -> None:
         None
     """
 
-    args = parse_args(args)
+    args = parse_args_train(args)
 
     initialize_environment(args.seed, args.results_path)
     model, config = get_model_from_config(args.model_type, args.config_path)
@@ -617,6 +190,7 @@ def train_model(args: argparse.Namespace) -> None:
 
     print(
         f"Instruments: {config.training.instruments}\n"
+        f"Losses for training: {args.loss}\n"
         f"Metrics for training: {args.metrics}. Metric for scheduler: {args.metric_for_scheduler}\n"
         f"Patience: {config.training.patience} "
         f"Reduce factor: {config.training.reduce_factor}\n"

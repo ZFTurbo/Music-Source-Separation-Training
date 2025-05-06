@@ -18,8 +18,8 @@ warnings.filterwarnings("ignore", category=UserWarning, message="TypedStorage is
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from utils import get_model_from_config, load_start_checkpoint, demix, apply_tta
-
+from utils.model_utils import load_start_checkpoint, demix, apply_tta
+from utils.settings import get_model_from_config
 RATE: int = 44100  # Sampling rate (44.1 kHz)
 FORMAT: int = pyaudio.paFloat32  # Audio format
 

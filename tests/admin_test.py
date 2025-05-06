@@ -1,7 +1,6 @@
-import shutil
 from test import test_settings
 from scripts.redact_config import redact_config
-from utils import load_config
+from utils.settings import load_config
 from pathlib import Path
 import os
 import numpy as np

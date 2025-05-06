@@ -3,7 +3,7 @@ import os
 import sys
 import argparse
 from omegaconf import OmegaConf
-from typing import Union, List, Dict
+from typing import Union, Dict
 from ml_collections import ConfigDict
 
 
@@ -57,7 +57,7 @@ def create_test_config(original_config_path: str, new_config_path: str, model_ty
     -------
     None
     """
-    from utils import load_config
+    from utils.settings import load_config
 
     config = load_config(model_type=model_type, config_path=original_config_path)
 

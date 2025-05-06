@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import segmentation_models_pytorch as smp
-from utils import prefer_target_instrument
+from utils.model_utils import prefer_target_instrument
 
 class STFT:
     def __init__(self, config):
