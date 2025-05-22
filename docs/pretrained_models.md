@@ -66,3 +66,9 @@ If you trained some good models, please, share them. You can post config and mod
 ### MelRoformer models
 
 [Table of Mel Band Roformers with different paramers](mel_roformer_experiments.md)
+
+### Other / Experimental Models
+
+| Model Type                                       | Task                            | Status                                                                         | Config                                     | Checkpoint | Details                               |
+|:-------------------------------------------------|:--------------------------------|:-------------------------------------------------------------------------------|:-------------------------------------------|:-----------|:--------------------------------------|
+| SSLAM (Self-Supervised Learning for Audio Models) | Audio Classification (intended) | Under Development. Not yet functional. Original Fairseq model being adapted. | [config_sslam.yaml](../configs/config_sslam.yaml) | N/A        | [SSLAM Details](sslam.md)             |

@@ -1,0 +1,93 @@
+# Placeholder configuration for SSLAM model
+# This config is based on MaeImageClassificationConfig and common project structure.
+# It will need to be filled in with appropriate values once the model is fully ported and trainable.
+
+audio:
+  sample_rate: 16000 # Typical for speech/audio models, SSLAM paper might specify
+  target_length: 1024 # from MaeImageClassificationConfig, for padding/truncating
+  # Other audio parameters like n_fft, hop_length, num_channels might be needed
+  # depending on how data preprocessing is handled for SSLAM.
+  # These are often part of the task/dataset config in Fairseq.
+
+model:
+  # General model selection (useful if this config system supports multiple models)
+  model_name: "sslam_mae_classification" # Custom name for this configuration
+
+  # Parameters from MaeImageClassificationConfig
+  model_path: "path/to/pretrained/sslam_checkpoint.pt" # IMPORTANT: Path to the pretrained SSLAM model
+  no_pretrained_weights: false # Set to true if not using pretrained weights (e.g., training from scratch)
+  linear_classifier: false # Set to true to freeze backbone and train only a linear layer
+
+  num_classes: 50 # Example: number of classes for the downstream task (e.g., ESC-50)
+  
+  drop_path_rate: 0.1
+  layer_decay: 0.65 # For ViT-style layer-wise learning rate decay
+
+  norm_eps: 1.0e-6 # Epsilon for LayerNorm
+
+  # Dropout settings (many are for the underlying Data2Vec model, might be part of pretrained_model_args)
+  encoder_dropout: 0.1
+  post_mlp_drop: 0.1
+  attention_dropout: 0.1
+  activation_dropout: 0.0
+  dropout_input: 0.0
+  layerdrop: 0.0 # Fairseq specific layerdrop, might not be used in a direct PyTorch port
+
+  use_fc_norm: true # Whether to use LayerNorm before the final classification head
+  prediction_mode: "CLS_TOKEN" # Or "MEAN_POOLING", "LIN_SOFTMAX"
+
+  # Task-specific flags (examples)
+  audio_mae: true       # General audio classification with MAE features
+  esc50_eval: false      # Specifics for ESC-50 evaluation
+  spcv2_eval: false      # Specifics for SpeechCommands v2 evaluation
+
+  # Spectrogram augmentation (if applied within the model forward pass)
+  specaug: false # Enable/disable specaug
+  freqm: 25      # Frequency masking parameter
+  timem: 200     # Time masking parameter
+  mask_ratio: 0.0 # Overall mask ratio for specaug if not using fixed freqm/timem
+
+  # Backbone / Pretrained model arguments (these would typically be loaded with the checkpoint)
+  # If not loading a fully configured pretrained_model, these define the backbone:
+  pretrained_model_args:
+    embed_dim: 768 # Example from Data2VecConfig
+    depth: 12      # Example
+    num_heads: 12  # Example
+    mlp_ratio: 4.0 # Example
+    # ... other necessary args for Data2VecMultiModel if it's being built by MaeImageClassificationModel
+    # This section might be automatically populated when loading a Fairseq checkpoint,
+    # or need manual specification if building the backbone from scratch.
+
+training:
+  batch_size: 32 # Placeholder
+  gradient_accumulation_steps: 1 # Placeholder
+  grad_clip: 1.0 # Placeholder, common value
+  lr: 1.0e-4 # Placeholder learning rate
+  num_epochs: 100 # Placeholder
+  optimizer: "adamw" # Placeholder (AdamW is common for transformers)
+  use_amp: true # Mixed precision training
+  # Other training parameters like scheduler, warmup steps, etc.
+
+augmentations: # Data augmentations applied at the dataset level (not in model forward)
+  enable: true
+  # Add SSLAM relevant augmentations here, e.g.
+  # mixup: 0.8 # If used
+  # specaugment: # If applied at data loading time instead of in model
+  #   freq_mask_param: 80
+  #   time_mask_param: 100
+  #   num_freq_masks: 1
+  #   num_time_masks: 1
+
+inference:
+  batch_size: 64 # Placeholder
+  # Potentially other inference specific settings
+
+# Add other sections as needed, e.g., dataset paths, logging, etc.
+# dataset:
+#   name: "esc50" # Example
+#   path: "path/to/esc50_dataset"
+#   # ... other dataset specific configurations
+
+# logging:
+#   wandb_project: "sslam_experiments"
+#   log_interval: 100

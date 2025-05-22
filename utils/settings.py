@@ -29,7 +29,7 @@ def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_type", type=str, default='mdx23c',
-                        help="One of mdx23c, htdemucs, segm_models, mel_band_roformer, bs_roformer, swin_upernet, bandit")
+                        help="One of mdx23c, htdemucs, segm_models, mel_band_roformer, bs_roformer, swin_upernet, bandit, sslam_mae_classification")
     parser.add_argument("--config_path", type=str, help="path to config file")
     parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint to start training")
     parser.add_argument("--results_path", type=str,
@@ -96,7 +96,7 @@ def parse_args_valid(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_type", type=str, default='mdx23c',
                         help="One of mdx23c, htdemucs, segm_models, mel_band_roformer,"
-                             " bs_roformer, swin_upernet, bandit")
+                             " bs_roformer, swin_upernet, bandit, sslam_mae_classification")
     parser.add_argument("--config_path", type=str, help="Path to config file")
     parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint"
                                                                           " to valid weights")
@@ -141,7 +141,7 @@ def parse_args_inference(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_type", type=str, default='mdx23c',
                         help="One of bandit, bandit_v2, bs_roformer, htdemucs, mdx23c, mel_band_roformer,"
-                             " scnet, scnet_unofficial, segm_models, swin_upernet, torchseg")
+                             " scnet, scnet_unofficial, segm_models, swin_upernet, torchseg, sslam_mae_classification")
     parser.add_argument("--config_path", type=str, help="path to config file")
     parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint to valid weights")
     parser.add_argument("--input_folder", type=str, help="folder with mixtures to process")
@@ -287,6 +287,16 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple:
     elif model_type == 'experimental_mdx23c_stht':
         from models.mdx23c_tfc_tdf_v3_with_STHT import TFC_TDF_net
         model = TFC_TDF_net(config)
+    elif model_type == 'sslam_mae_classification':
+        from models.sslam import MaeImageClassificationModel, MaeImageClassificationConfig
+        # Config is already loaded by load_config above.
+        # model_config = MaeImageClassificationConfig(**dict(config.model))
+        # model = MaeImageClassificationModel(model_config)
+        # For now, raise NotImplementedError as the model is not fully functional.
+        raise NotImplementedError(
+            "SSLAM model (sslam_mae_classification) is defined but not yet fully implemented for training/inference. "
+            "The model's __init__ method needs to be completed to build the architecture and load weights."
+        )
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
