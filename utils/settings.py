@@ -278,6 +278,9 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple:
     elif model_type == 'scnet_tran':
         from models.scnet.scnet_tran import SCNet_Tran
         model = SCNet_Tran(**config.model)
+    elif model_type == 'scnet_masked':
+        from models.scnet.scnet_masked import SCNet
+        model = SCNet(**config.model)
     elif model_type == 'apollo':
         from models.look2hear.models import BaseModel
         model = BaseModel.apollo(**config.model)
