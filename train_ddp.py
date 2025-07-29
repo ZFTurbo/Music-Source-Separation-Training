@@ -54,7 +54,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
             x, y = normalize_batch(x, y)
 
         with torch.cuda.amp.autocast(enabled=use_amp):
-            if args.model_type in ['mel_band_roformer', 'bs_roformer']:
+            if args.model_type in ['mel_band_roformer', 'bs_roformer'] and not args.use_standard_loss:
                 loss = model(x, y)
                 if isinstance(device_ids, (list, tuple)):
                     loss = loss.mean()
@@ -132,6 +132,13 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
         train_lora = args.train_lora
         save_weights_ddp(store_path, model, train_lora)
         best_metric = metric_avg
+
+    if args.save_weights_every_epoch:
+        metric_string = ''
+        for m in metrics_avg:
+            metric_string += '_{}_{:.4f}'.format(m, metrics_avg[m])
+        store_path = f'{args.results_path}/model_{args.model_type}_ep_{epoch}{metric_string}.ckpt'
+        save_weights_ddp(store_path, model, args.train_lora)
 
     scheduler.step(metric_avg)
     wandb.log({'metric_main': metric_avg, 'best_metric': best_metric})

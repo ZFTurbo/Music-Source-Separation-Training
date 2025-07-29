@@ -68,7 +68,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
             x, y = normalize_batch(x, y)
 
         with torch.cuda.amp.autocast(enabled=use_amp):
-            if 'roformer' in args.model_type:
+            if 'roformer' in args.model_type and not args.use_standard_loss:
                 # loss is computed in forward pass
                 loss = model(x, y)
                 if isinstance(device_ids, (list, tuple)):
@@ -130,6 +130,14 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
         train_lora = args.train_lora
         save_weights(store_path, model, device_ids, train_lora)
         best_metric = metric_avg
+
+    if args.save_weights_every_epoch:
+        metric_string = ''
+        for m in metrics_avg:
+            metric_string += '_{}_{:.4f}'.format(m, metrics_avg[m])
+        store_path = f'{args.results_path}/model_{args.model_type}_ep_{epoch}{metric_string}.ckpt'
+        save_weights(store_path, model, device_ids, args.train_lora)
+
     scheduler.step(metric_avg)
     wandb.log({'metric_main': metric_avg, 'best_metric': best_metric})
     for metric_name in metrics_avg:

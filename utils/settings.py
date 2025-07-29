@@ -63,11 +63,10 @@ def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
                                  'fullness'], help='Metric which will be used for scheduler.')
     parser.add_argument("--train_lora", action='store_true', help="Train with LoRA")
     parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to LoRA weights")
-    parser.add_argument("--save_metrics", action='store_true', help="Save metrics in csv file or not")
     parser.add_argument("--each_metrics_in_name", action='store_true',
                         help="Naming checkpoints consist only of vocal metric")
-    parser.add_argument("--more_metrics_wandb", action='store_true',
-                        help="Show metric_for_scheduler for all instuments")
+    parser.add_argument("--use_standard_loss", action='store_true', help="Roformers will use provided loss instead of internal")
+    parser.add_argument("--save_weights_every_epoch", action='store_true', help="Weights will be saved every epoch with all metric values")
 
     if dict_args is not None:
         args = parser.parse_args([])
