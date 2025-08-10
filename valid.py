@@ -1,7 +1,6 @@
 # coding: utf-8
 __author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
 
-import argparse
 import time
 import os
 import glob
@@ -12,56 +11,15 @@ import soundfile as sf
 from tqdm.auto import tqdm
 from ml_collections import ConfigDict
 from typing import Tuple, Dict, List, Union
-from utils import demix, get_model_from_config, prefer_target_instrument, draw_spectrogram
-from utils import normalize_audio, denormalize_audio, apply_tta, read_audio_transposed, load_start_checkpoint
-from metrics import get_metrics
+
+from utils.settings import get_model_from_config, logging, write_results_in_file, parse_args_valid
+from utils.audio_utils import draw_spectrogram, normalize_audio, denormalize_audio, read_audio_transposed
+from utils.model_utils import demix, prefer_target_instrument, apply_tta, load_start_checkpoint
+from utils.metrics import get_metrics
+
 import warnings
 
 warnings.filterwarnings("ignore")
-
-
-def logging(logs: List[str], text: str, verbose_logging: bool = False) -> None:
-    """
-    Log validation information by printing the text and appending it to a log list.
-
-    Parameters:
-    ----------
-    store_dir : str
-        Directory to store the logs. If empty, logs are not stored.
-    logs : List[str]
-        List where the logs will be appended if the store_dir is specified.
-    text : str
-        The text to be logged, printed, and optionally added to the logs list.
-
-    Returns:
-    -------
-    None
-        This function modifies the logs list in place and prints the text.
-    """
-
-    print(text)
-    if verbose_logging:
-        logs.append(text)
-
-
-def write_results_in_file(store_dir: str, logs: List[str]) -> None:
-    """
-    Write the list of results into a file in the specified directory.
-
-    Parameters:
-    ----------
-    store_dir : str
-        The directory where the results file will be saved.
-    results : List[str]
-        A list of result strings to be written to the file.
-
-    Returns:
-    -------
-    None
-    """
-    with open(f'{store_dir}/results.txt', 'w') as out:
-        for item in logs:
-            out.write(item + "\n")
 
 
 def get_mixture_paths(
@@ -258,8 +216,12 @@ def process_audio_files(
 
             if store_dir:
                 os.makedirs(store_dir, exist_ok=True)
-                out_wav_name = f"{store_dir}/{os.path.basename(folder)}_{instr}.wav"
-                sf.write(out_wav_name, estimates.T, sr, subtype='FLOAT')
+                if np.abs(estimates).max() <= 1.0:
+                    out_wav_name = f"{store_dir}/{os.path.basename(folder)}_{instr}.flac"
+                    sf.write(out_wav_name, estimates.T, sr, subtype='PCM_16')
+                else:
+                    out_wav_name = f"{store_dir}/{os.path.basename(folder)}_{instr}.wav"
+                    sf.write(out_wav_name, estimates.T, sr, subtype='FLOAT')
                 if args.draw_spectro > 0:
                     out_img_name = f"{store_dir}/{os.path.basename(folder)}_{instr}.jpg"
                     draw_spectrogram(estimates.T, sr, args.draw_spectro, out_img_name)
@@ -597,53 +559,8 @@ def valid_multi_gpu(
     return compute_metric_avg(store_dir, args, instruments, config, all_metrics, start_time), all_metrics
 
 
-def parse_args(dict_args: Union[Dict, None]) -> argparse.Namespace:
-    """
-    Parse command-line arguments for configuring the model, dataset, and training parameters.
-
-    Args:
-        dict_args: Dict of command-line arguments. If None, arguments will be parsed from sys.argv.
-
-    Returns:
-        Namespace object containing parsed arguments and their values.
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model_type", type=str, default='mdx23c',
-                        help="One of mdx23c, htdemucs, segm_models, mel_band_roformer,"
-                             " bs_roformer, swin_upernet, bandit")
-    parser.add_argument("--config_path", type=str, help="Path to config file")
-    parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint"
-                                                                          " to valid weights")
-    parser.add_argument("--valid_path", nargs="+", type=str, help="Validate path")
-    parser.add_argument("--store_dir", type=str, default="", help="Path to store results as wav file")
-    parser.add_argument("--draw_spectro", type=float, default=0,
-                        help="If --store_dir is set then code will generate spectrograms for resulted stems as well."
-                             " Value defines for how many seconds os track spectrogram will be generated.")
-    parser.add_argument("--device_ids", nargs='+', type=int, default=0, help='List of gpu ids')
-    parser.add_argument("--num_workers", type=int, default=0, help="Dataloader num_workers")
-    parser.add_argument("--pin_memory", action='store_true', help="Dataloader pin_memory")
-    parser.add_argument("--extension", type=str, default='wav', help="Choose extension for validation")
-    parser.add_argument("--use_tta", action='store_true',
-                        help="Flag adds test time augmentation during inference (polarity and channel inverse)."
-                        "While this triples the runtime, it reduces noise and slightly improves prediction quality.")
-    parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"],
-                        choices=['sdr', 'l1_freq', 'si_sdr', 'neg_log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
-                                 'fullness'], help='List of metrics to use.')
-    parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to LoRA weights")
-
-    if dict_args is not None:
-        args = parser.parse_args([])
-        args_dict = vars(args)
-        args_dict.update(dict_args)
-        args = argparse.Namespace(**args_dict)
-    else:
-        args = parser.parse_args()
-
-    return args
-
-
 def check_validation(dict_args):
-    args = parse_args(dict_args)
+    args = parse_args_valid(dict_args)
     torch.backends.cudnn.benchmark = True
     try:
         torch.multiprocessing.set_start_method('spawn')

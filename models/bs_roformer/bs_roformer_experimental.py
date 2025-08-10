@@ -6,10 +6,6 @@ from torch.nn import Module, ModuleList
 import torch.nn.functional as F
 
 from models.bs_roformer.attend import Attend
-try:
-    from models.bs_roformer.attend_sage import Attend as AttendSage
-except:
-    pass
 from torch.utils.checkpoint import checkpoint
 
 from beartype.typing import Tuple, Optional, List, Callable
@@ -19,6 +15,8 @@ from rotary_embedding_torch import RotaryEmbedding
 
 from einops import rearrange, pack, unpack
 from einops.layers.torch import Rearrange
+
+from hyper_connections import get_init_and_expand_reduce_stream_functions
 
 # helper functions
 
@@ -87,7 +85,7 @@ class Attention(Module):
             dropout=0.,
             rotary_embed=None,
             flash=True,
-            sage_attention=False,
+            learned_value_residual_mix=False,
     ):
         super().__init__()
         self.heads = heads
@@ -96,13 +94,12 @@ class Attention(Module):
 
         self.rotary_embed = rotary_embed
 
-        if sage_attention:
-            self.attend = AttendSage(flash=flash, dropout=dropout)
-        else:
-            self.attend = Attend(flash=flash, dropout=dropout)
+        self.attend = Attend(flash=flash, dropout=dropout)
 
         self.norm = RMSNorm(dim)
         self.to_qkv = nn.Linear(dim, dim_inner * 3, bias=False)
+
+        self.to_value_residual_mix = nn.Linear(dim, heads) if learned_value_residual_mix else None
 
         self.to_gates = nn.Linear(dim, heads)
 
@@ -111,10 +108,19 @@ class Attention(Module):
             nn.Dropout(dropout)
         )
 
-    def forward(self, x):
+    def forward(self, x, value_residual=None):
         x = self.norm(x)
 
         q, k, v = rearrange(self.to_qkv(x), 'b n (qkv h d) -> qkv b h n d', qkv=3, h=self.heads)
+
+        orig_v = v
+
+        if exists(self.to_value_residual_mix):
+            mix = self.to_value_residual_mix(x)
+            mix = rearrange(mix, 'b n h -> b h n 1').sigmoid()
+
+            assert exists(value_residual)
+            v = v.lerp(value_residual, mix)
 
         if exists(self.rotary_embed):
             q = self.rotary_embed.rotate_queries_or_keys(q)
@@ -126,7 +132,7 @@ class Attention(Module):
         out = out * rearrange(gates, 'b n h -> b h n 1').sigmoid()
 
         out = rearrange(out, 'b h n d -> b n (h d)')
-        return self.to_out(out)
+        return self.to_out(out), orig_v
 
 
 class LinearAttention(Module):
@@ -143,8 +149,7 @@ class LinearAttention(Module):
             heads=8,
             scale=8,
             flash=False,
-            dropout=0.,
-            sage_attention=False,
+            dropout=0.
     ):
         super().__init__()
         dim_inner = dim_head * heads
@@ -157,18 +162,11 @@ class LinearAttention(Module):
 
         self.temperature = nn.Parameter(torch.ones(heads, 1, 1))
 
-        if sage_attention:
-            self.attend = AttendSage(
-                scale=scale,
-                dropout=dropout,
-                flash=flash
-            )
-        else:
-            self.attend = Attend(
-                scale=scale,
-                dropout=dropout,
-                flash=flash
-            )
+        self.attend = Attend(
+            scale=scale,
+            dropout=dropout,
+            flash=flash
+        )
 
         self.to_out = nn.Sequential(
             Rearrange('b h d n -> b n (h d)'),
@@ -206,46 +204,55 @@ class Transformer(Module):
             rotary_embed=None,
             flash_attn=True,
             linear_attn=False,
-            sage_attention=False,
+            add_value_residual=False,
+            num_residual_streams=1,
     ):
         super().__init__()
         self.layers = ModuleList([])
 
+        init_hyper_conn, *_ = get_init_and_expand_reduce_stream_functions(num_residual_streams, disable=num_residual_streams == 1)
+
         for _ in range(depth):
             if linear_attn:
-                attn = LinearAttention(
-                    dim=dim,
-                    dim_head=dim_head,
-                    heads=heads,
-                    dropout=attn_dropout,
-                    flash=flash_attn,
-                    sage_attention=sage_attention
-                )
+                attn = LinearAttention(dim=dim, dim_head=dim_head, heads=heads, dropout=attn_dropout, flash=flash_attn)
             else:
-                attn = Attention(
-                    dim=dim,
-                    dim_head=dim_head,
-                    heads=heads,
-                    dropout=attn_dropout,
-                    rotary_embed=rotary_embed,
-                    flash=flash_attn,
-                    sage_attention=sage_attention
-                )
+                if num_residual_streams != 1:
+                    attn = init_hyper_conn(dim=dim, branch=Attention(dim=dim, dim_head=dim_head, heads=heads, dropout=attn_dropout,
+                                 rotary_embed=rotary_embed, flash=flash_attn, learned_value_residual_mix=add_value_residual))
+                else:
+                    attn = Attention(
+                        dim=dim, dim_head=dim_head, heads=heads, dropout=attn_dropout,
+                        rotary_embed=rotary_embed, flash=flash_attn, learned_value_residual_mix=add_value_residual
+                    )
+            if num_residual_streams != 1:
+                ff = init_hyper_conn(dim=dim, branch=FeedForward(dim=dim, mult=ff_mult, dropout=ff_dropout))
+            else:
+                ff = FeedForward(dim=dim, mult=ff_mult, dropout=ff_dropout)
 
             self.layers.append(ModuleList([
                 attn,
-                FeedForward(dim=dim, mult=ff_mult, dropout=ff_dropout)
+                ff
             ]))
 
         self.norm = RMSNorm(dim) if norm_output else nn.Identity()
 
-    def forward(self, x):
+    def forward(self, x, value_residual=None):
 
-        for attn, ff in self.layers:
-            x = attn(x) + x
-            x = ff(x) + x
+        first_values = None
+        if value_residual is not None:
+            for attn, ff in self.layers:
+                x, next_values = attn(x, value_residual=value_residual)
+                first_values = default(first_values, next_values)
+                x = ff(x)
+        else:
+            # Compatibility with old weights
+            for attn, ff in self.layers:
+                attn_out, next_values = attn(x, value_residual=None)
+                first_values = default(first_values, next_values)
+                x = attn_out + x
+                x = ff(x) + x
 
-        return self.norm(x)
+        return self.norm(x), first_values
 
 
 # bandsplit module
@@ -391,7 +398,8 @@ class BSRoformer(Module):
             mlp_expansion_factor=4,
             use_torch_checkpoint=False,
             skip_connection=False,
-            sage_attention=False,
+            use_value_residual_learning=False,
+            num_residual_streams=1,  # set to 1. to disable hyper connections (Default in original is 4)
     ):
         super().__init__()
 
@@ -400,11 +408,11 @@ class BSRoformer(Module):
         self.num_stems = num_stems
         self.use_torch_checkpoint = use_torch_checkpoint
         self.skip_connection = skip_connection
+        self.num_residual_streams = num_residual_streams
+
+        _, self.expand_stream, self.reduce_stream = get_init_and_expand_reduce_stream_functions(num_residual_streams, disable=num_residual_streams == 1)
 
         self.layers = ModuleList([])
-
-        if sage_attention:
-            print("Use Sage Attention")
 
         transformer_kwargs = dict(
             dim=dim,
@@ -414,21 +422,26 @@ class BSRoformer(Module):
             ff_dropout=ff_dropout,
             flash_attn=flash_attn,
             norm_output=False,
-            sage_attention=sage_attention,
+            num_residual_streams=num_residual_streams,
         )
 
         time_rotary_embed = RotaryEmbedding(dim=dim_head)
         freq_rotary_embed = RotaryEmbedding(dim=dim_head)
 
-        for _ in range(depth):
+        for layer_index in range(depth):
+            if use_value_residual_learning:
+                is_first = layer_index == 0
+            else:
+                is_first = True
+
             tran_modules = []
             if linear_transformer_depth > 0:
                 tran_modules.append(Transformer(depth=linear_transformer_depth, linear_attn=True, **transformer_kwargs))
             tran_modules.append(
-                Transformer(depth=time_transformer_depth, rotary_embed=time_rotary_embed, **transformer_kwargs)
+                Transformer(depth=time_transformer_depth, rotary_embed=time_rotary_embed, add_value_residual=not is_first, **transformer_kwargs)
             )
             tran_modules.append(
-                Transformer(depth=freq_transformer_depth, rotary_embed=freq_rotary_embed, **transformer_kwargs)
+                Transformer(depth=freq_transformer_depth, rotary_embed=freq_rotary_embed, add_value_residual=not is_first, **transformer_kwargs)
             )
             self.layers.append(nn.ModuleList(tran_modules))
 
@@ -537,6 +550,15 @@ class BSRoformer(Module):
         else:
             x = self.band_split(x)
 
+        # value residuals
+
+        time_v_residual = None
+        freq_v_residual = None
+
+        # maybe expand residual streams
+        if self.num_residual_streams != 1:
+            x = self.expand_stream(x)
+
         # axial / hierarchical attention
 
         store = [None] * len(self.layers)
@@ -563,23 +585,29 @@ class BSRoformer(Module):
             x, ps = pack([x], '* t d')
 
             if self.use_torch_checkpoint:
-                x = checkpoint(time_transformer, x, use_reentrant=False)
+                x, next_time_v_residual = checkpoint(time_transformer, x, time_v_residual, use_reentrant=False)
             else:
-                x = time_transformer(x)
+                x, next_time_v_residual = time_transformer(x, value_residual=time_v_residual)
+            time_v_residual = default(time_v_residual, next_time_v_residual)
 
             x, = unpack(x, ps, '* t d')
             x = rearrange(x, 'b f t d -> b t f d')
             x, ps = pack([x], '* f d')
 
             if self.use_torch_checkpoint:
-                x = checkpoint(freq_transformer, x, use_reentrant=False)
+                x, next_freq_v_residual = checkpoint(freq_transformer, x, freq_v_residual, use_reentrant=False)
             else:
-                x = freq_transformer(x)
+                x, next_freq_v_residual = freq_transformer(x, value_residual=freq_v_residual)
+            freq_v_residual = default(freq_v_residual, next_freq_v_residual)
 
             x, = unpack(x, ps, '* f d')
 
             if self.skip_connection:
                 store[i] = x
+
+        # maybe reduce residual streams
+        if self.num_residual_streams != 1:
+            x = self.reduce_stream(x)
 
         x = self.final_norm(x)
 

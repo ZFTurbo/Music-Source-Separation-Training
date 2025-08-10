@@ -1,7 +1,6 @@
 # coding: utf-8
 __author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
 
-import argparse
 import time
 import librosa
 import sys
@@ -12,14 +11,15 @@ import soundfile as sf
 import numpy as np
 from tqdm.auto import tqdm
 import torch.nn as nn
-from typing import Dict, Union
 
 # Using the embedded version of Python can also correctly import the utils module.
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
-from utils import demix, get_model_from_config, normalize_audio, denormalize_audio, draw_spectrogram
-from utils import prefer_target_instrument, apply_tta, load_start_checkpoint
+from utils.audio_utils import normalize_audio, denormalize_audio, draw_spectrogram
+from utils.settings import get_model_from_config, parse_args_inference
+from utils.model_utils import demix
+from utils.model_utils import prefer_target_instrument, apply_tta, load_start_checkpoint
 
 import warnings
 
@@ -119,53 +119,8 @@ def run_folder(model, args, config, device, verbose: bool = False):
     print(f"Elapsed time: {time.time() - start_time:.2f} seconds.")
 
 
-def parse_args(dict_args: Union[Dict, None]) -> argparse.Namespace:
-    """
-    Parse command-line arguments for configuring the model, dataset, and training parameters.
-
-    Args:
-        dict_args: Dict of command-line arguments. If None, arguments will be parsed from sys.argv.
-
-    Returns:
-        Namespace object containing parsed arguments and their values.
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model_type", type=str, default='mdx23c',
-                        help="One of bandit, bandit_v2, bs_roformer, htdemucs, mdx23c, mel_band_roformer,"
-                             " scnet, scnet_unofficial, segm_models, swin_upernet, torchseg")
-    parser.add_argument("--config_path", type=str, help="path to config file")
-    parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint to valid weights")
-    parser.add_argument("--input_folder", type=str, help="folder with mixtures to process")
-    parser.add_argument("--store_dir", type=str, default="", help="path to store results as wav file")
-    parser.add_argument("--draw_spectro", type=float, default=0,
-                        help="Code will generate spectrograms for resulted stems."
-                             " Value defines for how many seconds os track spectrogram will be generated.")
-    parser.add_argument("--device_ids", nargs='+', type=int, default=0, help='list of gpu ids')
-    parser.add_argument("--extract_instrumental", action='store_true',
-                        help="invert vocals to get instrumental if provided")
-    parser.add_argument("--disable_detailed_pbar", action='store_true', help="disable detailed progress bar")
-    parser.add_argument("--force_cpu", action='store_true', help="Force the use of CPU even if CUDA is available")
-    parser.add_argument("--flac_file", action='store_true', help="Output flac file instead of wav")
-    parser.add_argument("--pcm_type", type=str, choices=['PCM_16', 'PCM_24'], default='PCM_24',
-                        help="PCM type for FLAC files (PCM_16 or PCM_24)")
-    parser.add_argument("--use_tta", action='store_true',
-                        help="Flag adds test time augmentation during inference (polarity and channel inverse)."
-                        "While this triples the runtime, it reduces noise and slightly improves prediction quality.")
-    parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to LoRA weights")
-
-    if dict_args is not None:
-        args = parser.parse_args([])
-        args_dict = vars(args)
-        args_dict.update(dict_args)
-        args = argparse.Namespace(**args_dict)
-    else:
-        args = parser.parse_args()
-
-    return args
-
-
 def proc_folder(dict_args):
-    args = parse_args(dict_args)
+    args = parse_args_inference(dict_args)
     device = "cpu"
     if args.force_cpu:
         device = "cpu"

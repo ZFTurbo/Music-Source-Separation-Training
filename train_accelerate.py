@@ -22,9 +22,11 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch.nn.functional as F
 from accelerate import Accelerator
 
-from dataset import MSSDataset
-from utils import get_model_from_config, demix, sdr, prefer_target_instrument
-from train import masked_loss, manual_seed, load_not_compatible_weights
+from utils.dataset import MSSDataset
+from utils.model_utils import demix, prefer_target_instrument, load_not_compatible_weights
+from utils.metrics import sdr
+from utils.settings import manual_seed, get_model_from_config
+from utils.losses import masked_loss
 import warnings
 
 warnings.filterwarnings("ignore")
