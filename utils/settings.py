@@ -44,7 +44,7 @@ def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=0, help="random seed")
     parser.add_argument("--device_ids", nargs='+', type=int, default=[0], help='list of gpu ids')
     parser.add_argument("--loss", type=str, nargs='+', choices=['masked_loss', 'mse_loss', 'l1_loss',
-                        'multistft_loss', 'spec_masked_loss', 'spec_rmse_loss_coef', 'log_wmse_loss'],
+                        'multistft_loss', 'spec_masked_loss', 'spec_rmse_loss', 'log_wmse_loss'],
                         default=['masked_loss'], help="List of loss functions to use")
     parser.add_argument("--masked_loss_coef", type=float, default=1., help="Coef for loss")
     parser.add_argument("--mse_loss_coef", type=float, default=1., help="Coef for loss")
@@ -65,8 +65,10 @@ def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to LoRA weights")
     parser.add_argument("--each_metrics_in_name", action='store_true',
                         help="Naming checkpoints consist only of vocal metric")
-    parser.add_argument("--use_standard_loss", action='store_true', help="Roformers will use provided loss instead of internal")
-    parser.add_argument("--save_weights_every_epoch", action='store_true', help="Weights will be saved every epoch with all metric values")
+    parser.add_argument("--use_standard_loss", action='store_true',
+                        help="Roformers will use provided loss instead of internal")
+    parser.add_argument("--save_weights_every_epoch", action='store_true',
+                        help="Weights will be saved every epoch with all metric values")
 
     if dict_args is not None:
         args = parser.parse_args([])
@@ -277,9 +279,6 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple:
     elif model_type == 'scnet_tran':
         from models.scnet.scnet_tran import SCNet_Tran
         model = SCNet_Tran(**config.model)
-    elif model_type == 'scnet_masked':
-        from models.scnet.scnet_masked import SCNet
-        model = SCNet(**config.model)
     elif model_type == 'apollo':
         from models.look2hear.models import BaseModel
         model = BaseModel.apollo(**config.model)
@@ -289,6 +288,19 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple:
     elif model_type == 'experimental_mdx23c_stht':
         from models.mdx23c_tfc_tdf_v3_with_STHT import TFC_TDF_net
         model = TFC_TDF_net(config)
+    elif model_type == 'scnet_masked':
+        from models.scnet.scnet_masked import SCNet
+        model = SCNet(**config.model)
+    elif model_type =='conformer':
+        from models.conformer_model import ConformerMSS, NeuralModel
+        model = ConformerMSS(
+            core=NeuralModel(**config.model),
+            n_fft=config.stft.n_fft,
+            hop_length=config.stft.hop_length,
+            win_length=getattr(config.stft, 'win_length', config.stft.n_fft),
+            center=config.stft.center
+        )
+
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
