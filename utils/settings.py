@@ -305,8 +305,8 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple:
             win_length=getattr(config.stft, 'win_length', config.stft.n_fft),
             center=config.stft.center
         )
-    elif model_type =='conformer_v2':
-        from models.conformer_v2 import MelBandConformer
+    elif model_type =='mel_band_conformer':
+        from models.mel_band_conformer import MelBandConformer
         model = MelBandConformer(**config.model)
     else:
         raise ValueError(f"Unknown model type: {model_type}")
