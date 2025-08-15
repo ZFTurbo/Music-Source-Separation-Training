@@ -69,6 +69,11 @@ def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
                         help="Roformers will use provided loss instead of internal")
     parser.add_argument("--save_weights_every_epoch", action='store_true',
                         help="Weights will be saved every epoch with all metric values")
+    parser.add_argument("--persistent_workers", action='store_true',
+                        help="dataloader persistent_workers")
+    parser.add_argument("--prefetch_factor", type=int, default=None,
+                        help="dataloader prefetch_factor")
+
 
     if dict_args is not None:
         args = parser.parse_args([])
@@ -300,7 +305,9 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple:
             win_length=getattr(config.stft, 'win_length', config.stft.n_fft),
             center=config.stft.center
         )
-
+    elif model_type =='conformer_v2':
+        from models.conformer_v2 import MelBandConformer
+        model = MelBandConformer(**config.model)
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 

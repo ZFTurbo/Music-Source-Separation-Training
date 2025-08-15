@@ -34,8 +34,11 @@ def prepare_data(config: Dict, args: argparse.Namespace, batch_size: int) -> Dat
         batch_size=batch_size,
         shuffle=True,
         num_workers=args.num_workers,
-        pin_memory=args.pin_memory
+        pin_memory=args.pin_memory,
+        persistent_workers=args.persistent_workers,
+        prefetch_factor=args.prefetch_factor
     )
+
     return train_loader
 
 
