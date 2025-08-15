@@ -4,9 +4,9 @@ import os
 import soundfile as sf
 import matplotlib.pyplot as plt
 from typing import Dict, Tuple
-from utils.dataset import MSSDataset
 from torch.utils.data import DataLoader
-
+from torch.utils.data.distributed import DistributedSampler
+from utils.dataset import MSSDataset
 
 def prepare_data(config: Dict, args: argparse.Namespace, batch_size: int) -> DataLoader:
     """
@@ -39,6 +39,28 @@ def prepare_data(config: Dict, args: argparse.Namespace, batch_size: int) -> Dat
         prefetch_factor=args.prefetch_factor
     )
 
+    return train_loader
+
+
+def prepare_data_ddp(config: Dict, args: argparse.Namespace, batch_size: int, rank: int, world_size: int) -> DataLoader:
+    trainset = MSSDataset(
+        config,
+        args.data_path,
+        batch_size=world_size * batch_size, # to use self.config.training.num_steps without reduction
+        metadata_path=os.path.join(args.results_path, f'metadata_{args.dataset_type}.pkl'),
+        dataset_type=args.dataset_type,
+    )
+
+    sampler = DistributedSampler(trainset, num_replicas=world_size, rank=rank, shuffle=True)
+
+    train_loader = DataLoader(
+        trainset,
+        batch_size=batch_size,
+        sampler=sampler,
+        num_workers=args.num_workers,
+        pin_memory=args.pin_memory,
+        prefetch_factor=args.prefetch_factor
+    )
     return train_loader
 
 

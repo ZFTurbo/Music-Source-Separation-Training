@@ -12,9 +12,6 @@ from ml_collections import ConfigDict
 import torch.distributed as dist
 import loralib as lora
 from torch.optim import Adam, AdamW, SGD, RAdam, RMSprop
-from torch.utils.data import DataLoader
-from torch.utils.data.distributed import DistributedSampler
-from utils.dataset import MSSDataset
 
 
 def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
@@ -479,27 +476,6 @@ def wandb_init_ddp(args: argparse.Namespace, config: Dict, batch_size: int) -> N
             except Exception as e:
                 print(f"Error initializing WandB: {e}")
                 wandb.init(mode='disabled')
-
-
-def prepare_data_ddp(config: Dict, args: argparse.Namespace, batch_size: int, rank: int, world_size: int) -> DataLoader:
-    trainset = MSSDataset(
-        config,
-        args.data_path,
-        batch_size=world_size * batch_size, # to use self.config.training.num_steps without reduction
-        metadata_path=os.path.join(args.results_path, f'metadata_{args.dataset_type}.pkl'),
-        dataset_type=args.dataset_type,
-    )
-
-    sampler = DistributedSampler(trainset, num_replicas=world_size, rank=rank, shuffle=True)
-
-    train_loader = DataLoader(
-        trainset,
-        batch_size=batch_size,
-        sampler=sampler,
-        num_workers=args.num_workers,
-        pin_memory=args.pin_memory
-    )
-    return train_loader
 
 
 def get_optimizer_ddp(config: ConfigDict, model: torch.nn.Module) -> torch.optim.Optimizer:
