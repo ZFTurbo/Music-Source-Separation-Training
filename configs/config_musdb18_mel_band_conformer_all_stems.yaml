@@ -20,7 +20,6 @@ model:
   # band-splitting
   num_bands: 60
 
-  # внимание/ширина
   dim_head: 64
   heads: 8
   ff_mult: 4
