@@ -51,6 +51,7 @@ def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser.add_argument("--spec_masked_loss_coef", type=float, default=1, help="Coef for loss")
     parser.add_argument("--spec_rmse_loss_coef", type=float, default=1, help="Coef for loss")
     parser.add_argument("--wandb_key", type=str, default='', help='wandb API Key')
+    parser.add_argument("--wandb_offline", action='store_true', help='local wandb')
     parser.add_argument("--pre_valid", action='store_true', help='Run validation before training')
     parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"],
                         choices=['sdr', 'l1_freq', 'si_sdr', 'log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
@@ -364,8 +365,13 @@ def wandb_init(args: argparse.Namespace, config: Dict, device_ids: List[int], ba
         device_ids: List of GPU device IDs used for training.
         batch_size: Batch size for training.
     """
-
-    if args.wandb_key is None or args.wandb_key.strip() == '':
+    if args.wandb_offline:
+        wandb.init(mode='offline',
+                   project='msst',
+                   name=gen_wandb_name(args, config),
+                   config={'config': config, 'args': args, 'device_ids': device_ids, 'batch_size': batch_size}
+                   )
+    elif args.wandb_key is None or args.wandb_key.strip() == '':
         wandb.init(mode='disabled')
     else:
         wandb.login(key=args.wandb_key)
