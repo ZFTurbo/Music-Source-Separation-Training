@@ -59,6 +59,7 @@ def prepare_data_ddp(config: Dict, args: argparse.Namespace, batch_size: int, ra
         sampler=sampler,
         num_workers=args.num_workers,
         pin_memory=args.pin_memory,
+        persistent_workers=args.persistent_workers,
         prefetch_factor=args.prefetch_factor
     )
     return train_loader
