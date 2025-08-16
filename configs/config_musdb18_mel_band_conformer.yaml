@@ -1,0 +1,92 @@
+audio:
+  chunk_size: 131584
+  dim_f: 1024
+  dim_t: 256
+  hop_length: 512
+  n_fft: 2048
+  num_channels: 2
+  sample_rate: 44100
+  min_mean_abs: 0.001
+
+model:
+  dim: 192
+  depth: 8
+  stereo: true
+  num_stems: 1
+
+  time_conformer_depth: 1
+  freq_conformer_depth: 1
+
+  # band-splitting
+  num_bands: 60
+
+  # attention/width
+  dim_head: 64
+  heads: 8
+  ff_mult: 4
+
+  # conformer conv sub-block
+  conv_expansion_factor: 2
+  conv_kernel_size: 31
+
+  # dropouts
+  attn_dropout: 0.0
+  ff_dropout: 0.0
+  conv_dropout: 0.0
+
+  # STFT
+  dim_freqs_in: 1025
+  sample_rate: 44100
+  stft_n_fft: 2048
+  stft_hop_length: 512
+  stft_win_length: 2048
+  stft_normalized: False
+
+  # mask estimator + multi-res STFT loss
+  mask_estimator_depth: 2
+  multi_stft_resolution_loss_weight: 1.0
+  multi_stft_resolutions_window_sizes: !!python/tuple
+    - 4096
+    - 2048
+    - 1024
+    - 512
+    - 256
+  multi_stft_hop_size: 147
+  multi_stft_normalized: False
+
+  use_torch_checkpoint: False
+  skip_connection: False
+  match_input_audio_length: False
+
+training:
+  batch_size: 1
+  gradient_accumulation_steps: 1
+  grad_clip: 0
+  instruments:
+    - vocals
+    - bass
+    - drums
+    - other
+  lr: 5.0e-05
+  patience: 2
+  reduce_factor: 0.95
+  target_instrument: vocals
+  num_epochs: 1000
+  num_steps: 1000
+  q: 0.95
+  coarse_loss_clip: true
+  ema_momentum: 0.999
+  optimizer: adam
+  other_fix: false
+  use_amp: true
+
+augmentations:
+  enable: false
+  loudness: true
+  loudness_min: 0.5
+  loudness_max: 1.5
+
+inference:
+  batch_size: 1
+  dim_t: 256
+  num_overlap: 4

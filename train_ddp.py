@@ -21,9 +21,9 @@ from typing import List, Dict, Callable
 from utils.losses import choice_loss
 from utils.model_utils import bind_lora_to_model, load_start_checkpoint, normalize_batch
 from utils.settings import get_model_from_config,  parse_args_train, save_weights_ddp, wandb_init_ddp, \
-    initialize_environment_ddp, prepare_data_ddp, get_optimizer_ddp, cleanup_ddp, save_last_weights_ddp
+    initialize_environment_ddp, get_optimizer_ddp, cleanup_ddp, save_last_weights_ddp
 from valid_ddp import valid_multi_gpu
-
+from utils.audio_utils import prepare_data_ddp
 import warnings
 
 warnings.filterwarnings("ignore")
