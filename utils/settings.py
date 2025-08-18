@@ -15,6 +15,7 @@ from torch.optim import Adam, AdamW, SGD, RAdam, RMSprop
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from utils.dataset import MSSDataset
+from .muon import MuonWithAuxAdam
 
 
 def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
@@ -495,14 +496,13 @@ def get_optimizer_ddp(config: ConfigDict, model: torch.nn.Module) -> torch.optim
         A PyTorch optimizer object configured based on the specified settings.
     """
 
+    name_optimizer = getattr(config.training, 'optimizer', 'No optimizer in config')
+    should_print = dist.get_rank() == 0
     optim_params = dict()
     if 'optimizer' in config:
         optim_params = dict(config['optimizer'])
-        if dist.get_rank() == 0:
+        if name_optimizer != 'muon' and should_print:
             print(f'Optimizer params from config:\n{optim_params}')
-
-    name_optimizer = getattr(config.training, 'optimizer',
-                             'No optimizer in config')
 
     if name_optimizer == 'adam':
         optimizer = Adam(model.parameters(), lr=config.training.lr, **optim_params)
@@ -520,6 +520,29 @@ def get_optimizer_ddp(config: ConfigDict, model: torch.nn.Module) -> torch.optim
     elif name_optimizer == 'adamw8bit':
         import bitsandbytes as bnb
         optimizer = bnb.optim.AdamW8bit(model.parameters(), lr=config.training.lr, **optim_params)
+    elif name_optimizer == 'muon':
+        if should_print:
+            print("Using Muon optimizer (DDP) with AdamW for auxiliary parameters.")
+        
+        muon_params = [p for p in model.parameters() if p.ndim >= 2]
+        adam_params = [p for p in model.parameters() if p.ndim < 2]
+
+        if not hasattr(config, 'optimizer') or 'muon_group' not in config.optimizer or 'adam_group' not in config.optimizer:
+            raise ValueError("For the 'muon' optimizer, the config must have an 'optimizer' section "
+                             "with 'muon_group' and 'adam_group' dictionaries.")
+
+        muon_group_config = dict(config.optimizer.muon_group)
+        adam_group_config = dict(config.optimizer.adam_group)
+
+        if should_print:
+            print(f"Muon group params: {muon_group_config}")
+            print(f"Adam group params: {adam_group_config}")
+
+        param_groups = [
+            dict(params=muon_params, use_muon=True, **muon_group_config),
+            dict(params=adam_params, use_muon=False, **adam_group_config),
+        ]
+        optimizer = MuonWithAuxAdam(param_groups)
     elif name_optimizer == 'sgd':
         if dist.get_rank() == 0:
             print('Use SGD optimizer')
