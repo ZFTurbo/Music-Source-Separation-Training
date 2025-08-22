@@ -59,6 +59,9 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
 
     normalize = getattr(config.training, 'normalize', False)
 
+    get_internal_loss = ( args.model_type in ('mel_band_conformer',) or 'roformer' in args.model_type
+                    ) and not args.use_standard_loss
+
     pbar = tqdm(train_loader)
     for i, (batch, mixes) in enumerate(pbar):
         x = mixes.to(device)  # mixture
@@ -68,8 +71,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
             x, y = normalize_batch(x, y)
 
         with torch.cuda.amp.autocast(enabled=use_amp):
-            if 'roformer' in args.model_type and not args.use_standard_loss:
-                # loss is computed in forward pass
+            if get_internal_loss:
                 loss = model(x, y)
                 if isinstance(device_ids, (list, tuple)):
                     # If it's multiple GPUs sum partial loss

@@ -1,0 +1,109 @@
+audio:
+  chunk_size: 352800
+  dim_f: 1024
+  dim_t: 256
+  hop_length: 441
+  n_fft: 2048
+  num_channels: 2
+  sample_rate: 44100
+  min_mean_abs: 0.000
+
+model:
+  dim: 384
+  depth: 6
+  stereo: true
+  num_stems: 4
+
+  time_conformer_depth: 1
+  freq_conformer_depth: 1
+
+  # band-splitting
+  num_bands: 60
+
+  dim_head: 64
+  heads: 8
+  ff_mult: 4
+
+  # conformer conv sub-block
+  conv_expansion_factor: 2
+  conv_kernel_size: 31
+
+  # dropouts
+  attn_dropout: 0.0
+  ff_dropout: 0.0
+  conv_dropout: 0.0
+
+  # STFT
+  dim_freqs_in: 1025            # = n_fft//2 + 1
+  sample_rate: 44100
+  stft_n_fft: 2048
+  stft_hop_length: 441
+  stft_win_length: 2048
+  stft_normalized: False
+
+  # mask estimator + multi-res STFT loss
+  mask_estimator_depth: 2
+  multi_stft_resolution_loss_weight: 1.0
+  multi_stft_resolutions_window_sizes: !!python/tuple
+    - 4096
+    - 2048
+    - 1024
+    - 512
+    - 256
+  multi_stft_hop_size: 147
+  multi_stft_normalized: False
+
+  use_torch_checkpoint: False
+  skip_connection: False
+  match_input_audio_length: False
+
+training:
+  batch_size: 1
+  gradient_accumulation_steps: 1
+  grad_clip: 0
+  instruments:
+    - drums
+    - bass
+    - other
+    - vocals
+  lr: 1.0e-05
+  patience: 2
+  reduce_factor: 0.95
+  target_instrument: null
+  num_epochs: 1000
+  num_steps: 1000
+  augmentation: false
+  augmentation_type: null
+  use_mp3_compress: false
+  augmentation_mix: false
+  augmentation_loudness: false
+  augmentation_loudness_type: 1
+  augmentation_loudness_min: 0
+  augmentation_loudness_max: 0
+  q: 0.95
+  coarse_loss_clip: false
+  ema_momentum: 0.999
+  optimizer: adam
+  other_fix: false
+  use_amp: true
+
+augmentations:
+  enable: true
+  loudness: true
+  loudness_min: 0.5
+  loudness_max: 1.5
+  mixup: true
+  mixup_probs: !!python/tuple
+    - 0.2
+    - 0.02
+  mixup_loudness_min: 0.5
+  mixup_loudness_max: 1.5
+  all:
+    channel_shuffle: 0.5
+    random_inverse: 0.1
+    random_polarity: 0.5
+
+inference:
+  batch_size: 4
+  dim_t: 256
+  num_overlap: 2

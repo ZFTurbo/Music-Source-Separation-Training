@@ -12,9 +12,6 @@ from ml_collections import ConfigDict
 import torch.distributed as dist
 import loralib as lora
 from torch.optim import Adam, AdamW, SGD, RAdam, RMSprop
-from torch.utils.data import DataLoader
-from torch.utils.data.distributed import DistributedSampler
-from utils.dataset import MSSDataset
 from .muon import MuonWithAuxAdam
 
 
@@ -45,7 +42,7 @@ def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=0, help="random seed")
     parser.add_argument("--device_ids", nargs='+', type=int, default=[0], help='list of gpu ids')
     parser.add_argument("--loss", type=str, nargs='+', choices=['masked_loss', 'mse_loss', 'l1_loss',
-                        'multistft_loss', 'spec_masked_loss', 'spec_rmse_loss_coef', 'log_wmse_loss'],
+                        'multistft_loss', 'spec_masked_loss', 'spec_rmse_loss', 'log_wmse_loss'],
                         default=['masked_loss'], help="List of loss functions to use")
     parser.add_argument("--masked_loss_coef", type=float, default=1., help="Coef for loss")
     parser.add_argument("--mse_loss_coef", type=float, default=1., help="Coef for loss")
@@ -55,6 +52,7 @@ def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser.add_argument("--spec_masked_loss_coef", type=float, default=1, help="Coef for loss")
     parser.add_argument("--spec_rmse_loss_coef", type=float, default=1, help="Coef for loss")
     parser.add_argument("--wandb_key", type=str, default='', help='wandb API Key')
+    parser.add_argument("--wandb_offline", action='store_true', help='local wandb')
     parser.add_argument("--pre_valid", action='store_true', help='Run validation before training')
     parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"],
                         choices=['sdr', 'l1_freq', 'si_sdr', 'log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
@@ -66,8 +64,15 @@ def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to LoRA weights")
     parser.add_argument("--each_metrics_in_name", action='store_true',
                         help="Naming checkpoints consist only of vocal metric")
-    parser.add_argument("--use_standard_loss", action='store_true', help="Roformers will use provided loss instead of internal")
-    parser.add_argument("--save_weights_every_epoch", action='store_true', help="Weights will be saved every epoch with all metric values")
+    parser.add_argument("--use_standard_loss", action='store_true',
+                        help="Roformers will use provided loss instead of internal")
+    parser.add_argument("--save_weights_every_epoch", action='store_true',
+                        help="Weights will be saved every epoch with all metric values")
+    parser.add_argument("--persistent_workers", action='store_true',
+                        help="dataloader persistent_workers")
+    parser.add_argument("--prefetch_factor", type=int, default=None,
+                        help="dataloader prefetch_factor")
+
 
     if dict_args is not None:
         args = parser.parse_args([])
@@ -80,6 +85,10 @@ def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
     if args.metric_for_scheduler not in args.metrics:
         args.metrics += [args.metric_for_scheduler]
 
+    get_internal_loss = (args.model_type in ('mel_band_conformer',) or 'roformer' in args.model_type
+                         ) and not args.use_standard_loss
+    if get_internal_loss:
+        args.loss = [f'{args.model_type}_loss']
     return args
 
 
@@ -278,9 +287,6 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple:
     elif model_type == 'scnet_tran':
         from models.scnet.scnet_tran import SCNet_Tran
         model = SCNet_Tran(**config.model)
-    elif model_type == 'scnet_masked':
-        from models.scnet.scnet_masked import SCNet
-        model = SCNet(**config.model)
     elif model_type == 'apollo':
         from models.look2hear.models import BaseModel
         model = BaseModel.apollo(**config.model)
@@ -290,6 +296,21 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple:
     elif model_type == 'experimental_mdx23c_stht':
         from models.mdx23c_tfc_tdf_v3_with_STHT import TFC_TDF_net
         model = TFC_TDF_net(config)
+    elif model_type == 'scnet_masked':
+        from models.scnet.scnet_masked import SCNet
+        model = SCNet(**config.model)
+    elif model_type =='conformer':
+        from models.conformer_model import ConformerMSS, NeuralModel
+        model = ConformerMSS(
+            core=NeuralModel(**config.model),
+            n_fft=config.stft.n_fft,
+            hop_length=config.stft.hop_length,
+            win_length=getattr(config.stft, 'win_length', config.stft.n_fft),
+            center=config.stft.center
+        )
+    elif model_type =='mel_band_conformer':
+        from models.mel_band_conformer import MelBandConformer
+        model = MelBandConformer(**config.model)
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
@@ -349,8 +370,13 @@ def wandb_init(args: argparse.Namespace, config: Dict, device_ids: List[int], ba
         device_ids: List of GPU device IDs used for training.
         batch_size: Batch size for training.
     """
-
-    if args.wandb_key is None or args.wandb_key.strip() == '':
+    if args.wandb_offline:
+        wandb.init(mode='offline',
+                   project='msst',
+                   name=gen_wandb_name(args, config),
+                   config={'config': config, 'args': args, 'device_ids': device_ids, 'batch_size': batch_size}
+                   )
+    elif args.wandb_key is None or args.wandb_key.strip() == '':
         wandb.init(mode='disabled')
     else:
         wandb.login(key=args.wandb_key)
@@ -461,27 +487,6 @@ def wandb_init_ddp(args: argparse.Namespace, config: Dict, batch_size: int) -> N
             except Exception as e:
                 print(f"Error initializing WandB: {e}")
                 wandb.init(mode='disabled')
-
-
-def prepare_data_ddp(config: Dict, args: argparse.Namespace, batch_size: int, rank: int, world_size: int) -> DataLoader:
-    trainset = MSSDataset(
-        config,
-        args.data_path,
-        batch_size=world_size * batch_size, # to use self.config.training.num_steps without reduction
-        metadata_path=os.path.join(args.results_path, f'metadata_{args.dataset_type}.pkl'),
-        dataset_type=args.dataset_type,
-    )
-
-    sampler = DistributedSampler(trainset, num_replicas=world_size, rank=rank, shuffle=True)
-
-    train_loader = DataLoader(
-        trainset,
-        batch_size=batch_size,
-        sampler=sampler,
-        num_workers=args.num_workers,
-        pin_memory=args.pin_memory
-    )
-    return train_loader
 
 
 def get_optimizer_ddp(config: ConfigDict, model: torch.nn.Module) -> torch.optim.Optimizer:
