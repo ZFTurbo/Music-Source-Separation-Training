@@ -10,6 +10,7 @@ from torch.optim import Adam, AdamW, SGD, RAdam, RMSprop
 from tqdm.auto import tqdm
 from typing import Dict, List, Tuple, Any, Union
 import loralib as lora
+from .muon import SingleDeviceMuonWithAuxAdam
 
 
 def demix(
@@ -205,7 +206,8 @@ def get_optimizer(config: ConfigDict, model: torch.nn.Module) -> torch.optim.Opt
     optim_params = dict()
     if 'optimizer' in config:
         optim_params = dict(config['optimizer'])
-        print(f'Optimizer params from config:\n{optim_params}')
+        if config.training.optimizer != 'muon':
+            print(f'Optimizer params from config:\n{optim_params}')
 
     name_optimizer = getattr(config.training, 'optimizer',
                              'No optimizer in config')
@@ -226,6 +228,27 @@ def get_optimizer(config: ConfigDict, model: torch.nn.Module) -> torch.optim.Opt
     elif name_optimizer == 'adamw8bit':
         import bitsandbytes as bnb
         optimizer = bnb.optim.AdamW8bit(model.parameters(), lr=config.training.lr, **optim_params)
+    elif name_optimizer == 'muon':
+        print("Using Muon optimizer (Single-Device) with AdamW for auxiliary parameters.")
+        
+        muon_params = [p for p in model.parameters() if p.ndim >= 2]
+        adam_params = [p for p in model.parameters() if p.ndim < 2]
+
+        if not hasattr(config, 'optimizer') or 'muon_group' not in config.optimizer or 'adam_group' not in config.optimizer:
+            raise ValueError("For the 'muon' optimizer, the config must have an 'optimizer' section "
+                             "with 'muon_group' and 'adam_group' dictionaries.")
+
+        muon_group_config = dict(config.optimizer.muon_group)
+        adam_group_config = dict(config.optimizer.adam_group)
+
+        print(f"Muon group params: {muon_group_config}")
+        print(f"Adam group params: {adam_group_config}")
+
+        param_groups = [
+            dict(params=muon_params, use_muon=True, **muon_group_config),
+            dict(params=adam_params, use_muon=False, **adam_group_config),
+        ]
+        optimizer = SingleDeviceMuonWithAuxAdam(param_groups)
     elif name_optimizer == 'sgd':
         print('Use SGD optimizer')
         optimizer = SGD(model.parameters(), lr=config.training.lr, **optim_params)
