@@ -1,6 +1,8 @@
 # coding: utf-8
 __author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
 
+import argparse
+import math
 import time
 import os
 import glob
@@ -10,7 +12,8 @@ import numpy as np
 import soundfile as sf
 from tqdm.auto import tqdm
 from ml_collections import ConfigDict
-from typing import Tuple, Dict, List, Union
+from typing import Tuple, Dict, List, Union, Any, Optional
+import torch.distributed as dist
 
 from utils.settings import get_model_from_config, logging, write_results_in_file, parse_args_valid
 from utils.audio_utils import draw_spectrogram, normalize_audio, denormalize_audio, read_audio_transposed
@@ -23,83 +26,144 @@ warnings.filterwarnings("ignore")
 
 
 def get_mixture_paths(
-    args,
+    args: argparse.Namespace,
     verbose: bool,
     config: ConfigDict,
     extension: str
 ) -> List[str]:
     """
-    Retrieve paths to mixture files in the specified validation directories.
+    Collect validation mixture file paths from one or more root directories.
 
-    Parameters:
-    ----------
-    valid_path : List[str]
-        A list of directories to search for validation mixtures.
-    verbose : bool
-        If True, prints detailed information about the search process.
-    config : ConfigDict
-        Configuration object containing parameters like `inference.num_overlap` and `inference.batch_size`.
-    extension : str
-        File extension of the mixture files (e.g., 'wav').
+    Scans each directory in `args.valid_path` for files matching the pattern
+    `<root>/*/mixture.<extension>` and returns a sorted list of absolute paths.
+    In Distributed Data Parallel (DDP) runs, status messages are printed only
+    on rank 0; otherwise they are printed unconditionally when `verbose=True`.
+
+    Args:
+        args (argparse.Namespace): Arguments with `valid_path` (str or List[str])
+            specifying root directories to search.
+        verbose (bool): If True, print collection details and summary.
+        config (ConfigDict): Configuration used for informational logging
+            (e.g., `inference.num_overlap`, `inference.batch_size`).
+        extension (str): Audio file extension to match (with or without a leading dot).
 
     Returns:
-    -------
-    List[str]
-        A list of file paths to the mixture files.
+        List[str]: Sorted list of discovered mixture file paths.
     """
+
+    ddp_mode = dist.is_initialized()
+    should_print = (not ddp_mode) or (dist.get_rank() == 0)
+
+    # --- read & normalize args.valid_path ---
     try:
         valid_path = args.valid_path
     except Exception as e:
-        print('No valid path in args')
+        if should_print:
+            print("No valid path in args")
         raise e
 
-    all_mixtures_path = []
-    for path in valid_path:
-        part = sorted(glob.glob(f"{path}/*/mixture.{extension}"))
-        if len(part) == 0:
-            if verbose:
-                print(f'No validation data found in: {path}')
-        all_mixtures_path += part
-    if verbose:
-        print(f'Total mixtures: {len(all_mixtures_path)}')
-        print(f'Overlap: {config.inference.num_overlap} Batch size: {config.inference.batch_size}')
+    if isinstance(valid_path, str):
+        valid_paths: List[str] = [valid_path]
+    else:
+        valid_paths = list(valid_path)
+
+    # --- collect mixture files ---
+    all_mixtures_path: List[str] = []
+    ext = extension.lstrip(".")
+    pattern = os.path.join("*", f"mixture.{ext}")   # matches "<dir>/*/mixture.ext"
+
+    for root in valid_paths:
+        part = sorted(glob.glob(os.path.join(root, pattern)))
+        if not part and verbose and should_print:
+            print(f"No validation data found in: {root}")
+        all_mixtures_path.extend(part)
+
+    # --- verbose summary ---
+    if verbose and should_print:
+        # be robust to dict-like or attribute-like config
+        inference = getattr(config, "inference", None)
+        if inference is None and isinstance(config, dict):
+            inference = config.get("inference", None)
+
+        def _get(obj, name, default=None):
+            if obj is None:
+                return default
+            if isinstance(obj, dict):
+                return obj.get(name, default)
+            return getattr(obj, name, default)
+
+        num_overlap = _get(inference, "num_overlap", "?")
+        batch_size  = _get(inference, "batch_size",  "?")
+
+        print(f"Total mixtures: {len(all_mixtures_path)}")
+        print(f"Overlap: {num_overlap} Batch size: {batch_size}")
 
     return all_mixtures_path
 
 
 def update_metrics_and_pbar(
-        track_metrics: Dict,
-        all_metrics: Dict,
-        instr: str,
-        pbar_dict: Dict,
-        mixture_paths: Union[List[str], tqdm],
-        verbose: bool = False
+    track_metrics: Dict[str, float],
+    all_metrics: Dict[str, Dict[str, Union[Dict[str, float], List[float]]]],
+    instr: str,
+    pbar_dict: Dict[str, float],
+    mixture_paths: Optional[Union[List[str], tqdm]],
+    verbose: bool = False,
+    path: Optional[str] = None,
 ) -> None:
     """
-    Update metrics dictionary and progress bar with new metric values.
+    Update accumulated metrics and (optionally) a tqdm progress bar.
 
-    Parameters:
-    ----------
-    track_metrics : Dict
-        Dictionary with metric names as keys and their computed values as values.
-    all_metrics : Dict
-        Dictionary to store all metrics, organized by metric name and instrument.
-    instr : str
-        Name of the instrument for which the metrics are being computed.
-    pbar_dict : Dict
-        Dictionary for progress bar updates.
-    mixture_paths : tqdm, optional
-        Progress bar object, if available. Default is None.
-    verbose : bool, optional
-        If True, prints metric values to the console. Default is False.
+    In non-DDP runs, appends each metric value to `all_metrics[metric_name][instr]`
+    (a list). In DDP runs (when `torch.distributed` is initialized), stores values
+    as `all_metrics[metric_name][instr][path]` (a dict keyed by file `path`);
+    therefore `path` must be provided under DDP. When `verbose=True`, metric
+    values are printed only on rank 0. Also updates `pbar_dict` and, if a tqdm
+    instance is provided, calls `set_postfix` for live display.
+
+    Args:
+        track_metrics (Dict[str, float]): Mapping from metric name to its value for
+            the current track/instrument.
+        all_metrics (Dict[str, Dict[str, Union[Dict[str, float], List[float]]]]):
+            Aggregator for all collected metrics, organized as
+            `{metric_name: {instrument: list_or_dict}}`, where the inner container
+            is a list (non-DDP) or dict keyed by `path` (DDP).
+        instr (str): Instrument name associated with the current metrics.
+        pbar_dict (Dict[str, float]): Dictionary holding the latest values to show
+            in the tqdm postfix (updated in place).
+        mixture_paths (Optional[Union[List[str], tqdm]]): If a tqdm progress bar is
+            supplied, its `set_postfix` is called with `pbar_dict`.
+        verbose (bool, optional): If True, print metric updates (rank 0 only in DDP).
+            Defaults to False.
+        path (Optional[str], optional): File path key required in DDP mode to index
+            per-track metrics for `instr`. Ignored in non-DDP. Defaults to None.
+
+    Returns:
+        None
     """
-    for metric_name, metric_value in track_metrics.items():
-        if verbose:
-            print(f"Metric {metric_name:11s} value: {metric_value:.4f}")
-        all_metrics[metric_name][instr].append(metric_value)
-        pbar_dict[f'{metric_name}_{instr}'] = metric_value
 
-    if mixture_paths is not None:
+    ddp_mode = dist.is_initialized()
+    should_print = (not ddp_mode) or (dist.get_rank() == 0)
+
+    if ddp_mode and path is None:
+        raise ValueError("`path` must be provided when torch.distributed is initialized.")
+
+    for metric_name, metric_value in track_metrics.items():
+        if verbose and should_print:
+            print(f"Metric {metric_name:11s} value: {metric_value:.4f}")
+
+        if metric_name not in all_metrics:
+            all_metrics[metric_name] = {}
+        if instr not in all_metrics[metric_name]:
+            all_metrics[metric_name][instr] = {} if ddp_mode else []
+
+        if ddp_mode:
+            all_metrics[metric_name][instr][path] = metric_value  # type: ignore[index]
+        else:
+            all_metrics[metric_name][instr].append(metric_value)  # type: ignore[union-attr]
+
+        pbar_dict[f"{metric_name}_{instr}"] = metric_value
+
+    if mixture_paths is not None and hasattr(mixture_paths, "set_postfix"):
         try:
             mixture_paths.set_postfix(pbar_dict)
         except Exception:
@@ -109,56 +173,73 @@ def update_metrics_and_pbar(
 def process_audio_files(
     mixture_paths: List[str],
     model: torch.nn.Module,
-    args,
-    config,
+    args: Any,
+    config: ConfigDict,
     device: torch.device,
     verbose: bool = False,
     is_tqdm: bool = True
-) -> Dict[str, Dict[str, List[float]]]:
+) -> Dict[str, Dict[str, Union[Dict[str, float], List[float]]]]:
     """
-    Process a list of audio files, perform source separation, and evaluate metrics.
+    Run source separation on a list of mixtures and collect evaluation metrics.
 
-    Parameters:
-    ----------
-    mixture_paths : List[str]
-        List of file paths to the audio mixtures.
-    model : torch.nn.Module
-        The trained model used for source separation.
-    args : Any
-        Argument object containing user-specified options like metrics, model type, etc.
-    config : Any
-        Configuration object containing model and processing parameters.
-    device : torch.device
-        Device (CPU or CUDA) on which the model will be executed.
-    verbose : bool, optional
-        If True, prints detailed logs for each processed file. Default is False.
-    is_tqdm : bool, optional
-        If True, displays a progress bar for file processing. Default is True.
+    Performs optional resampling and normalization, demixes each track (with
+    optional Test-Time Augmentation), saves separated stems (FLAC PCM_16 when
+    peak ≤ 1.0 else WAV FLOAT), optionally renders spectrograms, computes the
+    requested metrics, and aggregates them in a nested dictionary.
+
+    In non-DDP runs, metrics are stored as lists:
+        {metric_name: {instrument: [values...]}}
+    In DDP runs (when `torch.distributed` is initialized), metrics are stored as
+    dicts keyed by the track path:
+        {metric_name: {instrument: {path: value, ...}}}
+
+    Args:
+        mixture_paths (List[str]): Absolute or relative paths to `mixture.<ext>` files.
+        model (torch.nn.Module): Trained separator model in eval mode.
+        args (Any): Runtime arguments (e.g., `metrics`, `model_type`, `use_tta`,
+            `store_dir`, `draw_spectro`, `extension`).
+        config (ConfigDict): Configuration with audio/inference/training settings
+            (e.g., `audio.sample_rate`, `inference.batch_size`, `inference.num_overlap`,
+            `inference.normalize`, `training.instruments`).
+        device (torch.device): Device for inference (CPU/CUDA).
+        verbose (bool, optional): Print per-track details and timings. Defaults to False.
+        is_tqdm (bool, optional): Show a tqdm progress bar (rank 0 only under DDP). Defaults to True.
 
     Returns:
-    -------
-    Dict[str, Dict[str, List[float]]]
-        A nested dictionary where the outer keys are metric names,
-        the inner keys are instrument names, and the values are lists of metric scores.
+        Dict[str, Dict[str, Union[Dict[str, float], List[float]]]]: Aggregated metrics
+        per metric and instrument; inner container is a list (non-DDP) or a dict keyed
+        by track path (DDP).
     """
-    instruments = prefer_target_instrument(config)
 
+    ddp_mode = dist.is_initialized()
+    should_print = (not ddp_mode) or (dist.get_rank() == 0)
+
+    instruments = prefer_target_instrument(config)
     use_tta = getattr(args, 'use_tta', False)
-    # dir to save files, if empty no saving
     store_dir = getattr(args, 'store_dir', '')
-    # codec to save files
-    if 'extension' in config['inference']:
+
+    # extension is used only for reading GT stems; outputs use FLAC/WAV rule unconditionally
+    if 'inference' in config and 'extension' in config['inference']:
         extension = config['inference']['extension']
     else:
         extension = getattr(args, 'extension', 'wav')
 
-    # Initialize metrics dictionary
-    all_metrics = {
-        metric: {instr: [] for instr in config.training.instruments}
-        for metric in args.metrics
-    }
+    # --- init metrics container ---
+    if ddp_mode:
+        # behave like first: dict of dicts
+        all_metrics: Dict[str, Dict[str, Dict]] = {
+            metric: {instr: {} for instr in config.training.instruments}
+            for metric in args.metrics
+        }
+    else:
+        # behave like second: dict of lists
+        all_metrics: Dict[str, Dict[str, List[float]]] = {
+            metric: {instr: [] for instr in config.training.instruments}
+            for metric in args.metrics
+        }
 
-    if is_tqdm:
+    # --- tqdm wrapping as requested ---
+    if is_tqdm and should_print:
         mixture_paths = tqdm(mixture_paths)
 
     for path in mixture_paths:
@@ -167,20 +248,23 @@ def process_audio_files(
         mix_orig = mix.copy()
         folder = os.path.dirname(path)
 
-        if 'sample_rate' in config.audio:
-            if sr != config.audio['sample_rate']:
+        # resample input to config SR if needed
+        if 'audio' in config and 'sample_rate' in config.audio:
+            target_sr = config.audio['sample_rate']
+            if sr != target_sr:
                 orig_length = mix.shape[-1]
-                if verbose:
-                    print(f'Warning: sample rate is different. In config: {config.audio["sample_rate"]} in file {path}: {sr}')
-                mix = librosa.resample(mix, orig_sr=sr, target_sr=config.audio['sample_rate'], res_type='kaiser_best')
+                if verbose and should_print:
+                    print(f'Warning: sample rate is different. In config: {target_sr} in file {path}: {sr}')
+                mix = librosa.resample(mix, orig_sr=sr, target_sr=target_sr, res_type='kaiser_best')
 
-        if verbose:
-            folder_name = os.path.abspath(folder)
-            print(f'Song: {folder_name} Shape: {mix.shape}')
+        if verbose and should_print:
+            print(f'Song: {os.path.abspath(folder)} Shape: {mix.shape}')
 
-        if 'normalize' in config.inference:
-            if config.inference['normalize'] is True:
-                mix, norm_params = normalize_audio(mix)
+        # optional normalize
+        if 'inference' in config and config.inference.get('normalize', False):
+            mix, norm_params = normalize_audio(mix)
+        else:
+            norm_params = None
 
         waveforms_orig = demix(config, model, mix.copy(), device, model_type=args.model_type)
 
@@ -190,44 +274,50 @@ def process_audio_files(
         pbar_dict = {}
 
         for instr in instruments:
-            if verbose:
+            if verbose and should_print:
                 print(f"Instr: {instr}")
 
-            if instr != 'other' or config.training.other_fix is False:
+            # read GT track
+            if instr != 'other' or not getattr(config.training, 'other_fix', False):
                 track, sr1 = read_audio_transposed(f"{folder}/{instr}.{extension}", instr, skip_err=True)
                 if track is None:
                     continue
             else:
-                # if track=vocal+other
+                # other = mix - vocals
                 track, sr1 = read_audio_transposed(f"{folder}/vocals.{extension}")
                 track = mix_orig - track
 
             estimates = waveforms_orig[instr]
 
-            if 'sample_rate' in config.audio:
-                if sr != config.audio['sample_rate']:
-                    estimates = librosa.resample(estimates, orig_sr=config.audio['sample_rate'], target_sr=sr,
-                                                 res_type='kaiser_best')
+            # back-resample estimates to original SR if input was resampled
+            if 'audio' in config and 'sample_rate' in config.audio:
+                target_sr = config.audio['sample_rate']
+                if sr != target_sr:
+                    estimates = librosa.resample(estimates, orig_sr=target_sr, target_sr=sr, res_type='kaiser_best')
                     estimates = librosa.util.fix_length(estimates, size=orig_length)
 
-            if 'normalize' in config.inference:
-                if config.inference['normalize'] is True:
-                    estimates = denormalize_audio(estimates, norm_params)
+            # denormalize if needed
+            if norm_params is not None and 'inference' in config and config.inference.get('normalize', False):
+                estimates = denormalize_audio(estimates, norm_params)
 
+            # --- saving (uniform rule) ---
             if store_dir:
                 os.makedirs(store_dir, exist_ok=True)
-                if np.abs(estimates).max() <= 1.0:
-                    out_wav_name = f"{store_dir}/{os.path.basename(folder)}_{instr}.flac"
-                    sf.write(out_wav_name, estimates.T, sr, subtype='PCM_16')
+                base = f"{store_dir}/{os.path.basename(folder)}_{instr}"
+                peak = float(np.abs(estimates).max())
+                if peak <= 1.0:
+                    out_path = f"{base}.flac"
+                    sf.write(out_path, estimates.T, sr, subtype='PCM_16')
                 else:
-                    out_wav_name = f"{store_dir}/{os.path.basename(folder)}_{instr}.wav"
-                    sf.write(out_wav_name, estimates.T, sr, subtype='FLOAT')
-                if args.draw_spectro > 0:
-                    out_img_name = f"{store_dir}/{os.path.basename(folder)}_{instr}.jpg"
-                    draw_spectrogram(estimates.T, sr, args.draw_spectro, out_img_name)
-                    out_img_name_orig = f"{store_dir}/{os.path.basename(folder)}_{instr}_orig.jpg"
-                    draw_spectrogram(track.T, sr, args.draw_spectro, out_img_name_orig)
+                    out_path = f"{base}.wav"
+                    sf.write(out_path, estimates.T, sr, subtype='FLOAT')
 
+                draw_spec = getattr(args, 'draw_spectro', 0)
+                if draw_spec and draw_spec > 0:
+                    draw_spectrogram(estimates.T, sr, draw_spec, f"{base}.jpg")
+                    draw_spectrogram(track.T,     sr, draw_spec, f"{base}_orig.jpg")
+
+            # --- metrics ---
             track_metrics = get_metrics(
                 args.metrics,
                 track,
@@ -236,15 +326,30 @@ def process_audio_files(
                 device=device,
             )
 
-            update_metrics_and_pbar(
-                track_metrics,
-                all_metrics,
-                instr, pbar_dict,
-                mixture_paths=mixture_paths,
-                verbose=verbose
-            )
+            # --- update metrics + progress ---
+            if ddp_mode:
+                # behave like first: include path in call
+                update_metrics_and_pbar(
+                    track_metrics,
+                    all_metrics,
+                    instr,
+                    pbar_dict,
+                    mixture_paths=mixture_paths,
+                    verbose=verbose and should_print,
+                    path=path
+                )
+            else:
+                # behave like second: no path argument
+                update_metrics_and_pbar(
+                    track_metrics,
+                    all_metrics,
+                    instr,
+                    pbar_dict,
+                    mixture_paths=mixture_paths,
+                    verbose=verbose and should_print
+                )
 
-        if verbose:
+        if verbose and should_print:
             print(f"Time for song: {time.time() - start_time:.2f} sec")
 
     return all_metrics
@@ -255,64 +360,83 @@ def compute_metric_avg(
     args,
     instruments: List[str],
     config: ConfigDict,
-    all_metrics: Dict[str, Dict[str, List[float]]],
+    all_metrics: Dict[str, Dict[str, Union[List[float], Dict[str, float]]]],
     start_time: float
 ) -> Dict[str, float]:
     """
-    Calculate and log the average metrics for each instrument, including per-instrument metrics and overall averages.
+    Compute average metrics across instruments (DDP-aware) and optionally log to file.
 
-    Parameters:
-    ----------
-    store_dir : str
-        Directory to store the logs. If empty, logs are not stored.
-    args : dict
-        Dictionary containing the arguments, used for logging.
-    instruments : List[str]
-        List of instruments to process.
-    config : ConfigDict
-        Configuration dictionary containing the inference settings.
-    all_metrics : Dict[str, Dict[str, List[float]]]
-        A dictionary containing metric values for each instrument.
-        The structure is {metric_name: {instrument_name: [metric_values]}}.
-    start_time : float
-        The starting time for calculating elapsed time.
+    For each metric, computes the mean value per instrument from its collected values
+    (list in non-DDP, or dict-of-{path: value} in DDP), sums these instrument means,
+    and divides by `len(instruments)` to obtain the final average (legacy behavior).
+    Prints/logs only on rank 0 when `torch.distributed` is initialized; if `store_dir`
+    is non-empty, writes a `results.txt` with logs.
+
+    Args:
+        store_dir (str): Directory to write `results.txt` when logging is enabled.
+        args: Run arguments included in the log header when `store_dir` is provided.
+        instruments (List[str]): Instruments to include in the averaging.
+        config (ConfigDict): Config used for informational logging (e.g., overlap).
+        all_metrics (Dict[str, Dict[str, Union[List[float], Dict[str, float]]]]):
+            Nested metrics container:
+              - non-DDP: {metric: {instrument: [values...]}}
+              - DDP:     {metric: {instrument: {path: value, ...}}}
+        start_time (float): Timestamp for reporting elapsed time.
 
     Returns:
-    -------
-    Dict[str, float]
-        A dictionary with the average value for each metric across all instruments.
+        Dict[str, float]: Mapping from metric name to its average over instruments.
     """
 
-    logs = []
-    if store_dir:
+    ddp_mode = dist.is_initialized()
+    should_print = (not ddp_mode) or (dist.get_rank() == 0)
+
+    logs: List[str] = []
+    verbose_logging = bool(store_dir) and should_print
+    if verbose_logging:
         logs.append(str(args))
-        verbose_logging = True
-    else:
-        verbose_logging = False
 
     logging(logs, text=f"Num overlap: {config.inference.num_overlap}", verbose_logging=verbose_logging)
 
-    metric_avg = {}
+    metric_sum: Dict[str, float] = {}
+
     for instr in instruments:
         for metric_name in all_metrics:
-            metric_values = np.array(all_metrics[metric_name][instr])
+            per_instr_container = all_metrics[metric_name]  # dict: instr -> (list | dict[path->val])
 
-            mean_val = metric_values.mean()
-            std_val = metric_values.std()
+            values_obj = per_instr_container.get(instr, []) if isinstance(per_instr_container, dict) else []
+            if isinstance(values_obj, dict):
+                vals = list(values_obj.values())
+            else:
+                vals = list(values_obj)
 
-            logging(logs, text=f"Instr {instr} {metric_name}: {mean_val:.4f} (Std: {std_val:.4f})", verbose_logging=verbose_logging)
-            if metric_name not in metric_avg:
-                metric_avg[metric_name] = 0.0
-            metric_avg[metric_name] += mean_val
+            arr = np.asarray(vals, dtype=float)
+            if arr.size == 0:
+                mean_val = float("nan")
+                std_val = float("nan")
+            else:
+                mean_val = float(arr.mean())
+                std_val = float(arr.std())
+
+            logging(
+                logs,
+                text=f"Instr {instr} {metric_name}: {mean_val:.4f} (Std: {std_val:.4f})",
+                verbose_logging=verbose_logging
+            )
+
+            metric_sum[metric_name] = metric_sum.get(metric_name, 0.0) + mean_val
+
+    metric_avg: Dict[str, float] = {}
+    denom = max(len(instruments), 1)
     for metric_name in all_metrics:
-        metric_avg[metric_name] /= len(instruments)
+        metric_avg[metric_name] = metric_sum.get(metric_name, float("nan")) / denom
 
     if len(instruments) > 1:
-        for metric_name in metric_avg:
-            logging(logs, text=f'Metric avg {metric_name:11s}: {metric_avg[metric_name]:.4f}', verbose_logging=verbose_logging)
+        for metric_name, avg in metric_avg.items():
+            logging(logs, text=f"Metric avg {metric_name:11s}: {avg:.4f}", verbose_logging=verbose_logging)
+
     logging(logs, text=f"Elapsed time: {time.time() - start_time:.2f} sec", verbose_logging=verbose_logging)
 
-    if store_dir:
+    if store_dir and should_print:
         write_results_in_file(store_dir, logs)
 
     return metric_avg
@@ -504,59 +628,134 @@ def valid_multi_gpu(
     model: torch.nn.Module,
     args,
     config: ConfigDict,
-    device_ids: List[int],
+    device_ids: Optional[List[int]] = None,
     verbose: bool = False
-) -> Tuple[Dict[str, float], dict]:
+) -> Tuple[Dict[str, float], Dict]:
     """
-    Perform validation across multiple GPUs, processing mixtures and computing metrics using parallel processes.
-    The results from each GPU are aggregated and the average metrics are computed.
+    Validate a separator model across multiple GPUs with a unified API.
 
-    Parameters:
-    ----------
-    model : torch.nn.Module
-        The model to be used for inference.
-    args : dict
-        Dictionary containing various argument configurations, such as file saving directory and codec settings.
-    config : ConfigDict
-        Configuration object containing model settings and validation parameters.
-    device_ids : List[int]
-        List of device IDs (for multi-GPU setups) to use for validation.
-    verbose : bool, optional
-        Flag to print detailed information about the validation process. Default is False.
+    Runs validation either in Distributed Data Parallel (DDP) mode—detected via
+    `torch.distributed.is_initialized()`—or, if DDP is not active, via
+    multi-processing / single-GPU execution using the provided `device_ids`.
+    Collects per-track metrics, aggregates them into per-instrument/per-metric
+    arrays, and computes per-metric averages.
+
+    Behavior:
+      * DDP mode: splits the dataset across ranks and gathers metrics; only rank 0
+        returns results, while other ranks return `(None, None)`.
+      * Non-DDP: launches parallel workers when `len(device_ids) > 1`, otherwise
+        runs on a single device/CPU.
+
+    Args:
+        model (torch.nn.Module): Trained model to evaluate.
+        args: Runtime arguments (e.g., metrics list, store dir).
+        config (ConfigDict): Configuration with inference/training settings.
+        device_ids (Optional[List[int]]): GPU device IDs for non-DDP parallelism.
+            If None or length is 1, runs on a single device.
+        verbose (bool, optional): If True, print progress/logs. Defaults to False.
 
     Returns:
-    -------
-    Dict[str, float]
-        A dictionary containing the average metrics for each metric name.
+        Tuple[Dict[str, float], Dict]: A pair `(metric_avg, all_metrics)` where
+            - `metric_avg` maps metric name to its average score,
+            - `all_metrics` is a nested dict `{metric: {instrument: List[float]}}`.
+          In DDP mode, non-zero ranks return `(None, None)`.
     """
 
     start_time = time.time()
 
-    # dir to save files, if empty no saving
-    store_dir = getattr(args, 'store_dir', '')
-    # codec to save files
-    if 'extension' in config['inference']:
-        extension = config['inference']['extension']
-    else:
-        extension = getattr(args, 'extension', 'wav')
+    inference = getattr(config, "inference", None)
+    if inference is None and isinstance(config, dict):
+        inference = config.get("inference", {})
+    extension = getattr(inference, "extension", None)
+    if extension is None:
+        if isinstance(inference, dict):
+            extension = inference.get("extension", getattr(args, "extension", "wav"))
+        else:
+            extension = getattr(args, "extension", "wav")
 
     all_mixtures_path = get_mixture_paths(args, verbose, config, extension)
 
-    return_dict = torch.multiprocessing.Manager().dict()
+    ddp_mode = dist.is_initialized()
 
+    if ddp_mode:
+        rank = dist.get_rank()
+        world_size = dist.get_world_size()
+
+        device = torch.device(f"cuda:{rank}" if torch.cuda.is_available() else "cpu")
+        model.to(device)
+        model.eval()
+
+        per_rank_data = all_mixtures_path[rank::world_size]
+        target_len = math.ceil(len(all_mixtures_path) / world_size)
+        if len(per_rank_data) < target_len and len(all_mixtures_path) > 0:
+            per_rank_data += [all_mixtures_path[0]] * (target_len - len(per_rank_data))
+
+        local_metrics = {
+            metric: {instr: [] for instr in config.training.instruments}
+            for metric in args.metrics
+        }
+
+        with torch.no_grad():
+            single_metrics = process_audio_files(
+                per_rank_data, model, args, config, device, verbose=verbose
+            )
+            for instr in config.training.instruments:
+                for metric_name in args.metrics:
+                    local_metrics[metric_name][instr] = single_metrics[metric_name][instr]
+
+        all_metrics: Dict[str, Dict[str, List[float]]] = {m: {} for m in args.metrics}
+        for metric in args.metrics:
+            for instr in config.training.instruments:
+                all_metrics[metric][instr] = []
+                per_instr = local_metrics[metric][instr]
+                if isinstance(per_instr, dict):
+                    local_data = list(per_instr.values())
+                else:
+                    local_data = list(per_instr)
+
+                if len(local_data) == 0:
+                    local_tensor = torch.zeros(target_len, dtype=torch.float32, device=device)
+                else:
+                    if len(local_data) < target_len:
+                        local_data = local_data + [0.0] * (target_len - len(local_data))
+                    local_tensor = torch.tensor(local_data, dtype=torch.float32, device=device)
+
+                gathered_list = [torch.zeros_like(local_tensor) for _ in range(world_size)]
+                dist.all_gather(gathered_list, local_tensor)
+
+                cat_vals = torch.cat(gathered_list).tolist()[:len(all_mixtures_path)]
+                all_metrics[metric][instr] = cat_vals
+
+        if dist.get_rank() == 0:
+            instruments = prefer_target_instrument(config)
+            metric_avg = compute_metric_avg(
+                getattr(args, "store_dir", ""),
+                args,
+                instruments,
+                config,
+                all_metrics,
+                start_time
+            )
+            return metric_avg, all_metrics
+
+        return None, None
+
+    store_dir = getattr(args, "store_dir", "")
+
+    return_dict = torch.multiprocessing.Manager().dict()
     run_parallel_validation(verbose, all_mixtures_path, config, model, device_ids, args, return_dict)
 
-    all_metrics = dict()
+    all_metrics: Dict[str, Dict[str, List[float]]] = {m: {} for m in args.metrics}
     for metric in args.metrics:
-        all_metrics[metric] = dict()
         for instr in config.training.instruments:
-            all_metrics[metric][instr] = []
+            merged: List[float] = []
             for i in range(len(device_ids)):
-                all_metrics[metric][instr] += return_dict[i][metric][instr]
+                merged += return_dict[i][metric][instr]
+            all_metrics[metric][instr] = merged
 
     instruments = prefer_target_instrument(config)
-
-    return compute_metric_avg(store_dir, args, instruments, config, all_metrics, start_time), all_metrics
+    metric_avg = compute_metric_avg(store_dir, args, instruments, config, all_metrics, start_time)
+    return metric_avg, all_metrics
 
 
 def check_validation(dict_args):

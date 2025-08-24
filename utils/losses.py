@@ -9,8 +9,30 @@ from torch import nn
 from torch_log_wmse import LogWMSE
 
 
-def multistft_loss(y_: torch.Tensor, y: torch.Tensor,
-                   loss_multistft: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]) -> torch.Tensor:
+def multistft_loss(
+    y_: torch.Tensor,
+    y: torch.Tensor,
+    loss_multistft: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
+) -> torch.Tensor:
+    """
+    Compute a (multi-resolution) STFT-based loss on waveforms.
+
+    Reshapes inputs to (B, C*T, L) when needed and delegates to a provided
+    multi-resolution STFT criterion (e.g., `auraloss.freq.MultiResolutionSTFTLoss`),
+    a widely used spectral loss for audio synthesis/enhancement that compares
+    magnitudes across multiple STFT settings.
+    See: Steinmetz & Reiss, 2020, “auraloss: Audio-focused loss functions in PyTorch”.
+
+    Args:
+        y_ (torch.Tensor): Predicted waveform tensor of shape (B, C, T) or (B, S, C, T).
+        y (torch.Tensor): Target waveform tensor with a compatible shape.
+        loss_multistft (Callable[[torch.Tensor, torch.Tensor], torch.Tensor]):
+            A callable implementing the MR-STFT loss.
+
+    Returns:
+        torch.Tensor: Scalar loss tensor.
+    """
+
     if len(y_.shape) == 4:
         y1_ = y_.reshape(y_.shape[0], y_.shape[1] * y_.shape[2], y_.shape[3])
     elif len(y_.shape) == 3:
@@ -24,7 +46,31 @@ def multistft_loss(y_: torch.Tensor, y: torch.Tensor,
     return loss_multistft(y1_, y1)
 
 
-def masked_loss(y_: torch.Tensor, y: torch.Tensor, q: float, coarse: bool = True) -> torch.Tensor:
+def masked_loss(
+    y_: torch.Tensor,
+    y: torch.Tensor,
+    q: float,
+    coarse: bool = True
+) -> torch.Tensor:
+    """
+    Robust, quantile-masked MSE (“trimmed” MSE).
+
+    Computes an elementwise MSE, optionally averages spatial dims (“coarse”),
+    then masks out the largest residuals by keeping values below the `q`-quantile.
+    This yields robustness to outliers akin to trimmed/robust regression losses.
+    See classical robust estimation: Huber, 1964; Rousseeuw & Leroy, 1987.
+
+    Args:
+        y_ (torch.Tensor): Predicted tensor matching `y`'s shape.
+        y (torch.Tensor): Ground-truth tensor.
+        q (float): Quantile in (0, 1] used to keep low-error elements.
+        coarse (bool, optional): If True, average over last two dims before masking.
+            Defaults to True.
+
+    Returns:
+        torch.Tensor: Scalar loss tensor.
+    """
+
     loss = torch.nn.MSELoss(reduction='none')(y_, y).transpose(0, 1)
     if coarse:
         loss = loss.mean(dim=(-1, -2))
@@ -34,7 +80,28 @@ def masked_loss(y_: torch.Tensor, y: torch.Tensor, q: float, coarse: bool = True
     return (loss * mask).mean()
 
 
-def spec_rmse_loss(estimate, sources, stft_config):
+def spec_rmse_loss(
+    estimate: torch.Tensor,
+    sources: torch.Tensor,
+    stft_config: dict
+) -> torch.Tensor:
+    """
+    RMSE in the complex STFT domain.
+
+    Computes STFT for prediction and target, represents complex values as
+    real+imag pairs, and applies RMSE (L2) over the spectral representation.
+    Spectral-domain L2/RMSE losses are common in speech/music enhancement.
+    See, e.g., Steinmetz & Reiss, 2020; Yamamoto et al., 2020 (Parallel WaveGAN).
+
+    Args:
+        estimate (torch.Tensor): Predicted time-domain signal(s), e.g., (B, S, C, T).
+        sources (torch.Tensor): Target time-domain signal(s), matching shape.
+        stft_config (dict): Parameters for `torch.stft` (e.g., n_fft, hop_length, win_length).
+
+    Returns:
+        torch.Tensor: Scalar loss tensor.
+    """
+
     _, _, _, lenc = estimate.shape
     spec_estimate = estimate.view(-1, lenc)
     spec_sources = sources.view(-1, lenc)
@@ -57,7 +124,33 @@ def spec_rmse_loss(estimate, sources, stft_config):
     return loss
 
 
-def spec_masked_loss(estimate, sources, stft_config, q: float = 0.9, coarse: bool = True):
+def spec_masked_loss(
+    estimate: torch.Tensor,
+    sources: torch.Tensor,
+    stft_config: dict,
+    q: float = 0.9,
+    coarse: bool = True
+) -> torch.Tensor:
+    """
+    Quantile-masked MSE in the complex STFT domain.
+
+    Computes a complex STFT for prediction and target, forms an elementwise MSE
+    in the spectral domain, optionally averages spatial/frequency dims (“coarse”),
+    and masks out the highest-error elements using the `q`-quantile threshold for
+    robustness to outliers. Related to trimmed/robust spectral losses.
+    See: Huber, 1964; Rousseeuw & Leroy, 1987; spectral losses as in Steinmetz & Reiss, 2020.
+
+    Args:
+        estimate (torch.Tensor): Predicted time-domain signal(s), e.g., (B, S, C, T).
+        sources (torch.Tensor): Target time-domain signal(s), matching shape.
+        stft_config (dict): Parameters for `torch.stft`.
+        q (float, optional): Quantile in (0, 1] to keep low-error elements. Defaults to 0.9.
+        coarse (bool, optional): If True, average over spectral dims before masking. Defaults to True.
+
+    Returns:
+        torch.Tensor: Scalar loss tensor.
+    """
+
     _, _, _, lenc = estimate.shape
     spec_estimate = estimate.view(-1, lenc)
     spec_sources = sources.view(-1, lenc)
@@ -94,16 +187,31 @@ def spec_masked_loss(estimate, sources, stft_config, q: float = 0.9, coarse: boo
     return masked_loss
 
 
-def choice_loss(args: argparse.Namespace, config: ConfigDict) -> Callable[..., torch.Tensor]:
+def choice_loss(
+    args: argparse.Namespace,
+    config: ConfigDict
+) -> Callable[[Any, Any, Any | None], torch.Tensor]:
     """
-    Select and return the appropriate loss function based on the configuration and arguments.
+    Build a composite loss from CLI/config options.
+
+    Returns a callable that sums enabled terms (with per-term coefficients):
+    - `masked_loss`: robust, quantile-masked MSE (trimmed MSE; Huber, 1964; Rousseeuw & Leroy, 1987).
+    - `mse_loss`: standard mean squared error.
+    - `l1_loss`: mean absolute error.
+    - `multistft_loss`: multi-resolution STFT magnitude loss (Steinmetz & Reiss, 2020).
+    - `log_wmse_loss`: weighted MSE operating in a log/spectral perceptual space (log-weighted MSE).
+    - `spec_rmse_loss`: RMSE in complex STFT domain.
+    - `spec_masked_loss`: quantile-masked spectral MSE (robust spectral loss).
 
     Args:
-        args: Parsed command-line arguments containing flags for different loss functions.
-        config: Configuration object containing loss settings and parameters.
+        args (argparse.Namespace): Parsed arguments specifying which losses are active
+            and their coefficients.
+        config (ConfigDict): Configuration with loss hyperparameters (e.g., STFT settings,
+            quantile `q`, coarse masking flag).
 
     Returns:
-        A loss function that can be applied to the predicted and ground truth tensors.
+        Callable[[Any, Any, Optional[Any]], torch.Tensor]: A function `loss(y_pred, y_true, x=None)`
+        that computes the weighted sum of the selected loss terms.
     """
 
     loss_fns = []

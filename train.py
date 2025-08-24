@@ -14,7 +14,7 @@ from ml_collections import ConfigDict
 from typing import List, Callable
 import loralib as lora
 
-from utils.audio_utils import prepare_data
+from utils.dataset import prepare_data
 from utils.settings import parse_args_train, initialize_environment, wandb_init, get_model_from_config
 from utils.model_utils import bind_lora_to_model, load_start_checkpoint, save_weights, normalize_batch, \
     initialize_model_and_device, get_optimizer, save_last_weights
@@ -168,7 +168,7 @@ def train_model(args: argparse.Namespace) -> None:
     device_ids = args.device_ids
     batch_size = config.training.batch_size * len(device_ids)
 
-    wandb_init(args, config, device_ids, batch_size)
+    wandb_init(args, config, batch_size)
 
     train_loader = prepare_data(config, args, batch_size)
 
