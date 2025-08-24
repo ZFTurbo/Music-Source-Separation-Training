@@ -341,7 +341,7 @@ class MSSDataset(torch.utils.data.Dataset):
             res = np.stack(res, axis=0)
         except Exception as e:
             # Normally it should never happen, but if happen will let you find a problematic track
-            print('Error during stacking stems: {} Track Length: {} Track path: {}'.format(str(e), track_path, track_length))
+            print('Error during stacking stems: {} Track Length: {} Track path: {}'.format(str(e), track_length, track_path))
             res = np.zeros((len(self.instruments), 2, self.chunk_size), dtype=np.float32)
         if self.aug:
             for i, instr in enumerate(self.instruments):
