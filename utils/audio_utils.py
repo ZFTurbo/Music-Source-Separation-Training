@@ -1,96 +1,43 @@
-import argparse
+
 import numpy as np
 import os
 import soundfile as sf
 import matplotlib.pyplot as plt
-from typing import Dict, Tuple
-from torch.utils.data import DataLoader
-from torch.utils.data.distributed import DistributedSampler
-from utils.dataset import MSSDataset
+from typing import Dict, Tuple, Optional
 
-def prepare_data(config: Dict, args: argparse.Namespace, batch_size: int) -> DataLoader:
+import torch.distributed as dist
+
+
+def read_audio_transposed(path: str, instr: Optional[str] = None, skip_err: bool = False) -> Tuple[Optional[np.ndarray], Optional[int]]:
     """
-    Prepare the training dataset and data loader.
+    Read an audio file and return transposed waveform data with channels first.
+
+    Loads the audio file from `path`, converts mono signals to 2D format, and
+    transposes the array so that its shape is (channels, length). In case of
+    errors, either raises an exception or skips gracefully depending on
+    `skip_err`.
 
     Args:
-        config: Configuration dictionary for the dataset.
-        args: Parsed command-line arguments containing dataset paths and settings.
-        batch_size: Batch size for training.
+        path (str): Path to the audio file to load.
+        instr (Optional[str], optional): Instrument name, used for informative
+            messages when `skip_err` is True. Defaults to None.
+        skip_err (bool, optional): If True, skip files with read errors and
+            return `(None, None)` instead of raising. Defaults to False.
 
     Returns:
-        DataLoader object for the training dataset.
+        Tuple[Optional[np.ndarray], Optional[int]]: A tuple containing:
+            - NumPy array of shape (channels, length), or None if skipped.
+            - Sampling rate as an integer, or None if skipped.
     """
 
-    trainset = MSSDataset(
-        config,
-        args.data_path,
-        batch_size=batch_size,
-        metadata_path=os.path.join(args.results_path, f'metadata_{args.dataset_type}.pkl'),
-        dataset_type=args.dataset_type,
-    )
-
-    train_loader = DataLoader(
-        trainset,
-        batch_size=batch_size,
-        shuffle=True,
-        num_workers=args.num_workers,
-        pin_memory=args.pin_memory,
-        persistent_workers=args.persistent_workers,
-        prefetch_factor=args.prefetch_factor
-    )
-
-    return train_loader
-
-
-def prepare_data_ddp(config: Dict, args: argparse.Namespace, batch_size: int, rank: int, world_size: int) -> DataLoader:
-    trainset = MSSDataset(
-        config,
-        args.data_path,
-        batch_size=world_size * batch_size, # to use self.config.training.num_steps without reduction
-        metadata_path=os.path.join(args.results_path, f'metadata_{args.dataset_type}.pkl'),
-        dataset_type=args.dataset_type,
-    )
-
-    sampler = DistributedSampler(trainset, num_replicas=world_size, rank=rank, shuffle=True)
-
-    train_loader = DataLoader(
-        trainset,
-        batch_size=batch_size,
-        sampler=sampler,
-        num_workers=args.num_workers,
-        pin_memory=args.pin_memory,
-        persistent_workers=args.persistent_workers,
-        prefetch_factor=args.prefetch_factor
-    )
-    return train_loader
-
-
-def read_audio_transposed(path: str, instr: str = None, skip_err: bool = False) -> Tuple[np.ndarray, int]:
-    """
-    Reads an audio file, ensuring mono audio is converted to two-dimensional format,
-    and transposes the data to have channels as the first dimension.
-    Parameters
-    ----------
-    path : str
-        Path to the audio file.
-    skip_err: bool
-        If true, not raise errors
-    instr:
-        name of instument
-    Returns
-    -------
-    Tuple[np.ndarray, int]
-        A tuple containing:
-        - Transposed audio data as a NumPy array with shape (channels, length).
-          For mono audio, the shape will be (1, length).
-        - Sampling rate (int), e.g., 44100.
-    """
+    should_print = not dist.is_initialized() or dist.get_rank() == 0
 
     try:
         mix, sr = sf.read(path)
     except Exception as e:
         if skip_err:
-            print(f"No stem {instr}: skip!")
+            if should_print:
+                print(f"No stem {instr}: skip!")
             return None, None
         else:
             raise RuntimeError(f"Error reading the file at {path}: {e}")
@@ -100,20 +47,20 @@ def read_audio_transposed(path: str, instr: str = None, skip_err: bool = False) 
         return mix.T, sr
 
 
-def normalize_audio(audio: np.ndarray) -> tuple[np.ndarray, Dict[str, float]]:
+def normalize_audio(audio: np.ndarray) -> Tuple[np.ndarray, Dict[str, float]]:
     """
-    Normalize an audio signal by subtracting the mean and dividing by the standard deviation.
+    Normalize an audio signal using mean and standard deviation.
 
-    Parameters:
-    ----------
-    audio : np.ndarray
-        Input audio array with shape (channels, time) or (time,).
+    Computes the mean and standard deviation from the mono mix of the input
+    signal, then applies normalization to each channel.
+
+    Args:
+        audio (np.ndarray): Input audio array of shape (channels, time) or (time,).
 
     Returns:
-    -------
-    tuple[np.ndarray, dict[str, float]]
-        - Normalized audio array with the same shape as the input.
-        - Dictionary containing the mean and standard deviation of the original audio.
+        Tuple[np.ndarray, Dict[str, float]]: A tuple containing:
+            - Normalized audio with the same shape as the input.
+            - A dictionary with keys "mean" and "std" from the original audio.
     """
 
     mono = audio.mean(0)
@@ -123,26 +70,43 @@ def normalize_audio(audio: np.ndarray) -> tuple[np.ndarray, Dict[str, float]]:
 
 def denormalize_audio(audio: np.ndarray, norm_params: Dict[str, float]) -> np.ndarray:
     """
-    Denormalize an audio signal by reversing the normalization process (multiplying by the standard deviation
-    and adding the mean).
+    Reverse normalization on an audio signal.
 
-    Parameters:
-    ----------
-    audio : np.ndarray
-        Normalized audio array to be denormalized.
-    norm_params : dict[str, float]
-        Dictionary containing the 'mean' and 'std' values used for normalization.
+    Applies the stored mean and standard deviation to restore the original
+    scale of a previously normalized signal.
+
+    Args:
+        audio (np.ndarray): Normalized audio array to be denormalized.
+        norm_params (Dict[str, float]): Dictionary containing the keys
+            "mean" and "std" used during normalization.
 
     Returns:
-    -------
-    np.ndarray
-        Denormalized audio array with the same shape as the input.
+        np.ndarray: Denormalized audio with the same shape as the input.
     """
 
     return audio * norm_params["std"] + norm_params["mean"]
 
 
-def draw_spectrogram(waveform, sample_rate, length, output_file):
+def draw_spectrogram(waveform: np.ndarray, sample_rate: int, length: float, output_file: str) -> None:
+    """
+    Generate and save a spectrogram image from an audio waveform.
+
+    Converts the provided waveform into a mono signal, computes its Short-Time
+    Fourier Transform (STFT), converts the amplitude spectrogram to dB scale,
+    and plots it using a plasma colormap.
+
+    Args:
+        waveform (np.ndarray): Input audio waveform array of shape (time, channels)
+            or (time,).
+        sample_rate (int): Sampling rate of the waveform in Hz.
+        length (float): Duration (in seconds) of the waveform to include in the
+            spectrogram.
+        output_file (str): Path to save the resulting spectrogram image.
+
+    Returns:
+        None
+    """
+
     import librosa.display
 
     # Cut only required part of spectorgram

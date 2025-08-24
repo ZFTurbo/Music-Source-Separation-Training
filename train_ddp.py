@@ -16,14 +16,14 @@ import torch.multiprocessing as mp
 import loralib as lora
 
 from ml_collections import ConfigDict
-from typing import List, Dict, Callable
+from typing import List, Callable
 
 from utils.losses import choice_loss
-from utils.model_utils import bind_lora_to_model, load_start_checkpoint, normalize_batch
-from utils.settings import get_model_from_config,  parse_args_train, save_weights_ddp, wandb_init_ddp, \
-    initialize_environment_ddp, get_optimizer_ddp, cleanup_ddp, save_last_weights_ddp
+from utils.model_utils import bind_lora_to_model, load_start_checkpoint, normalize_batch, get_optimizer, save_weights, \
+    save_last_weights
+from utils.settings import get_model_from_config, parse_args_train, initialize_environment_ddp, cleanup_ddp, wandb_init
 from valid_ddp import valid_multi_gpu
-from utils.audio_utils import prepare_data_ddp
+from utils.dataset import prepare_data
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -129,8 +129,7 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
             store_path = f'{args.results_path}/model_{args.model_type}_ep_{epoch}_{args.metric_for_scheduler}_{metric_avg:.4f}.ckpt'
         if dist.get_rank() == 0:
             print(f'Store weights: {store_path}')
-        train_lora = args.train_lora
-        save_weights_ddp(store_path, model, train_lora)
+        save_weights(store_path, model, args.device_ids, args.train_lora)
         best_metric = metric_avg
 
     if args.save_weights_every_epoch:
@@ -138,7 +137,7 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
         for m in metrics_avg:
             metric_string += '_{}_{:.4f}'.format(m, metrics_avg[m])
         store_path = f'{args.results_path}/model_{args.model_type}_ep_{epoch}{metric_string}.ckpt'
-        save_weights_ddp(store_path, model, args.train_lora)
+        save_weights(store_path, model, args.device_ids, args.train_lora)
 
     scheduler.step(metric_avg)
     wandb.log({'metric_main': metric_avg, 'best_metric': best_metric})
@@ -167,8 +166,7 @@ def train_model_single(rank: int, world_size: int, args=None):
     use_amp = getattr(config.training, 'use_amp', True)
     batch_size = config.training.batch_size
 
-    wandb_init_ddp(args, config, batch_size)
-
+    wandb_init(args, config, batch_size)
 
     if args.start_check_point:
         load_start_checkpoint(args, model, type_='train')
@@ -181,11 +179,11 @@ def train_model_single(rank: int, world_size: int, args=None):
     model.to(device)
     model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[rank])
 
-    train_loader = prepare_data_ddp(config, args, batch_size, rank, world_size)
+    train_loader = prepare_data(config, args, batch_size)
     if args.pre_valid:
-        valid_multi_gpu(model, args, config, rank, world_size, verbose=False)
+        valid_multi_gpu(model, args, config, args.device_ids, verbose=False)
 
-    optimizer = get_optimizer_ddp(config, model)
+    optimizer = get_optimizer(config, model)
     gradient_accumulation_steps = int(getattr(config.training, 'gradient_accumulation_steps', 1))
     scaler = GradScaler()
     scheduler = ReduceLROnPlateau(optimizer, 'max', patience=config.training.patience,
@@ -215,8 +213,8 @@ def train_model_single(rank: int, world_size: int, args=None):
                            use_amp, scaler, gradient_accumulation_steps, train_loader, multi_loss)
 
         if rank == 0:
-            save_last_weights_ddp(args, model)
-        metrics_avg, all_metrics = valid_multi_gpu(model, args, config, rank, world_size, verbose=False)
+            save_last_weights(args, model, args.device_ids)
+        metrics_avg, all_metrics = valid_multi_gpu(model, args, config, args.device_ids, verbose=False)
         if rank == 0:
             best_metric = compute_epoch_metrics(model, args, config, best_metric, epoch, scheduler, metrics_avg, all_metrics)
 

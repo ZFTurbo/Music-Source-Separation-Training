@@ -11,46 +11,43 @@ from tqdm.auto import tqdm
 from typing import Dict, List, Tuple, Any, Union
 import loralib as lora
 from .muon import SingleDeviceMuonWithAuxAdam
-
+import torch.distributed as dist
 
 def demix(
-        config: ConfigDict,
-        model: torch.nn.Module,
-        mix: torch.Tensor,
-        device: torch.device,
-        model_type: str,
-        pbar: bool = False
-) -> Tuple[List[Dict[str, np.ndarray]], np.ndarray]:
+    config: ConfigDict,
+    model: torch.nn.Module,
+    mix: torch.Tensor,
+    device: torch.device,
+    model_type: str,
+    pbar: bool = False
+) -> Union[Dict[str, np.ndarray], np.ndarray]:
     """
-    Unified function for audio source separation with support for multiple processing modes.
+    Perform audio source separation with a given model.
 
-    This function separates audio into its constituent sources using either a generic custom logic
-    or a Demucs-specific logic. It supports batch processing and overlapping window-based chunking
-    for efficient and artifact-free separation.
+    Supports both Demucs-specific and generic processing modes, including
+    overlapping chunk-based inference with optional progress bar display.
+    Handles padding, fading, and batching to reduce artifacts during separation.
 
-    Parameters:
-    ----------
-    config : ConfigDict
-        Configuration object containing audio and inference settings.
-    model : torch.nn.Module
-        The trained model used for audio source separation.
-    mix : torch.Tensor
-        Input audio tensor with shape (channels, time).
-    device : torch.device
-        The computation device (CPU or CUDA).
-    model_type : str, optional
-        Processing mode:
-            - "demucs" for logic specific to the Demucs model.
-        Default is "generic".
-    pbar : bool, optional
-        If True, displays a progress bar during chunk processing. Default is False.
+    Args:
+        config (ConfigDict): Configuration object with audio and inference
+            parameters (chunk size, overlap, batch size, etc.).
+        model (torch.nn.Module): Source separation model for inference.
+        mix (torch.Tensor): Input audio tensor of shape (channels, time).
+        device (torch.device): Device on which to run inference (CPU or CUDA).
+        model_type (str): Type of model (e.g., 'htdemucs', 'mdx23c') that
+            determines processing mode.
+        pbar (bool, optional): If True, show a progress bar during chunk
+            processing. Defaults to False.
 
     Returns:
-    -------
-    Union[Dict[str, np.ndarray], np.ndarray]
-        - A dictionary mapping target instruments to separated audio sources if multiple instruments are present.
-        - A numpy array of the separated source if only one instrument is present.
+        Union[Dict[str, np.ndarray], np.ndarray]:
+            - Dictionary mapping instrument names to separated waveforms if
+              multiple instruments are predicted.
+            - NumPy array of separated audio if only a single instrument is
+              present (Demucs mode).
     """
+
+    should_print = not dist.is_initialized() or dist.get_rank() == 0
 
     mix = torch.tensor(mix, dtype=torch.float32)
 
@@ -95,9 +92,12 @@ def demix(
             i = 0
             batch_data = []
             batch_locations = []
-            progress_bar = tqdm(
-                total=mix.shape[1], desc="Processing audio chunks", leave=False
-            ) if pbar else None
+            if pbar and should_print:
+                progress_bar = tqdm(
+                    total=mix.shape[1], desc="Processing audio chunks", leave=False
+                )
+            else:
+                progress_bar = None
 
             while i < mix.shape[1]:
                 # Extract chunk and apply padding if necessary
@@ -166,17 +166,23 @@ def demix(
         return ret_data
 
 
-
 def initialize_model_and_device(model: torch.nn.Module, device_ids: List[int]) -> Tuple[Union[torch.device, str], torch.nn.Module]:
     """
-    Initialize the model and assign it to the appropriate device (GPU or CPU).
+    Move a model to the correct computation device and wrap with DataParallel if needed.
+
+    Selects GPU(s) if CUDA is available; otherwise defaults to CPU. If multiple
+    GPU IDs are provided, wraps the model with `nn.DataParallel` for multi-GPU
+    execution.
 
     Args:
-        model: The PyTorch model to be initialized.
-        device_ids: List of GPU device IDs to use for parallel processing.
+        model (torch.nn.Module): PyTorch model to be initialized.
+        device_ids (List[int]): List of GPU device IDs to use. If length > 1,
+            the model will be wrapped with DataParallel.
 
     Returns:
-        A tuple containing the device and the model moved to that device.
+        Tuple[Union[torch.device, str], torch.nn.Module]: A tuple containing:
+            - The computation device (`torch.device` or "cpu").
+            - The model moved to that device (wrapped in DataParallel if applicable).
     """
 
     if torch.cuda.is_available():
@@ -196,20 +202,31 @@ def initialize_model_and_device(model: torch.nn.Module, device_ids: List[int]) -
 
 def get_optimizer(config: ConfigDict, model: torch.nn.Module) -> torch.optim.Optimizer:
     """
-    Initializes an optimizer based on the configuration.
+    Create and configure an optimizer for training.
+
+    Selects the optimizer type based on `config.training.optimizer` and applies
+    the corresponding parameters, including support for advanced optimizers
+    such as Muon, Prodigy, and 8-bit AdamW. Handles parameter group separation
+    for specialized optimizers (e.g., Muon vs. Adam parameters).
 
     Args:
-        config: Configuration object containing training parameters.
-        model: PyTorch model whose parameters will be optimized.
+        config (ConfigDict): Training configuration containing optimizer type,
+            learning rate, and optional optimizer-specific parameters.
+        model (torch.nn.Module): Model whose parameters will be optimized.
 
     Returns:
-        A PyTorch optimizer object configured based on the specified settings.
+        torch.optim.Optimizer: Initialized optimizer ready for training.
+
+    Raises:
+        ValueError: If required optimizer configuration is missing (e.g., for Muon).
+        SystemExit: If an unknown optimizer name is encountered.
     """
 
+    should_print = not dist.is_initialized() or dist.get_rank() == 0
     optim_params = dict()
     if 'optimizer' in config:
         optim_params = dict(config['optimizer'])
-        if config.training.optimizer != 'muon':
+        if config.training.optimizer != 'muon' and should_print:
             print(f'Optimizer params from config:\n{optim_params}')
 
     name_optimizer = getattr(config.training, 'optimizer',
@@ -232,7 +249,8 @@ def get_optimizer(config: ConfigDict, model: torch.nn.Module) -> torch.optim.Opt
         import bitsandbytes as bnb
         optimizer = bnb.optim.AdamW8bit(model.parameters(), lr=config.training.lr, **optim_params)
     elif name_optimizer == 'muon':
-        print("Using Muon optimizer (Single-Device) with AdamW for auxiliary parameters.")
+        if should_print:
+            print("Using Muon optimizer (Single-Device) with AdamW for auxiliary parameters.")
         
         muon_params = [p for p in model.parameters() if p.ndim >= 2]
         adam_params = [p for p in model.parameters() if p.ndim < 2]
@@ -244,8 +262,9 @@ def get_optimizer(config: ConfigDict, model: torch.nn.Module) -> torch.optim.Opt
         muon_group_config = dict(config.optimizer.muon_group)
         adam_group_config = dict(config.optimizer.adam_group)
 
-        print(f"Muon group params: {muon_group_config}")
-        print(f"Adam group params: {adam_group_config}")
+        if should_print:
+            print(f"Muon group params: {muon_group_config}")
+            print(f"Adam group params: {adam_group_config}")
 
         param_groups = [
             dict(params=muon_params, use_muon=True, **muon_group_config),
@@ -253,24 +272,30 @@ def get_optimizer(config: ConfigDict, model: torch.nn.Module) -> torch.optim.Opt
         ]
         optimizer = SingleDeviceMuonWithAuxAdam(param_groups)
     elif name_optimizer == 'sgd':
-        print('Use SGD optimizer')
+        if should_print:
+            print('Use SGD optimizer')
         optimizer = SGD(model.parameters(), lr=config.training.lr, **optim_params)
     else:
-        print(f'Unknown optimizer: {name_optimizer}')
+        if should_print:
+            print(f'Unknown optimizer: {name_optimizer}')
         exit()
     return optimizer
 
 
 def normalize_batch(x: torch.Tensor, y: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
     """
-    Normalize a batch of tensors (x and y) by subtracting the mean and dividing by the standard deviation.
+    Apply mean-variance normalization to a pair of tensors.
+
+    Computes the mean and standard deviation from `x` and normalizes both `x`
+    and `y` using those statistics. This ensures the two tensors are scaled
+    consistently.
 
     Args:
-        x: Tensor to normalize.
-        y: Tensor to normalize (same as x, typically).
+        x (torch.Tensor): Input tensor used to compute normalization statistics.
+        y (torch.Tensor): Input tensor normalized using the same statistics as `x`.
 
     Returns:
-        A tuple of normalized tensors (x, y).
+        Tuple[torch.Tensor, torch.Tensor]: Normalized tensors `(x, y)`.
     """
 
     mean = x.mean()
@@ -282,40 +307,33 @@ def normalize_batch(x: torch.Tensor, y: torch.Tensor) -> Tuple[torch.Tensor, tor
 
 
 def apply_tta(
-        config,
-        model: torch.nn.Module,
-        mix: torch.Tensor,
-        waveforms_orig: Dict[str, torch.Tensor],
-        device: torch.device,
-        model_type: str
+    config,
+    model: torch.nn.Module,
+    mix: torch.Tensor,
+    waveforms_orig: Dict[str, torch.Tensor],
+    device: torch.device,
+    model_type: str
 ) -> Dict[str, torch.Tensor]:
     """
-    Apply Test-Time Augmentation (TTA) for source separation.
+    Enhance source separation results using Test-Time Augmentation (TTA).
 
-    This function processes the input mixture with test-time augmentations, including
-    channel inversion and polarity inversion, to enhance the separation results. The
-    results from all augmentations are averaged to produce the final output.
+    Applies augmentations such as channel reversal and polarity inversion to
+    the input mixture, reprocesses with the model, and combines the results
+    with the original predictions by averaging.
 
-    Parameters:
-    ----------
-    config : Any
-        Configuration object containing model and processing parameters.
-    model : torch.nn.Module
-        The trained model used for source separation.
-    mix : torch.Tensor
-        The mixed audio tensor with shape (channels, time).
-    waveforms_orig : Dict[str, torch.Tensor]
-        Dictionary of original separated waveforms (before TTA) for each instrument.
-    device : torch.device
-        Device (CPU or CUDA) on which the model will be executed.
-    model_type : str
-        Type of the model being used (e.g., "demucs", "custom_model").
+    Args:
+        config: Configuration object with model and inference parameters.
+        model (torch.nn.Module): Trained source separation model.
+        mix (torch.Tensor): Input mixture tensor of shape (channels, time).
+        waveforms_orig (Dict[str, torch.Tensor]): Dictionary of separated
+            sources before augmentation.
+        device (torch.device): Computation device (CPU or CUDA).
+        model_type (str): Model type identifier used for demixing.
 
     Returns:
-    -------
-    Dict[str, torch.Tensor]
-        Updated dictionary of separated waveforms after applying TTA.
+        Dict[str, torch.Tensor]: Dictionary of separated sources after applying TTA.
     """
+
     # Create augmentations: channel inversion and polarity inversion
     track_proc_list = [mix[::-1].copy(), -1.0 * mix.copy()]
 
@@ -402,6 +420,8 @@ def load_not_compatible_weights(model: torch.nn.Module, weights: str, verbose: b
         verbose: If True, prints detailed information about matching and mismatched layers.
     """
 
+    should_print = not dist.is_initialized() or dist.get_rank() == 0
+
     new_model = model.state_dict()
     old_model = torch.load(weights, weights_only=False)
     if 'state' in old_model:
@@ -414,18 +434,22 @@ def load_not_compatible_weights(model: torch.nn.Module, weights: str, verbose: b
     for el in new_model:
         if el in old_model:
             if verbose:
-                print(f'Match found for {el}!')
+                if should_print:
+                    print(f'Match found for {el}!')
             if new_model[el].shape == old_model[el].shape:
                 if verbose:
-                    print('Action: Just copy weights!')
+                    if should_print:
+                        print('Action: Just copy weights!')
                 new_model[el] = old_model[el]
             else:
                 if len(new_model[el].shape) != len(old_model[el].shape):
                     if verbose:
-                        print('Action: Different dimension! Too lazy to write the code... Skip it')
+                        if should_print:
+                            print('Action: Different dimension! Too lazy to write the code... Skip it')
                 else:
                     if verbose:
-                        print(f'Shape is different: {tuple(new_model[el].shape)} != {tuple(old_model[el].shape)}')
+                        if should_print:
+                            print(f'Shape is different: {tuple(new_model[el].shape)} != {tuple(old_model[el].shape)}')
                     ln = len(new_model[el].shape)
                     max_shape = []
                     slices_old = []
@@ -444,7 +468,7 @@ def load_not_compatible_weights(model: torch.nn.Module, weights: str, verbose: b
                     max_matrix = torch.from_numpy(max_matrix)
                     new_model[el] = max_matrix[slices_new]
         else:
-            if verbose:
+            if verbose and should_print:
                 print(f'Match not found for {el}!')
     model.load_state_dict(
         new_model
@@ -484,8 +508,10 @@ def load_start_checkpoint(args: argparse.Namespace, model: torch.nn.Module, type
         model: PyTorch model to load the checkpoint into.
         type_: how to load weights - for train we can load not fully compatible weights
     """
+    should_print = not dist.is_initialized() or dist.get_rank() == 0
 
-    print(f'Start from checkpoint: {args.start_check_point}')
+    if should_print:
+        print(f'Start from checkpoint: {args.start_check_point}')
     if type_ in ['train']:
         if 1:
             load_not_compatible_weights(model, args.start_check_point, verbose=False)
@@ -506,7 +532,8 @@ def load_start_checkpoint(args: argparse.Namespace, model: torch.nn.Module, type
         model.load_state_dict(state_dict)
 
     if args.lora_checkpoint:
-        print(f"Loading LoRA weights from: {args.lora_checkpoint}")
+        if should_print:
+            print(f"Loading LoRA weights from: {args.lora_checkpoint}")
         load_lora_weights(model, args.lora_checkpoint)
 
 
@@ -531,6 +558,7 @@ def bind_lora_to_model(config: Dict[str, Any], model: nn.Module) -> nn.Module:
         raise ValueError("Configuration must contain the 'lora' key with parameters for LoRA.")
 
     replaced_layers = 0  # Counter for replaced layers
+    should_print = not dist.is_initialized() or dist.get_rank() == 0
 
     for name, module in model.named_modules():
         hierarchy = name.split('.')
@@ -558,26 +586,49 @@ def bind_lora_to_model(config: Dict[str, Any], model: nn.Module) -> nn.Module:
                 replaced_layers += 1  # Increment the counter
 
             except Exception as e:
-                print(f"Error replacing layer {name}: {e}")
+                if should_print:
+                    print(f"Error replacing layer {name}: {e}")
 
-    if replaced_layers == 0:
+    if replaced_layers == 0 and should_print:
         print("Warning: No layers were replaced. Check the model structure and configuration.")
-    else:
+    elif should_print:
         print(f"Number of layers replaced with LoRA: {replaced_layers}")
 
     return model
 
 
-def save_weights(store_path, model, device_ids, train_lora):
+def save_weights(store_path: str, model: nn.Module, device_ids: List[int], train_lora: bool = False) -> None:
+    """
+    Save model weights to a file, restricted to rank 0 under DDP.
 
-    if train_lora:
-        torch.save(lora.lora_state_dict(model), store_path)
-    else:
-        state_dict = model.state_dict() if len(device_ids) <= 1 else model.module.state_dict()
-        torch.save(
-            state_dict,
-            store_path
-        )
+    Handles both standard models and LoRA fine-tuned models. In multi-GPU or DDP
+    setups, ensures only the main process saves to avoid conflicts.
+
+    Args:
+        store_path (str): Destination file path for saving the weights.
+        model (nn.Module): PyTorch model whose state_dict or LoRA weights to save.
+        device_ids (List[int]): List of GPU IDs in use; affects how state_dict is accessed.
+        train_lora (bool, optional): If True, save LoRA adapter weights instead of
+            full model weights. Defaults to False.
+
+    Returns:
+        None
+    """
+
+    if not dist.is_initialized():
+        if train_lora:
+            torch.save(lora.lora_state_dict(model), store_path)
+        else:
+            state_dict = model.state_dict() if len(device_ids) <= 1 else model.module.state_dict()
+            torch.save(
+                state_dict,
+                store_path
+            )
+    elif dist.get_rank() == 0:
+        if train_lora:
+            torch.save(lora.lora_state_dict(model), store_path)
+        else:
+            torch.save(model.module.state_dict(), store_path)  # model.module always need in DDP
 
 
 def save_last_weights(args: argparse.Namespace, model: torch.nn.Module, device_ids: List[int]) -> None:
@@ -594,5 +645,4 @@ def save_last_weights(args: argparse.Namespace, model: torch.nn.Module, device_i
     """
 
     store_path = f'{args.results_path}/last_{args.model_type}.ckpt'
-    train_lora = args.train_lora
-    save_weights(store_path, model, device_ids, train_lora)
+    save_weights(store_path, model, device_ids, args.train_lora)
