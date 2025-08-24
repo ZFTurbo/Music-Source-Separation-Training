@@ -84,8 +84,8 @@ All inference parameters are [here](https://github.com/ZFTurbo/Music-Source-Sepa
 * `dataset.py` - dataset which creates new samples for training
 * `gui-wx.py` - GUI interface for code
 * `inference.py` - process folder with music files and separate them
-* `train.py` - main training code
-* `train_accelerate.py` - experimental training code to use with `accelerate` module. Speed up for MultiGPU.
+* `train.py` - main training code for single GPU
+* `train_ddp.py` - training code for Multi GPU config. Faster than `train.py`. Use it for 2 or more GPUs.
 * `utils.py` - common functions used by train/valid
 * `valid.py` - validation of model with metrics
 * `ensemble.py` - useful script to ensemble results of different models to make results better (see [docs](docs/ensemble.md)).   
