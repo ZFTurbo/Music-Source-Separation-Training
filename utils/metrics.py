@@ -414,8 +414,8 @@ def get_metrics(
     if 'bleedless' in metrics or 'fullness' in metrics:
         bleedless, fullness = bleed_full(reference, estimate, device=device)
         if 'bleedless' in metrics:
-            result['bleedless'] = bleedless
+            result['bleedless'] = float(bleedless)
         if 'fullness' in metrics:
-            result['fullness'] = fullness
+            result['fullness'] = float(fullness)
 
     return result
