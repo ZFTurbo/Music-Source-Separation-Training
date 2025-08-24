@@ -65,7 +65,10 @@ def demix(
         num_overlap = config.inference.num_overlap
         step = chunk_size // num_overlap
     else:
-        chunk_size = config.audio.chunk_size
+        if 'chunk_size' in config.inference:
+            chunk_size = config.inference.chunk_size
+        else:
+            chunk_size = config.audio.chunk_size
         num_instruments = len(prefer_target_instrument(config))
         num_overlap = config.inference.num_overlap
 
