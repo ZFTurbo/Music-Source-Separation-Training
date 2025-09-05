@@ -119,7 +119,7 @@ def get_track_set_length(params):
         for extension in file_types:
             path_to_audio_file = path + '/{}.{}'.format(instr, extension)
             if os.path.isfile(path_to_audio_file):
-                length = len(sf.read(path_to_audio_file)[0])
+                length = sf.info(path_to_audio_file).frames
                 break
         if length == -1 and should_print:
             print('Cant find file "{}" in folder {}'.format(instr, path))
@@ -139,7 +139,7 @@ def get_track_set_length(params):
 # For multiprocessing
 def get_track_length(params):
     path = params
-    length = len(sf.read(path)[0])
+    length = sf.info(path).frames
     return (path, length)
 
 
@@ -278,7 +278,7 @@ class MSSDataset(torch.utils.data.Dataset):
                 if read_metadata_procs <= 1:
                     pbar = tqdm(track_paths) if should_print else track_paths
                     for path in pbar:
-                        length = len(sf.read(path)[0])
+                        length = sf.info(path).frames
                         metadata[instr].append((path, length))
                 else:
                     p = multiprocessing.Pool(processes=read_metadata_procs)
@@ -321,7 +321,7 @@ class MSSDataset(torch.utils.data.Dataset):
                             continue
                         # print(path)
                         try:
-                            length = len(sf.read(path)[0])
+                            length = sf.info(path).frames
                         except:
                             if should_print:
                                 print('Problem with path: {}'.format(path))
