@@ -164,7 +164,7 @@ def train_model_single(rank: int, world_size: int, args=None):
     initialize_environment_ddp(rank, world_size, args.seed, args.results_path)
     model, config = get_model_from_config(args.model_type, args.config_path)
     use_amp = getattr(config.training, 'use_amp', True)
-    batch_size = config.training.batch_size
+    batch_size = config.training.batch_size * world_size
 
     wandb_init(args, config, batch_size)
 
@@ -199,6 +199,7 @@ def train_model_single(rank: int, world_size: int, args=None):
             f"Reduce factor: {config.training.reduce_factor}\n"
             f"Batch size: {batch_size} "
             f"Grad accum steps: {gradient_accumulation_steps} "
+            f"Num gpus: {world_size} "
             f"Effective batch size: {batch_size * gradient_accumulation_steps}\n"
             f"Dataset type: {args.dataset_type}\n"
             f"Optimizer: {config.training.optimizer}"
