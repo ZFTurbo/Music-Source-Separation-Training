@@ -624,6 +624,47 @@ def run_parallel_validation(
     return
 
 
+def block_bounds(num_tracks: int, world_size: int, rank: int) -> Tuple[int, int]:
+    """
+    Split a dataset of `num_tracks` items into `world_size` equal contiguous blocks
+    and return the half-open interval [start, end) assigned to the given `rank`.
+
+    This function enforces exact divisibility: `num_tracks` must be divisible
+    by `world_size`, otherwise a ValueError is raised.
+
+    Args:
+        num_tracks (int): Total number of items to split (must be ≥ 0).
+        world_size (int): Number of workers to divide the items into (must be > 0).
+        rank (int): Zero-based worker index (0 ≤ rank < world_size).
+
+    Returns:
+        Tuple[int, int]: A pair `(start, end)` defining the block of indices for this rank.
+
+    Raises:
+        ValueError: If `num_tracks` is not divisible by `world_size`.
+
+    Example:
+         [block_bounds(12, 4, r) for r in range(4)]
+        [(0, 3), (3, 6), (6, 9), (9, 12)]
+
+         block_bounds(8, 2, 1)
+        (4, 8)
+
+         block_bounds(10, 3, 0)
+        Traceback (most recent call last):
+        ...
+        ValueError: n (10) must be divisible by world_size (3)
+    """
+    if num_tracks % world_size != 0:
+        raise ValueError(f"n ({num_tracks}) must be divisible by world_size ({world_size})")
+
+    chunk = num_tracks // world_size
+    start = rank * chunk
+    end = start + chunk
+    return start, end
+
+
+
 def valid_multi_gpu(
     model: torch.nn.Module,
     args,
@@ -681,14 +722,18 @@ def valid_multi_gpu(
         rank = dist.get_rank()
         world_size = dist.get_world_size()
 
-        device = torch.device(f"cuda:{rank}" if torch.cuda.is_available() else "cpu")
+        device = torch.device(f"cuda:{rank}")
         model.to(device)
         model.eval()
 
-        per_rank_data = all_mixtures_path[rank::world_size]
-        target_len = math.ceil(len(all_mixtures_path) / world_size)
-        if len(per_rank_data) < target_len and len(all_mixtures_path) > 0:
-            per_rank_data += [all_mixtures_path[0]] * (target_len - len(per_rank_data))
+        num_tracks = len(all_mixtures_path)
+        pad_needed = (-num_tracks) % world_size
+        if pad_needed and num_tracks > 0:
+            all_mixtures_path += all_mixtures_path[:pad_needed]
+        padded_num_tracks = len(all_mixtures_path)
+        target_len = padded_num_tracks // world_size
+        start, end = block_bounds(padded_num_tracks, world_size, rank)
+        per_rank_data = all_mixtures_path[start:end]
 
         local_metrics = {
             metric: {instr: [] for instr in config.training.instruments}
@@ -723,7 +768,7 @@ def valid_multi_gpu(
                 gathered_list = [torch.zeros_like(local_tensor) for _ in range(world_size)]
                 dist.all_gather(gathered_list, local_tensor)
 
-                cat_vals = torch.cat(gathered_list).tolist()[:len(all_mixtures_path)]
+                cat_vals = torch.cat(gathered_list).tolist()[:num_tracks]
                 all_metrics[metric][instr] = cat_vals
 
         if dist.get_rank() == 0:
@@ -740,6 +785,7 @@ def valid_multi_gpu(
 
         return None, None
 
+    # Not DDP
     store_dir = getattr(args, "store_dir", "")
 
     return_dict = torch.multiprocessing.Manager().dict()
