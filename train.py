@@ -103,7 +103,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
 
 def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, config: ConfigDict,
                           device: torch.device, device_ids: List[int], best_metric: float,
-                          epoch: int, scheduler: torch.optim.lr_scheduler._LRScheduler) -> float:
+                          epoch: int, scheduler: torch.optim.lr_scheduler._LRScheduler, optimizer) -> float:
     """
     Compute and log the metrics for the current epoch, and save model weights if the metric improves.
 
@@ -130,7 +130,7 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
         store_path = f'{args.results_path}/model_{args.model_type}_ep_{epoch}_{args.metric_for_scheduler}_{metric_avg:.4f}.ckpt'
         print(f'Store weights: {store_path}')
         train_lora = args.train_lora
-        save_weights(store_path, model, device_ids, train_lora)
+        save_weights(store_path, model, device_ids, optimizer, train_lora)
         best_metric = metric_avg
 
     if args.save_weights_every_epoch:
@@ -138,7 +138,7 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
         for m in metrics_avg:
             metric_string += '_{}_{:.4f}'.format(m, metrics_avg[m])
         store_path = f'{args.results_path}/model_{args.model_type}_ep_{epoch}{metric_string}.ckpt'
-        save_weights(store_path, model, device_ids, args.train_lora)
+        save_weights(store_path, model, device_ids, optimizer, args.train_lora)
 
     scheduler.step(metric_avg)
     wandb.log({'metric_main': metric_avg, 'best_metric': best_metric})
@@ -188,6 +188,7 @@ def train_model(args: argparse.Namespace) -> None:
             valid(model, args, config, device, verbose=True)
 
     optimizer = get_optimizer(config, model)
+    optimizer.load_state_dict(torch.load(args.optimizer_check_point))
     gradient_accumulation_steps = int(getattr(config.training, 'gradient_accumulation_steps', 1))
 
     # Reduce LR if no metric improvements for several epochs
@@ -217,8 +218,8 @@ def train_model(args: argparse.Namespace) -> None:
 
         train_one_epoch(model, config, args, optimizer, device, device_ids, epoch,
                         use_amp, scaler, gradient_accumulation_steps, train_loader, multi_loss)
-        save_last_weights(args, model, device_ids)
-        best_metric = compute_epoch_metrics(model, args, config, device, device_ids, best_metric, epoch, scheduler)
+        save_last_weights(args, model, device_ids, optimizer)
+        best_metric = compute_epoch_metrics(model, args, config, device, device_ids, best_metric, epoch, scheduler, optimizer)
 
 
 if __name__ == "__main__":

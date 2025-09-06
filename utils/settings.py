@@ -34,6 +34,7 @@ def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
                         help="One of mdx23c, htdemucs, segm_models, mel_band_roformer, bs_roformer, swin_upernet, bandit")
     parser.add_argument("--config_path", type=str, help="path to config file")
     parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint to start training")
+    parser.add_argument("--optimizer_check_point", type=str, default='', help="Initial checkpoint to start training")
     parser.add_argument("--results_path", type=str,
                         help="path to folder where results will be stored (weights, metadata)")
     parser.add_argument("--data_path", nargs="+", type=str, help="Dataset data paths. You can provide several folders.")

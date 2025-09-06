@@ -597,7 +597,7 @@ def bind_lora_to_model(config: Dict[str, Any], model: nn.Module) -> nn.Module:
     return model
 
 
-def save_weights(store_path: str, model: nn.Module, device_ids: List[int], train_lora: bool = False) -> None:
+def save_weights(store_path: str, model: nn.Module, device_ids: List[int], optimizer: torch.optim.Optimizer, train_lora: bool = False) -> None:
     """
     Save model weights to a file, restricted to rank 0 under DDP.
 
@@ -610,7 +610,7 @@ def save_weights(store_path: str, model: nn.Module, device_ids: List[int], train
         device_ids (List[int]): List of GPU IDs in use; affects how state_dict is accessed.
         train_lora (bool, optional): If True, save LoRA adapter weights instead of
             full model weights. Defaults to False.
-
+        optimizer: torch optimizer
     Returns:
         None
     """
@@ -624,14 +624,15 @@ def save_weights(store_path: str, model: nn.Module, device_ids: List[int], train
                 state_dict,
                 store_path
             )
+        torch.save(optimizer.state_dict(), f"{store_path.split('.')[0]}_optimizer.pth")
     elif dist.get_rank() == 0:
         if train_lora:
             torch.save(lora.lora_state_dict(model), store_path)
         else:
             torch.save(model.module.state_dict(), store_path)  # model.module always need in DDP
+        torch.save(optimizer.state_dict(), f"{store_path.split('.')[0]}_optimizer.pth")
 
-
-def save_last_weights(args: argparse.Namespace, model: torch.nn.Module, device_ids: List[int]) -> None:
+def save_last_weights(args: argparse.Namespace, model: torch.nn.Module, device_ids: List[int], optimizer: torch.optim.Optimizer) -> None:
     """
     Save the model's state_dict to a file for later use.
 
@@ -639,10 +640,10 @@ def save_last_weights(args: argparse.Namespace, model: torch.nn.Module, device_i
         args: Command-line arguments containing the results path and model type.
         model: The model whose weights will be saved.
         device_ids: List of GPU device IDs if using multiple GPUs.
-
+        optimizer: torch optimizer
     Returns:
         None
     """
 
     store_path = f'{args.results_path}/last_{args.model_type}.ckpt'
-    save_weights(store_path, model, device_ids, args.train_lora)
+    save_weights(store_path, model, device_ids, optimizer, args.train_lora)

@@ -93,7 +93,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
 
 def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, config: ConfigDict,
                           best_metric: float,
-                          epoch: int, scheduler: torch.optim.lr_scheduler._LRScheduler, metrics_avg, all_metrics) -> float:
+                          epoch: int, scheduler: torch.optim.lr_scheduler._LRScheduler, optimizer, metrics_avg, all_metrics) -> float:
     """
     Compute and log the metrics for the current epoch, and save model weights if the metric improves.
 
@@ -137,7 +137,7 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
         for m in metrics_avg:
             metric_string += '_{}_{:.4f}'.format(m, metrics_avg[m])
         store_path = f'{args.results_path}/model_{args.model_type}_ep_{epoch}{metric_string}.ckpt'
-        save_weights(store_path, model, args.device_ids, args.train_lora)
+        save_weights(store_path, model, args.device_ids, optimizer, args.train_lora)
 
     scheduler.step(metric_avg)
     wandb.log({'metric_main': metric_avg, 'best_metric': best_metric})
@@ -184,6 +184,7 @@ def train_model_single(rank: int, world_size: int, args=None):
         valid_multi_gpu(model, args, config, args.device_ids, verbose=False)
 
     optimizer = get_optimizer(config, model)
+    optimizer.load_state_dict(torch.load(args.optimizer_check_point))
     gradient_accumulation_steps = int(getattr(config.training, 'gradient_accumulation_steps', 1))
     scaler = GradScaler()
     scheduler = ReduceLROnPlateau(optimizer, 'max', patience=config.training.patience,
@@ -214,10 +215,10 @@ def train_model_single(rank: int, world_size: int, args=None):
                            use_amp, scaler, gradient_accumulation_steps, train_loader, multi_loss)
 
         if rank == 0:
-            save_last_weights(args, model, args.device_ids)
+            save_last_weights(args, model, args.device_ids, optimizer)
         metrics_avg, all_metrics = valid_multi_gpu(model, args, config, args.device_ids, verbose=False)
         if rank == 0:
-            best_metric = compute_epoch_metrics(model, args, config, best_metric, epoch, scheduler, metrics_avg, all_metrics)
+            best_metric = compute_epoch_metrics(model, args, config, best_metric, epoch, scheduler, optimizer, metrics_avg, all_metrics)
 
     cleanup_ddp()  # Close DDP
 
