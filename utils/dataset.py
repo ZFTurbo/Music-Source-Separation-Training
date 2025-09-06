@@ -46,7 +46,7 @@ def prepare_data(config: Dict, args: argparse.Namespace, batch_size: int) -> Dat
         trainset = MSSDataset(
             config,
             args.data_path,
-            batch_size=batch_size,  # maintain "num_steps" semantics across the whole world
+            batch_size=batch_size * world_size,  # maintain "num_steps" semantics across the whole world
             metadata_path=os.path.join(args.results_path, f"metadata_{args.dataset_type}.pkl"),
             dataset_type=args.dataset_type,
         )
