@@ -160,7 +160,6 @@ def train_model_single(rank: int, world_size: int, args=None):
     """
 
     args = parse_args_train(args)
-
     initialize_environment_ddp(rank, world_size, args.seed, args.results_path)
     model, config = get_model_from_config(args.model_type, args.config_path)
     use_amp = getattr(config.training, 'use_amp', True)
@@ -184,7 +183,8 @@ def train_model_single(rank: int, world_size: int, args=None):
         valid_multi_gpu(model, args, config, args.device_ids, verbose=False)
 
     optimizer = get_optimizer(config, model)
-    optimizer.load_state_dict(torch.load(args.optimizer_check_point))
+    if args.optimizer_check_point:
+        optimizer.load_state_dict(torch.load(args.optimizer_check_point))
     gradient_accumulation_steps = int(getattr(config.training, 'gradient_accumulation_steps', 1))
     scaler = GradScaler()
     scheduler = ReduceLROnPlateau(optimizer, 'max', patience=config.training.patience,

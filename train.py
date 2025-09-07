@@ -188,7 +188,8 @@ def train_model(args: argparse.Namespace) -> None:
             valid(model, args, config, device, verbose=True)
 
     optimizer = get_optimizer(config, model)
-    optimizer.load_state_dict(torch.load(args.optimizer_check_point))
+    if args.optimizer_check_point:
+        optimizer.load_state_dict(torch.load(args.optimizer_check_point))
     gradient_accumulation_steps = int(getattr(config.training, 'gradient_accumulation_steps', 1))
 
     # Reduce LR if no metric improvements for several epochs
