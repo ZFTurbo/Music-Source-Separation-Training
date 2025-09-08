@@ -4,7 +4,7 @@ import librosa
 import torch.nn.functional as F
 from typing import Dict, List, Tuple
 
-def sdr(references: np.ndarray, estimates: np.ndarray) -> np.ndarray:
+def sdr(references: np.ndarray, estimates: np.ndarray) -> float:
     """
     Compute Signal-to-Distortion Ratio (SDR) for one or more audio tracks.
 
@@ -394,10 +394,10 @@ def get_metrics(
     if 'sdr' in metrics:
         references = np.expand_dims(reference, axis=0)
         estimates = np.expand_dims(estimate, axis=0)
-        result['sdr'] = sdr(references, estimates)[0]
+        result['sdr'] = float(sdr(references, estimates))
 
     if 'si_sdr' in metrics:
-        result['si_sdr'] = si_sdr(reference, estimate)
+        result['si_sdr'] = float(si_sdr(reference, estimate))
 
     if 'l1_freq' in metrics:
         result['l1_freq'] = L1Freq_metric(reference, estimate, device=device)
