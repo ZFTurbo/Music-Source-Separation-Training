@@ -8,7 +8,7 @@ import torch.nn as nn
 from ml_collections import ConfigDict
 from torch.optim import Adam, AdamW, SGD, RAdam, RMSprop
 from tqdm.auto import tqdm
-from typing import Dict, List, Tuple, Any, Union
+from typing import Dict, List, Tuple, Any, Union, Optional
 import loralib as lora
 from .muon import SingleDeviceMuonWithAuxAdam
 import torch.distributed as dist
@@ -410,20 +410,28 @@ def prefer_target_instrument(config: ConfigDict) -> List[str]:
         return config.training.instruments
 
 
-def load_not_compatible_weights(model: torch.nn.Module, weights: str, verbose: bool = False) -> None:
+def load_not_compatible_weights(model: torch.nn.Module, old_model: dict, verbose: bool = False) -> None:
     """
-    Load weights into a model, handling mismatched shapes and dimensions.
+    Load a possibly incompatible state dict into `model` with best-effort matching.
+
+    Accepts either a raw state_dict or a checkpoint dict with weights under "state" or "state_dict".
+    For each param/buffer in `model`: if the name exists and shapes match → copy;
+    if ndim matches but shapes differ → zero-pad/crop the source to fit the target;
+    if the name is missing or ndim differs → skip. Optional logging on rank 0 when `verbose=True`.
 
     Args:
-        model: PyTorch model into which the weights will be loaded.
-        weights: Path to the weights file.
-        verbose: If True, prints detailed information about matching and mismatched layers.
+        model: Target PyTorch module.
+        old_model: Source weights (state_dict or checkpoint dict).
+        verbose: Print brief load decisions.
+
+    Returns:
+        None
     """
 
-    should_print = not dist.is_initialized() or dist.get_rank() == 0
+    should_print = verbose and (not dist.is_initialized() or dist.get_rank() == 0)
 
     new_model = model.state_dict()
-    old_model = torch.load(weights, weights_only=False)
+
     if 'state' in old_model:
         # Fix for htdemucs weights loading
         old_model = old_model['state']
@@ -433,23 +441,18 @@ def load_not_compatible_weights(model: torch.nn.Module, weights: str, verbose: b
 
     for el in new_model:
         if el in old_model:
-            if verbose:
-                if should_print:
-                    print(f'Match found for {el}!')
+            if should_print:
+                print(f'Match found for {el}!')
             if new_model[el].shape == old_model[el].shape:
-                if verbose:
-                    if should_print:
-                        print('Action: Just copy weights!')
+                if should_print:
+                    print('Action: Just copy weights!')
                 new_model[el] = old_model[el]
             else:
-                if len(new_model[el].shape) != len(old_model[el].shape):
-                    if verbose:
-                        if should_print:
-                            print('Action: Different dimension! Too lazy to write the code... Skip it')
+                if len(new_model[el].shape) != len(old_model[el].shape) and should_print:
+                    print('Action: Different dimension! Too lazy to write the code... Skip it')
                 else:
-                    if verbose:
-                        if should_print:
-                            print(f'Shape is different: {tuple(new_model[el].shape)} != {tuple(old_model[el].shape)}')
+                    if should_print:
+                        print(f'Shape is different: {tuple(new_model[el].shape)} != {tuple(old_model[el].shape)}')
                     ln = len(new_model[el].shape)
                     max_shape = []
                     slices_old = []
@@ -468,7 +471,7 @@ def load_not_compatible_weights(model: torch.nn.Module, weights: str, verbose: b
                     max_matrix = torch.from_numpy(max_matrix)
                     new_model[el] = max_matrix[slices_new]
         else:
-            if verbose and should_print:
+            if should_print:
                 print(f'Match not found for {el}!')
     model.load_state_dict(
         new_model
@@ -499,14 +502,27 @@ def load_lora_weights(model: torch.nn.Module, lora_path: str, device: str = 'cpu
     model.load_state_dict(lora_state_dict, strict=False)
 
 
-def load_start_checkpoint(args: argparse.Namespace, model: torch.nn.Module, type_='train') -> None:
+def load_start_checkpoint(args: argparse.Namespace,
+                          model: torch.nn.Module,
+                          old_model,
+                          type_: str = 'train') -> None:
     """
-    Load the starting checkpoint for a model.
+    Load an initial checkpoint into `model`.
+
+    For `type_ == "train"`, performs a tolerant load using `old_model` (a state dict or a
+    checkpoint dict) via `load_not_compatible_weights`, allowing partial shape mismatches.
+    For other modes, loads a strict state dict from `args.start_check_point`, with special
+    handling for HTDemucs/Apollo checkpoints (keys under "state"/"state_dict"). If
+    `args.lora_checkpoint` is set, LoRA weights are applied after the base load.
 
     Args:
-        args: Parsed command-line arguments containing the checkpoint path.
-        model: PyTorch model to load the checkpoint into.
-        type_: how to load weights - for train we can load not fully compatible weights
+        args: Namespace with at least `start_check_point`, `model_type`, and optionally `lora_checkpoint`.
+        model: Target PyTorch module to receive weights.
+        old_model: Source weights for tolerant loading in train mode (state dict or checkpoint dict).
+        type_: Loading strategy; "train" uses tolerant loading, otherwise strict loading from path.
+
+    Returns:
+        None
     """
     should_print = not dist.is_initialized() or dist.get_rank() == 0
 
@@ -514,7 +530,7 @@ def load_start_checkpoint(args: argparse.Namespace, model: torch.nn.Module, type
         print(f'Start from checkpoint: {args.start_check_point}')
     if type_ in ['train']:
         if 1:
-            load_not_compatible_weights(model, args.start_check_point, verbose=False)
+            load_not_compatible_weights(model, old_model, verbose=False)
         else:
             model.load_state_dict(torch.load(args.start_check_point))
     else:
@@ -597,53 +613,104 @@ def bind_lora_to_model(config: Dict[str, Any], model: nn.Module) -> nn.Module:
     return model
 
 
-def save_weights(store_path: str, model: nn.Module, device_ids: List[int], optimizer: torch.optim.Optimizer, train_lora: bool = False) -> None:
+def save_weights(
+    store_path: str,
+    model: nn.Module,
+    device_ids: List[int],
+    optimizer: torch.optim.Optimizer,
+    epoch: int,
+    best_metric: float,
+    scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
+    train_lora: bool = False
+) -> None:
     """
-    Save model weights to a file, restricted to rank 0 under DDP.
+    Save a training checkpoint containing model weights, optimizer/scheduler states, and metadata.
 
-    Handles both standard models and LoRA fine-tuned models. In multi-GPU or DDP
-    setups, ensures only the main process saves to avoid conflicts.
+    Behavior:
+    - In Distributed Data Parallel (DDP), only rank 0 writes the file to avoid conflicts.
+    - If `train_lora` is True, saves only LoRA adapter weights (`lora_state_dict`); otherwise saves the full model.
+    - Uses `model.module.state_dict()` when the model is wrapped by DDP/DataParallel.
+    - Stores `epoch` and `best_metric` alongside optimizer/scheduler states.
 
     Args:
-        store_path (str): Destination file path for saving the weights.
-        model (nn.Module): PyTorch model whose state_dict or LoRA weights to save.
-        device_ids (List[int]): List of GPU IDs in use; affects how state_dict is accessed.
-        train_lora (bool, optional): If True, save LoRA adapter weights instead of
-            full model weights. Defaults to False.
-        optimizer: torch optimizer
+        store_path: Destination file path for the checkpoint (will be overwritten).
+        model: The model whose weights are being saved (may be wrapped by DDP/DataParallel).
+        device_ids: List of GPU device IDs used during training (used to detect DP wrapping in non-DDP runs).
+        optimizer: Optimizer whose state will be saved.
+        epoch: Current training epoch to record in the checkpoint.
+        best_metric: Best validation metric achieved so far.
+        scheduler: Optional learning rate scheduler; its state is saved if provided.
+        train_lora: If True, save only LoRA adapter weights instead of the full model.
+
     Returns:
         None
     """
 
-    if not dist.is_initialized():
-        if train_lora:
-            torch.save(lora.lora_state_dict(model), store_path)
+    checkpoint: Dict[str, Any] = {
+        "epoch": epoch,
+        "optimizer_name": optimizer.__class__.__name__,
+        "optimizer_state_dict": optimizer.state_dict(),
+        "scheduler_state_dict": scheduler.state_dict() if scheduler else None,
+        "best_metric": best_metric
+    }
+
+    # Save model weights
+    if train_lora:
+        checkpoint["model_state_dict"] = lora.lora_state_dict(model)
+    else:
+        if dist.is_initialized():
+            # In DDP, use .module
+            checkpoint["model_state_dict"] = model.module.state_dict()
         else:
-            state_dict = model.state_dict() if len(device_ids) <= 1 else model.module.state_dict()
-            torch.save(
-                state_dict,
-                store_path
+            checkpoint["model_state_dict"] = (
+                model.state_dict() if len(device_ids) <= 1 else model.module.state_dict()
             )
-        torch.save(optimizer.state_dict(), f"{store_path.split('.')[0]}_optimizer.pth")
-    elif dist.get_rank() == 0:
-        if train_lora:
-            torch.save(lora.lora_state_dict(model), store_path)
-        else:
-            torch.save(model.module.state_dict(), store_path)  # model.module always need in DDP
-        torch.save(optimizer.state_dict(), f"{store_path.split('.')[0]}_optimizer.pth")
 
-def save_last_weights(args: argparse.Namespace, model: torch.nn.Module, device_ids: List[int], optimizer: torch.optim.Optimizer) -> None:
+    # Save only on rank 0 (or if not using DDP)
+    if not dist.is_initialized() or dist.get_rank() == 0:
+        torch.save(checkpoint, store_path)
+
+
+def save_last_weights(
+    args: argparse.Namespace,
+    model: nn.Module,
+    device_ids: List[int],
+    optimizer: torch.optim.Optimizer,
+    epoch: int,
+    best_metric: float,
+    scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
+) -> None:
     """
-    Save the model's state_dict to a file for later use.
+    Save the latest training checkpoint for continuation or recovery.
+
+    The checkpoint is always written to:
+        {args.results_path}/last_{args.model_type}.ckpt
+
+    This wraps `save_weights` and ensures the latest model/optimizer/scheduler
+    states are recorded, along with the current epoch and best metric. In DDP,
+    only rank 0 performs the save. Supports both standard and LoRA training.
 
     Args:
-        args: Command-line arguments containing the results path and model type.
-        model: The model whose weights will be saved.
-        device_ids: List of GPU device IDs if using multiple GPUs.
-        optimizer: torch optimizer
+        args: Training arguments. Must define `results_path`, `model_type`,
+              and `train_lora`.
+        model: Model instance (may be wrapped by DDP/DataParallel).
+        device_ids: List of GPU IDs used for training.
+        optimizer: Optimizer whose state will be saved.
+        epoch: Current training epoch.
+        best_metric: Current best validation metric.
+        scheduler: Optional learning rate scheduler to save state for.
+
     Returns:
         None
     """
-
-    store_path = f'{args.results_path}/last_{args.model_type}.ckpt'
-    save_weights(store_path, model, device_ids, optimizer, args.train_lora)
+    store_path = f"{args.results_path}/last_{args.model_type}.ckpt"
+    save_weights(
+        store_path,
+        model,
+        device_ids,
+        optimizer,
+        epoch,
+        best_metric,
+        scheduler,
+        args.train_lora,
+    )
