@@ -93,7 +93,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
 
 def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, config: ConfigDict,
                           best_metric: float,
-                          epoch: int, scheduler: torch.optim.lr_scheduler._LRScheduler, optimizer, metrics_avg, all_metrics) -> float:
+                          epoch: int, all_time_all_metrics, scheduler: torch.optim.lr_scheduler._LRScheduler, optimizer, metrics_avg, all_metrics) -> float:
     """
     Compute and log the metrics for the current epoch, and save model weights if the metric improves.
 
@@ -134,7 +134,7 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
             )
         if dist.get_rank() == 0:
             print(f'Store weights: {store_path}')
-            save_weights(store_path, model, args.device_ids, optimizer, epoch, metric_avg, scheduler, args.train_lora)
+            save_weights(store_path, model, args.device_ids, optimizer, epoch, all_time_all_metrics, metric_avg, scheduler, args.train_lora)
         best_metric = metric_avg
 
     if args.save_weights_every_epoch:
@@ -142,7 +142,7 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
         for m in metrics_avg:
             metric_string += '_{}_{:.4f}'.format(m, metrics_avg[m])
         store_path = f'{args.results_path}/model_{args.model_type}_ep_{epoch}{metric_string}.ckpt'
-        save_weights(store_path, model, args.device_ids, optimizer, epoch, best_metric, scheduler, args.train_lora)
+        save_weights(store_path, model, args.device_ids, optimizer, epoch, all_time_all_metrics, best_metric, scheduler, args.train_lora)
 
     scheduler.step(metric_avg)
     wandb.log({'metric_main': metric_avg, 'best_metric': best_metric})
@@ -175,12 +175,9 @@ def train_model_single(rank: int, world_size: int, args=None):
 
     train_loader = prepare_data(config, args, batch_size)
 
-    if args.full_check_point:
-        checkpoint = torch.load(args.full_check_point)
-        load_start_checkpoint(args, model,  checkpoint["model_state_dict"], type_='train')
-    elif args.start_check_point:
-        old_model = torch.load(args.start_check_point)
-        load_start_checkpoint(args, model, old_model, type_='train')
+    if args.start_check_point:
+        checkpoint = torch.load(args.start_check_point, weights_only=False, map_location='cpu')
+        load_start_checkpoint(args, model, checkpoint, type_='train')
 
     if args.train_lora:
         model = bind_lora_to_model(config, model)
@@ -197,25 +194,30 @@ def train_model_single(rank: int, world_size: int, args=None):
 
     # load optimizer
     optimizer = get_optimizer(config, model)
-    if args.full_check_point and "optimizer_state_dict" in checkpoint and args.load_optimizer:
+    if args.start_check_point and "optimizer_state_dict" in checkpoint and args.load_optimizer:
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
 
+    # Reduce LR if no metric improvements for several epochs
     scheduler = ReduceLROnPlateau(optimizer, 'max', patience=config.training.patience,
                                   factor=config.training.reduce_factor)
-
-    if args.full_check_point and "scheduler_state_dict" in checkpoint and args.load_scheduler:
+    if args.start_check_point and "scheduler_state_dict" in checkpoint and args.load_scheduler:
         scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
 
     # load num epoch
-    if args.full_check_point and "epoch" in checkpoint and args.load_epoch:
+    if args.start_check_point and "epoch" in checkpoint and args.load_epoch:
         start_epoch = checkpoint["epoch"] + 1
     else:
         start_epoch = 0
 
-    if args.full_check_point and "best_metric" in checkpoint and args.load_best_metric:
+    if args.start_check_point and "best_metric" in checkpoint and args.load_best_metric:
         best_metric = checkpoint["best_metric"]
     else:
         best_metric = float('-inf')
+
+    if args.start_check_point and "all_metrics" in checkpoint and args.load_all_metrics:
+        all_time_all_metrics = checkpoint["all_metrics"]
+    else:
+        all_time_all_metrics = {}
 
     multi_loss = choice_loss(args, config)
     scaler = GradScaler()
@@ -247,10 +249,11 @@ def train_model_single(rank: int, world_size: int, args=None):
                            use_amp, scaler, gradient_accumulation_steps, train_loader, multi_loss)
 
         if rank == 0:
-            save_last_weights(args, model, args.device_ids, optimizer, epoch, best_metric, scheduler)
+            save_last_weights(args, model, args.device_ids, optimizer, epoch, all_time_all_metrics, best_metric, scheduler)
         metrics_avg, all_metrics = valid_multi_gpu(model, args, config, args.device_ids, verbose=False)
         if rank == 0:
-            best_metric = compute_epoch_metrics(model, args, config, best_metric, epoch, scheduler, optimizer, metrics_avg, all_metrics)
+            all_time_all_metrics[f"epoch_{epoch}"] = all_metrics
+            best_metric = compute_epoch_metrics(model, args, config, best_metric, epoch, all_time_all_metrics, scheduler, optimizer, metrics_avg, all_metrics)
 
     cleanup_ddp()  # Close DDP
 

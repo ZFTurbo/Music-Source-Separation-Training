@@ -438,6 +438,9 @@ def load_not_compatible_weights(model: torch.nn.Module, old_model: dict, verbose
     if 'state_dict' in old_model:
         # Fix for apollo weights loading
         old_model = old_model['state_dict']
+    if 'model_state_dict' in old_model:
+        # Fix for full_check_point
+        old_model = old_model['model_state_dict']
 
     for el in new_model:
         if el in old_model:
@@ -619,8 +622,9 @@ def save_weights(
     device_ids: List[int],
     optimizer: torch.optim.Optimizer,
     epoch: int,
+    all_time_all_metrics,
     best_metric: float,
-    scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
+    scheduler: Optional[torch.optim.lr_scheduler.ReduceLROnPlateau] = None,
     train_lora: bool = False
 ) -> None:
     """
@@ -638,6 +642,7 @@ def save_weights(
         device_ids: List of GPU device IDs used during training (used to detect DP wrapping in non-DDP runs).
         optimizer: Optimizer whose state will be saved.
         epoch: Current training epoch to record in the checkpoint.
+        all_time_all_metrics:
         best_metric: Best validation metric achieved so far.
         scheduler: Optional learning rate scheduler; its state is saved if provided.
         train_lora: If True, save only LoRA adapter weights instead of the full model.
@@ -651,7 +656,8 @@ def save_weights(
         "optimizer_name": optimizer.__class__.__name__,
         "optimizer_state_dict": optimizer.state_dict(),
         "scheduler_state_dict": scheduler.state_dict() if scheduler else None,
-        "best_metric": best_metric
+        "best_metric": best_metric,
+        "all_metrics": all_time_all_metrics
     }
 
     # Save model weights
@@ -677,8 +683,9 @@ def save_last_weights(
     device_ids: List[int],
     optimizer: torch.optim.Optimizer,
     epoch: int,
+    all_time_all_metrics,
     best_metric: float,
-    scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
+    scheduler: Optional[torch.optim.lr_scheduler.ReduceLROnPlateau] = None,
 ) -> None:
     """
     Save the latest training checkpoint for continuation or recovery.
@@ -691,6 +698,7 @@ def save_last_weights(
     only rank 0 performs the save. Supports both standard and LoRA training.
 
     Args:
+        all_time_all_metrics:
         args: Training arguments. Must define `results_path`, `model_type`,
               and `train_lora`.
         model: Model instance (may be wrapped by DDP/DataParallel).
@@ -710,6 +718,7 @@ def save_last_weights(
         device_ids,
         optimizer,
         epoch,
+        all_time_all_metrics,
         best_metric,
         scheduler,
         args.train_lora,

@@ -105,7 +105,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
 
 def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, config: ConfigDict,
                           device: torch.device, device_ids: List[int], best_metric: float,
-                          epoch: int, scheduler: torch.optim.lr_scheduler._LRScheduler, optimizer) -> float:
+                          epoch: int, scheduler: torch.optim.lr_scheduler.ReduceLROnPlateau, optimizer, all_time_all_metrics) -> float:
     """
     Compute and log the metrics for the current epoch, and save model weights if the metric improves.
 
@@ -118,7 +118,8 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
         best_metric: The best metric value seen so far.
         epoch: The current epoch number.
         scheduler: The learning rate scheduler to adjust the learning rate.
-
+        optimizer:
+        all_time_all_metrics:
     Returns:
         The updated best_metric.
     """
@@ -127,6 +128,7 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
         metrics_avg, all_metrics = valid_multi_gpu(model, args, config, args.device_ids, verbose=False)
     else:
         metrics_avg, all_metrics = valid(model, args, config, device, verbose=False)
+    all_time_all_metrics[f"epoch_{epoch}"] = all_metrics
     metric_avg = metrics_avg[args.metric_for_scheduler]
     if metric_avg > best_metric:
 
@@ -149,7 +151,7 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
             )
         print(f'Store weights: {store_path}')
         train_lora = args.train_lora
-        save_weights(store_path, model, device_ids, optimizer, epoch, metric_avg, scheduler, train_lora)
+        save_weights(store_path, model, device_ids, optimizer, epoch, all_time_all_metrics, metric_avg, scheduler, train_lora)
         best_metric = metric_avg
 
     if args.save_weights_every_epoch:
@@ -157,7 +159,7 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
         for m in metrics_avg:
             metric_string += '_{}_{:.4f}'.format(m, metrics_avg[m])
         store_path = f'{args.results_path}/model_{args.model_type}_ep_{epoch}{metric_string}.ckpt'
-        save_weights(store_path, model, device_ids, optimizer, epoch, best_metric, scheduler, train_lora)
+        save_weights(store_path, model, device_ids, optimizer, epoch, all_time_all_metrics, best_metric, scheduler, train_lora)
 
     scheduler.step(metric_avg)
     wandb.log({'metric_main': metric_avg, 'best_metric': best_metric})
@@ -191,12 +193,9 @@ def train_model(args: argparse.Namespace) -> None:
 
     train_loader = prepare_data(config, args, batch_size)
 
-    if args.full_check_point:
-        checkpoint = torch.load(args.full_check_point)
-        load_start_checkpoint(args, model,  checkpoint["model_state_dict"], type_='train')
-    elif args.start_check_point:
-        old_model = torch.load(args.start_check_point)
-        load_start_checkpoint(args, model, old_model, type_='train')
+    if args.start_check_point:
+        checkpoint = torch.load(args.start_check_point, weights_only=False, map_location='cpu')
+        load_start_checkpoint(args, model, checkpoint, type_='train')
 
     if args.train_lora:
         model = bind_lora_to_model(config, model)
@@ -214,25 +213,30 @@ def train_model(args: argparse.Namespace) -> None:
 
     # load optimizer
     optimizer = get_optimizer(config, model)
-    if args.full_check_point and "optimizer_state_dict" in checkpoint and args.load_optimizer:
+    if args.start_check_point and "optimizer_state_dict" in checkpoint and args.load_optimizer:
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
 
     # Reduce LR if no metric improvements for several epochs
     scheduler = ReduceLROnPlateau(optimizer, 'max', patience=config.training.patience,
                                   factor=config.training.reduce_factor)
-    if args.full_check_point and "scheduler_state_dict" in checkpoint and args.load_scheduler:
+    if args.start_check_point and "scheduler_state_dict" in checkpoint and args.load_scheduler:
         scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
 
     # load num epoch
-    if args.full_check_point and "epoch" in checkpoint and args.load_epoch:
+    if args.start_check_point and "epoch" in checkpoint and args.load_epoch:
         start_epoch = checkpoint["epoch"] + 1
     else:
         start_epoch = 0
 
-    if args.full_check_point and "best_metric" in checkpoint and args.load_best_metric:
+    if args.start_check_point and "best_metric" in checkpoint and args.load_best_metric:
         best_metric = checkpoint["best_metric"]
     else:
         best_metric = float('-inf')
+
+    if args.start_check_point and "all_metrics" in checkpoint and args.load_all_metrics:
+        all_time_all_metrics = checkpoint["all_metrics"]
+    else:
+        all_time_all_metrics = {}
 
     multi_loss = choice_loss(args, config)
     scaler = GradScaler()
@@ -240,6 +244,7 @@ def train_model(args: argparse.Namespace) -> None:
     if args.set_per_process_memory_fraction:
         torch.cuda.set_per_process_memory_fraction(1.0)
     torch.cuda.empty_cache()
+
     print(
         f"Instruments: {config.training.instruments}\n"
         f"Losses for training: {args.loss}\n"
@@ -259,8 +264,8 @@ def train_model(args: argparse.Namespace) -> None:
 
         train_one_epoch(model, config, args, optimizer, device, device_ids, epoch,
                         use_amp, scaler, gradient_accumulation_steps, train_loader, multi_loss)
-        save_last_weights(args, model, device_ids, optimizer, epoch, best_metric, scheduler)
-        best_metric = compute_epoch_metrics(model, args, config, device, device_ids, best_metric, epoch, scheduler, optimizer)
+        save_last_weights(args, model, device_ids, optimizer, epoch, all_time_all_metrics, best_metric, scheduler)
+        best_metric = compute_epoch_metrics(model, args, config, device, device_ids, best_metric, epoch, scheduler, optimizer, all_time_all_metrics)
 
 
 if __name__ == "__main__":
