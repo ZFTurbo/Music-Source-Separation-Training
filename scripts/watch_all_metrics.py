@@ -1,3 +1,7 @@
+"""
+    Script to print metrics for checkpoint file of new format
+"""
+
 import argparse
 import torch
 
