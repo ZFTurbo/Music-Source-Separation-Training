@@ -93,7 +93,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
 
 def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, config: ConfigDict,
                           best_metric: float,
-                          epoch: int, scheduler: torch.optim.lr_scheduler._LRScheduler, metrics_avg, all_metrics) -> float:
+                          epoch: int, all_time_all_metrics, scheduler: torch.optim.lr_scheduler._LRScheduler, optimizer, metrics_avg, all_metrics) -> float:
     """
     Compute and log the metrics for the current epoch, and save model weights if the metric improves.
 
@@ -116,20 +116,25 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
     if metric_avg > best_metric:
 
         if args.each_metrics_in_name:
-            vocal_sdr_values = np.array(all_metrics[args.metric_for_scheduler]['vocals'])
-            vocal_mean_val = vocal_sdr_values.mean()
-            vocal_std_val = vocal_sdr_values.std()
-
-            other_sdr_values = np.array(all_metrics[args.metric_for_scheduler]['other'])
-            other_mean_val = other_sdr_values.mean()
-            other_std_val = other_sdr_values.std()
-
-            store_path = f'{args.results_path}/model_{args.model_type}_ep_{epoch}_vocals_{args.metric_for_scheduler}_{vocal_mean_val:.4f}_std_{vocal_std_val:.4f}__other_{args.metric_for_scheduler}_{other_mean_val:.4f}_std_{other_std_val:.4f}.ckpt'
+            stem_parts = []
+            for stem_name, values in all_metrics[args.metric_for_scheduler].items():
+                stem_values = np.array(values)
+                mean_val = stem_values.mean()
+                std_val = stem_values.std()
+                stem_parts.append(
+                    f"{stem_name}_{args.metric_for_scheduler}_{mean_val:.4f}_std_{std_val:.4f}"
+                )
+            stem_info = "__".join(stem_parts)
+            store_path = (
+                f"{args.results_path}/model_{args.model_type}_ep_{epoch}_{stem_info}.ckpt"
+            )
         else:
-            store_path = f'{args.results_path}/model_{args.model_type}_ep_{epoch}_{args.metric_for_scheduler}_{metric_avg:.4f}.ckpt'
+            store_path = (
+                f"{args.results_path}/model_{args.model_type}_ep_{epoch}_{args.metric_for_scheduler}_{metric_avg:.4f}.ckpt"
+            )
         if dist.get_rank() == 0:
             print(f'Store weights: {store_path}')
-        save_weights(store_path, model, args.device_ids, args.train_lora)
+            save_weights(store_path, model, args.device_ids, optimizer, epoch, all_time_all_metrics, metric_avg, scheduler, args.train_lora)
         best_metric = metric_avg
 
     if args.save_weights_every_epoch:
@@ -137,7 +142,7 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
         for m in metrics_avg:
             metric_string += '_{}_{:.4f}'.format(m, metrics_avg[m])
         store_path = f'{args.results_path}/model_{args.model_type}_ep_{epoch}{metric_string}.ckpt'
-        save_weights(store_path, model, args.device_ids, args.train_lora)
+        save_weights(store_path, model, args.device_ids, optimizer, epoch, all_time_all_metrics, best_metric, scheduler, args.train_lora)
 
     scheduler.step(metric_avg)
     wandb.log({'metric_main': metric_avg, 'best_metric': best_metric})
@@ -164,12 +169,15 @@ def train_model_single(rank: int, world_size: int, args=None):
     initialize_environment_ddp(rank, world_size, args.seed, args.results_path)
     model, config = get_model_from_config(args.model_type, args.config_path)
     use_amp = getattr(config.training, 'use_amp', True)
-    batch_size = config.training.batch_size * world_size
+    batch_size = config.training.batch_size
 
     wandb_init(args, config, batch_size)
 
+    train_loader = prepare_data(config, args, batch_size)
+
     if args.start_check_point:
-        load_start_checkpoint(args, model, type_='train')
+        checkpoint = torch.load(args.start_check_point, weights_only=False, map_location='cpu')
+        load_start_checkpoint(args, model, checkpoint, type_='train')
 
     if args.train_lora:
         model = bind_lora_to_model(config, model)
@@ -179,19 +187,46 @@ def train_model_single(rank: int, world_size: int, args=None):
     model.to(device)
     model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[rank])
 
-    train_loader = prepare_data(config, args, batch_size)
     if args.pre_valid:
         valid_multi_gpu(model, args, config, args.device_ids, verbose=False)
 
-    optimizer = get_optimizer(config, model)
     gradient_accumulation_steps = int(getattr(config.training, 'gradient_accumulation_steps', 1))
-    scaler = GradScaler()
+
+    # load optimizer
+    optimizer = get_optimizer(config, model)
+    if args.start_check_point and "optimizer_state_dict" in checkpoint and args.load_optimizer:
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+
+    # Reduce LR if no metric improvements for several epochs
     scheduler = ReduceLROnPlateau(optimizer, 'max', patience=config.training.patience,
                                   factor=config.training.reduce_factor)
+    if args.start_check_point and "scheduler_state_dict" in checkpoint and args.load_scheduler:
+        scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+
+    # load num epoch
+    if args.start_check_point and "epoch" in checkpoint and args.load_epoch:
+        start_epoch = checkpoint["epoch"] + 1
+    else:
+        start_epoch = 0
+
+    if args.start_check_point and "best_metric" in checkpoint and args.load_best_metric:
+        best_metric = checkpoint["best_metric"]
+    else:
+        best_metric = float('-inf')
+
+    if args.start_check_point and "all_metrics" in checkpoint and args.load_all_metrics:
+        all_time_all_metrics = checkpoint["all_metrics"]
+    else:
+        all_time_all_metrics = {}
 
     multi_loss = choice_loss(args, config)
-    best_metric = float('-inf')
-    if dist.get_rank() == 0:
+    scaler = GradScaler()
+
+    if args.set_per_process_memory_fraction:
+        torch.cuda.set_per_process_memory_fraction(1.0)
+    torch.cuda.empty_cache()
+
+    if rank == 0:
         print(
             f"Instruments: {config.training.instruments}\n"
             f"Metrics for training: {args.metrics}. Metric for scheduler: {args.metric_for_scheduler}\n"
@@ -200,32 +235,36 @@ def train_model_single(rank: int, world_size: int, args=None):
             f"Batch size: {batch_size} "
             f"Grad accum steps: {gradient_accumulation_steps} "
             f"Num gpus: {world_size} "
-            f"Effective batch size: {batch_size * gradient_accumulation_steps}\n"
+            f"Effective batch size: {batch_size * gradient_accumulation_steps * world_size}\n"
             f"Dataset type: {args.dataset_type}\n"
             f"Optimizer: {config.training.optimizer}"
         )
 
         print(f'Train for: {config.training.num_epochs} epochs')
 
-    for epoch in range(config.training.num_epochs):
+    for epoch in range(start_epoch, config.training.num_epochs):
         train_loader.sampler.set_epoch(epoch)
 
         train_one_epoch(model, config, args, optimizer, device, args.device_ids, epoch,
                            use_amp, scaler, gradient_accumulation_steps, train_loader, multi_loss)
 
         if rank == 0:
-            save_last_weights(args, model, args.device_ids)
+            save_last_weights(args, model, args.device_ids, optimizer, epoch, all_time_all_metrics, best_metric, scheduler)
         metrics_avg, all_metrics = valid_multi_gpu(model, args, config, args.device_ids, verbose=False)
         if rank == 0:
-            best_metric = compute_epoch_metrics(model, args, config, best_metric, epoch, scheduler, metrics_avg, all_metrics)
+            all_time_all_metrics[f"epoch_{epoch}"] = all_metrics
+            best_metric = compute_epoch_metrics(model, args, config, best_metric, epoch, all_time_all_metrics, scheduler, optimizer, metrics_avg, all_metrics)
 
     cleanup_ddp()  # Close DDP
 
 
 def train_model(args=None):
     world_size = torch.cuda.device_count()
-    mp.spawn(train_model_single, args=(world_size, args), nprocs=world_size, join=True)
-
+    try:
+        mp.spawn(train_model_single, args=(world_size, args), nprocs=world_size, join=True)
+    except Exception as e:
+        cleanup_ddp()
+        raise e
 
 if __name__ == "__main__":
     train_model()
