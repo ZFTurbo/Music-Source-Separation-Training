@@ -2,6 +2,9 @@
 __author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
 
 import argparse
+import json
+import os
+from datetime import datetime
 import numpy as np
 import torch
 import torch.nn as nn
@@ -547,8 +550,16 @@ def load_start_checkpoint(args: argparse.Namespace,
             if 'state_dict' in state_dict:
                 state_dict = state_dict['state_dict']
         else:
-            state_dict = torch.load(args.start_check_point, map_location=device, weights_only=True)
-        model.load_state_dict(state_dict)
+            if 'state' in old_model:
+                # Fix for htdemucs weights loading
+                old_model = old_model['state']
+            if 'state_dict' in old_model:
+                # Fix for apollo weights loading
+                old_model = old_model['state_dict']
+            if 'model_state_dict' in old_model:
+                # Fix for full_check_point
+                old_model = old_model['model_state_dict']
+        model.load_state_dict(old_model)
 
     if args.lora_checkpoint:
         if should_print:
@@ -614,6 +625,73 @@ def bind_lora_to_model(config: Dict[str, Any], model: nn.Module) -> nn.Module:
         print(f"Number of layers replaced with LoRA: {replaced_layers}")
 
     return model
+
+def log_model_info(model: torch.nn.Module, results_path):
+    """Log comprehensive model information"""
+    model_info = {
+        "timestamp": datetime.now().isoformat(),
+        "model_class": model.__class__.__name__,
+        "model_module": model.__class__.__module__,
+    }
+
+    # Count parameters
+    total_params = sum(p.numel() for p in model.parameters())
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+    model_info["parameters"] = {
+        "total": total_params,
+        "trainable": trainable_params,
+        "non_trainable": total_params - trainable_params,
+        "total_millions": round(total_params / 1e6, 2),
+        "trainable_millions": round(trainable_params / 1e6, 2),
+    }
+
+    # Get model size in memory
+    param_size = 0
+    buffer_size = 0
+
+    for param in model.parameters():
+        param_size += param.nelement() * param.element_size()
+
+    for buffer in model.buffers():
+        buffer_size += buffer.nelement() * buffer.element_size()
+
+    model_size_mb = (param_size + buffer_size) / 1024 / 1024
+
+    model_info["memory"] = {
+        "parameters_mb": round(param_size / 1024 / 1024, 2),
+        "buffers_mb": round(buffer_size / 1024 / 1024, 2),
+        "total_mb": round(model_size_mb, 2),
+    }
+
+    # Log layer information
+    layer_info = []
+    for name, module in model.named_modules():
+        if len(list(module.children())) == 0:  # Only leaf modules
+            layer_params = sum(p.numel() for p in module.parameters())
+            if layer_params > 0:
+                layer_info.append({
+                    "name": name,
+                    "type": module.__class__.__name__,
+                    "parameters": layer_params,
+                })
+
+    model_info["layers"] = layer_info
+
+    if results_path:
+        path = os.path.join(results_path, "model_info.json")
+        # Save model info
+        with open(path, 'w') as f:
+            json.dump(model_info, f, indent=2)
+
+    # Log summary
+    if not dist.is_initialized() or dist.get_rank()==0:
+        print(f"Model: {model_info['model_class']}")
+        print(f"Total parameters: {model_info['parameters']['total']:,} ({model_info['parameters']['total_millions']}M)")
+        print(
+            f"Trainable parameters: {model_info['parameters']['trainable']:,} ({model_info['parameters']['trainable_millions']}M)")
+        print(f"Model size: {model_info['memory']['total_mb']:.2f} MB")
+        print(f"Number of layers: {len(layer_info)}")
 
 
 def save_weights(

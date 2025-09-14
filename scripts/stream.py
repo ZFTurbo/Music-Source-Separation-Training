@@ -95,7 +95,8 @@ def load_model(args: argparse.Namespace, device: str) -> Tuple[nn.Module, Any]:
     model, config = get_model_from_config(args.model_type, args.config_path)
 
     if args.start_check_point:
-        load_start_checkpoint(args, model, type_='inference')
+        checkpoint = torch.load(args.start_check_point, weights_only=False, map_location='cpu')
+        load_start_checkpoint(args, model, checkpoint, type_='inference')
 
     if isinstance(args.device_ids, list) and len(args.device_ids) > 1 and not args.force_cpu:
         model = nn.DataParallel(model, device_ids=args.device_ids)
