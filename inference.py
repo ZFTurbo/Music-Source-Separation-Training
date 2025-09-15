@@ -137,8 +137,9 @@ def proc_folder(dict_args):
 
     model, config = get_model_from_config(args.model_type, args.config_path)
 
-    if args.start_check_point != '':
-        load_start_checkpoint(args, model, type_='inference')
+    if args.start_check_point:
+        checkpoint = torch.load(args.start_check_point, weights_only=False, map_location='cpu')
+        load_start_checkpoint(args, model, checkpoint, type_='inference')
 
     print("Instruments: {}".format(config.training.instruments))
 
