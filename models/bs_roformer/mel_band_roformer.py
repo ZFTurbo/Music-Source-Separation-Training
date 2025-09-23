@@ -1,7 +1,7 @@
 from functools import partial
 
 import torch
-from torch import nn, einsum, Tensor
+from torch import nn, einsum, tensor, Tensor
 from torch.nn import Module, ModuleList
 import torch.nn.functional as F
 
@@ -378,6 +378,7 @@ class MelBandRoformer(Module):
             stft_win_length=2048,
             stft_normalized=False,
             stft_window_fn: Optional[Callable] = None,
+            zero_dc = True,
             mask_estimator_depth=1,
             multi_stft_resolution_loss_weight=1.,
             multi_stft_resolutions_window_sizes: Tuple[int, ...] = (4096, 2048, 1024, 512, 256),
@@ -497,6 +498,10 @@ class MelBandRoformer(Module):
             )
 
             self.mask_estimators.append(mask_estimator)
+
+        # whether to zero out dc
+
+        self.zero_dc = zero_dc
 
         # for the multi-resolution stft loss
 
@@ -653,6 +658,10 @@ class MelBandRoformer(Module):
         # istft
 
         stft_repr = rearrange(stft_repr, 'b n (f s) t -> (b n s) f t', s=self.audio_channels)
+
+        if self.zero_dc:
+            # whether to dc filter
+            stft_repr = stft_repr.index_fill(1, tensor(0, device = device), 0.)
 
         recon_audio = torch.istft(stft_repr, **self.stft_kwargs, window=stft_window, return_complex=False,
                                   length=istft_length)
