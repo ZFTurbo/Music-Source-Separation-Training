@@ -19,7 +19,7 @@ import loralib as lora
 from utils.dataset import prepare_data
 from utils.settings import parse_args_train, initialize_environment, wandb_init, get_model_from_config
 from utils.model_utils import bind_lora_to_model, load_start_checkpoint, save_weights, normalize_batch, \
-    initialize_model_and_device, get_optimizer, save_last_weights
+    initialize_model_and_device, get_optimizer, save_last_weights, log_model_info
 
 from utils.losses import choice_loss
 from valid import valid_multi_gpu, valid
@@ -259,7 +259,7 @@ def train_model(args: argparse.Namespace) -> None:
     )
 
     print(f'Train for: {config.training.num_epochs} epochs')
-
+    log_model_info(model, args.results_path)
     for epoch in range(start_epoch, config.training.num_epochs):
 
         train_one_epoch(model, config, args, optimizer, device, device_ids, epoch,

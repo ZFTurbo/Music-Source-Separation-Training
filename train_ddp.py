@@ -20,7 +20,7 @@ from typing import List, Callable
 
 from utils.losses import choice_loss
 from utils.model_utils import bind_lora_to_model, load_start_checkpoint, normalize_batch, get_optimizer, save_weights, \
-    save_last_weights
+    save_last_weights, log_model_info
 from utils.settings import get_model_from_config, parse_args_train, initialize_environment_ddp, cleanup_ddp, wandb_init
 from valid_ddp import valid_multi_gpu
 from utils.dataset import prepare_data
@@ -42,6 +42,8 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
     total = 0
 
     normalize = getattr(config.training, 'normalize', False)
+    get_internal_loss = (args.model_type in ('mel_band_roformer', 'bs_roformer', 'mel_band_conformer', 'bs_conformer')
+                         and not args.use_standard_loss)
 
     pbar = tqdm(train_loader,
                 dynamic_ncols=True) if dist.get_rank() == 0 else train_loader  # Only main process print progress bar
@@ -54,7 +56,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
             x, y = normalize_batch(x, y)
 
         with torch.cuda.amp.autocast(enabled=use_amp):
-            if args.model_type in ['mel_band_roformer', 'bs_roformer', 'mel_band_conformer', 'bs_conformer'] and not args.use_standard_loss:
+            if get_internal_loss:
                 loss = model(x, y)
                 if isinstance(device_ids, (list, tuple)):
                     loss = loss.mean()
@@ -241,6 +243,7 @@ def train_model_single(rank: int, world_size: int, args=None):
         )
 
         print(f'Train for: {config.training.num_epochs} epochs')
+        log_model_info(model, args.results_path)
 
     for epoch in range(start_epoch, config.training.num_epochs):
         train_loader.sampler.set_epoch(epoch)
