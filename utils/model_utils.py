@@ -274,6 +274,24 @@ def get_optimizer(config: ConfigDict, model: torch.nn.Module) -> torch.optim.Opt
             dict(params=adam_params, use_muon=False, **adam_group_config),
         ]
         optimizer = SingleDeviceMuonWithAuxAdam(param_groups)
+    elif name_optimizer == 'adago':
+        if should_print:
+            print("Using AdaGO optimizer (Single-Device) with AdamW for auxiliary parameters.")
+        muon_params = [p for p in model.parameters() if p.ndim >= 2]
+        adam_params = [p for p in model.parameters() if p.ndim < 2]
+        if not hasattr(config, 'optimizer') or 'muon_group' not in config.optimizer or 'adam_group' not in config.optimizer:
+            raise ValueError("For 'adago', the config must have an 'optimizer' section with 'muon_group' and 'adam_group' dictionaries.")
+        muon_group_config = dict(config.optimizer.muon_group)
+        adam_group_config = dict(config.optimizer.adam_group)
+        if should_print:
+            print(f"AdaGO muon group params: {muon_group_config}")
+            print(f"AdaGO adam group params: {adam_group_config}")
+        from .muon import SingleDeviceAdaGOWithAuxAdam
+        param_groups = [
+            dict(params=muon_params, use_muon=True, **muon_group_config),
+            dict(params=adam_params, use_muon=False, **adam_group_config),
+        ]
+        optimizer = SingleDeviceAdaGOWithAuxAdam(param_groups)
     elif name_optimizer == 'sgd':
         if should_print:
             print('Use SGD optimizer')
