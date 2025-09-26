@@ -11,6 +11,7 @@ from omegaconf import OmegaConf
 from ml_collections import ConfigDict
 import torch.distributed as dist
 from torch import nn
+import soundfile as sf
 
 
 def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
@@ -188,7 +189,7 @@ def parse_args_inference(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser.add_argument("--disable_detailed_pbar", action='store_true', help="disable detailed progress bar")
     parser.add_argument("--force_cpu", action='store_true', help="Force the use of CPU even if CUDA is available")
     parser.add_argument("--flac_file", action='store_true', help="Output flac file instead of wav")
-    parser.add_argument("--pcm_type", type=str, choices=['PCM_16', 'PCM_24'], default='PCM_24',
+    parser.add_argument("--pcm_type", type=str, choices=['PCM_16', 'PCM_24', 'FLOAT'], default='FLOAT',
                         help="PCM type for FLAC files (PCM_16 or PCM_24)")
     parser.add_argument("--use_tta", action='store_true',
                         help="Flag adds test time augmentation during inference (polarity and channel inverse)."
@@ -203,7 +204,18 @@ def parse_args_inference(dict_args: Union[Dict, None]) -> argparse.Namespace:
     else:
         args = parser.parse_args()
 
+    args.pcm_type = validate_sndfile_subtype(args)
     return args
+
+
+def validate_sndfile_subtype(args):
+    codec = 'flac' if getattr(args, 'flac_file', False) else 'wav'
+    subtype = args.pcm_type
+    if subtype in sf.available_subtypes(codec):
+        return subtype
+    default = sf.default_subtype(codec)
+    print(f"WARNING: codec {codec} doesn't support subtype {subtype}, defaulting to {default}")
+    return default
 
 
 def load_config(model_type: str, config_path: str) -> Union[ConfigDict, OmegaConf]:

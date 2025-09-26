@@ -108,7 +108,7 @@ def run_folder(model, args, config, device, verbose: bool = False):
                     estimates = denormalize_audio(estimates, norm_params)
 
             codec = 'flac' if getattr(args, 'flac_file', False) else 'wav'
-            subtype = 'PCM_16' if args.flac_file and args.pcm_type == 'PCM_16' else 'FLOAT'
+            subtype = args.pcm_type
 
             output_path = os.path.join(output_dir, f"{instr}.{codec}")
             sf.write(output_path, estimates.T, sr, subtype=subtype)
