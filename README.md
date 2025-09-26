@@ -71,6 +71,7 @@ python inference.py \
 ```
 
 All inference parameters are [here](https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/utils/settings.py#L130).
+Convert models to ONNX and TenosrRT formats [here](https://github.com/ZFTurbo/MSS_ONNX_TensorRT).
 
 ## Useful notes
 
