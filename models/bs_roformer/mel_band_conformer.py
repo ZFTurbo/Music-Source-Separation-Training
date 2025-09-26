@@ -484,7 +484,7 @@ class MelBandConformer(Module):
         if sage_attention:
             print("Use Sage Attention")
 
-        base_kwargs = dict(
+        transformer_kwargs = dict(
             dim = dim,
             heads = heads,
             dim_head = dim_head,
