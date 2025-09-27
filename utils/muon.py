@@ -1,5 +1,21 @@
+import math
 import torch
 import torch.distributed as dist
+from typing import Tuple
+
+
+def get_adjusted_lr(lr: float, param_shape: Tuple[float, ...], use_adjusted_lr: bool = False) -> float:
+    r"""Get the adjust learning rate."""
+    output_shape, *input_shape = param_shape
+    input_shape = math.prod(input_shape)
+
+    ratio: float = (
+        math.pow(max(1.0, output_shape / input_shape), 0.5)
+        if use_adjusted_lr
+        else 0.2 * math.sqrt(max(output_shape, input_shape))
+    )
+
+    return lr * ratio
 
 
 def zeropower_via_newtonschulz5(G, steps: int):
@@ -283,4 +299,86 @@ class SingleDeviceMuonWithAuxAdam(torch.optim.Optimizer):
                     p.mul_(1 - group["lr"] * group["weight_decay"])
                     p.add_(update, alpha=-group["lr"])
 
+        return loss
+
+
+class SingleDeviceAdaGOWithAuxAdam(torch.optim.Optimizer):
+    """
+    Non-distributed AdaGO with internal AdamW-like branch for non-muon params.
+    Mirrors SingleDeviceMuonWithAuxAdam, replacing the muon step with AdaGO's adaptive orthogonal step.
+    """
+    def __init__(self, param_groups):
+        for group in param_groups:
+            assert "use_muon" in group
+            if group["use_muon"]:
+                # AdaGO defaults (from upstream)
+                group["lr"] = group.get("lr", 5e-2)
+                group["momentum"] = group.get("momentum", 0.95)
+                group["weight_decay"] = group.get("weight_decay", 0.0)
+                group["nesterov"] = group.get("nesterov", False)
+                group["ns_steps"] = group.get("ns_steps", 5)
+                group["use_adjusted_lr"] = group.get("use_adjusted_lr", False)
+                group["gamma"] = group.get("gamma", 10.0)
+                group["eps"] = group.get("eps", 5e-4)
+                group["v"] = group.get("v", 1e-6)
+                assert set(group.keys()) == set(["params","lr","momentum","weight_decay","nesterov","ns_steps","use_adjusted_lr","gamma","eps","v","use_muon"])
+            else:
+                # Same defaults/pattern as SingleDeviceMuonWithAuxAdam
+                group["lr"] = group.get("lr", 3e-4)
+                group["betas"] = group.get("betas", (0.9, 0.95))
+                group["eps"] = group.get("eps", 1e-10)
+                group["weight_decay"] = group.get("weight_decay", 0.0)
+                assert set(group.keys()) == set(["params","lr","betas","eps","weight_decay","use_muon"])
+        super().__init__(param_groups, dict())
+
+    @torch.no_grad()
+    def step(self, closure=None):
+        loss = None
+        if closure is not None:
+            with torch.enable_grad():
+                loss = closure()
+
+        for group in self.param_groups:
+            if group["use_muon"]:
+                for p in group["params"]:
+                    if p.grad is None:
+                        p.grad = torch.zeros_like(p)  # preserve current sync behavior
+                    grad = p.grad
+                    state = self.state[p]
+                    if len(state) == 0:
+                        state["momentum_buffer"] = torch.zeros_like(p)
+                        state["v"] = torch.tensor(group["v"], dtype=p.dtype, device=p.device)
+                    # decoupled weight decay, consistent with local Muon implementation
+                    p.mul_(1 - group["lr"] * group["weight_decay"])
+                    # AdaGO momentum + accumulator
+                    buf, v = state["momentum_buffer"], state["v"]
+                    buf.lerp_(grad, 1.0 - group["momentum"])
+                    v.add_(min(grad.norm(p=2.0).pow(2), group["gamma"] ** 2))
+                    update = grad.lerp_(buf, group["momentum"]) if group["nesterov"] else buf
+                    # orthogonalize
+                    if update.ndim > 2:
+                        update = update.view(len(update), -1)
+                    update = zeropower_via_newtonschulz5(update, steps=group["ns_steps"])
+                    # shape-adjust the LR if requested
+                    g = float(p.grad.detach().norm(p=2).item())
+                    v_t = float(state["v"].item()) if isinstance(state["v"], torch.Tensor) else float(state["v"])
+                    s = min(g, float(group["gamma"]))
+                    lr_eff = float(get_adjusted_lr(group["lr"], p.size(), use_adjusted_lr=group["use_adjusted_lr"]))
+                    alpha = max(float(group["eps"]), lr_eff * s / max(v_t, 1e-12))  # Python float, no .item()
+                    p.add_(update.reshape(p.shape), alpha=-alpha)
+            else:
+                for p in group["params"]:
+                    if p.grad is None:
+                        p.grad = torch.zeros_like(p)
+                    grad = p.grad
+                    state = self.state[p]
+                    if len(state) == 0:
+                        state["exp_avg"] = torch.zeros_like(p)
+                        state["exp_avg_sq"] = torch.zeros_like(p)
+                        state["step"] = 0
+                    state["step"] += 1
+                    # decoupled weight decay
+                    p.mul_(1 - group["lr"] * group["weight_decay"])
+                    update = adam_update(grad, state["exp_avg"], state["exp_avg_sq"], state["step"], group["betas"], group["eps"])
+                    p.add_(update, alpha=-group["lr"])
         return loss

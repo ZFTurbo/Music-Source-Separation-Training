@@ -1,2 +1,4 @@
 from models.bs_roformer.bs_roformer import BSRoformer
+from models.bs_roformer.bs_conformer import BSConformer
 from models.bs_roformer.mel_band_roformer import MelBandRoformer
+from models.bs_roformer.mel_band_conformer import MelBandConformer
