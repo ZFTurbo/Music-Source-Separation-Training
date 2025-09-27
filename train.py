@@ -58,10 +58,10 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
     """
     ddp = True if world_size else False
     should_print = not dist.is_initialized() or dist.get_rank() == 0
-
     model.train()
     if should_print:
         print(f'Train epoch: {epoch} Learning rate: {optimizer.param_groups[0]["lr"]}')
+        sys.stdout.flush()
     loss_val = 0.
     total = 0
 
@@ -114,15 +114,18 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
                 loss_copy /= dist.get_world_size()
             if dist.get_rank() == 0:
                 li = loss_copy.item() * gradient_accumulation_steps
+                loss_val += li
+                total += 1
+                pbar.set_postfix({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1)})
+                sys.stdout.flush()
+                wandb.log({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1), 'i': i})
         else:
             li = loss.item() * gradient_accumulation_steps
-        if should_print:
             loss_val += li
             total += 1
             pbar.set_postfix({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1)})
-            if ddp:
-                sys.stdout.flush()
             wandb.log({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1), 'i': i})
+            loss.detach()
 
     if should_print:
         print(f'Training loss: {loss_val / total}')
@@ -338,7 +341,7 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
             train_loader.sampler.set_epoch(epoch)
 
         train_one_epoch(model, config, args, optimizer, device, device_ids, epoch,
-                        use_amp, scaler, scheduler, gradient_accumulation_steps, train_loader, multi_loss)
+                        use_amp, scaler, scheduler, gradient_accumulation_steps, train_loader, multi_loss, world_size)
         if should_print:
             save_last_weights(args, model, device_ids, optimizer, epoch, all_time_all_metrics, best_metric, scheduler)
         if ddp:
