@@ -18,6 +18,18 @@ def get_adjusted_lr(lr: float, param_shape: Tuple[float, ...], use_adjusted_lr: 
     return lr * ratio
 
 
+def _ortho(update, ns_steps: int):
+    # Orthogonalize any weight with ndim >= 2
+    if update.ndim == 2:
+        return zeropower_via_newtonschulz5(update, steps=ns_steps)
+    if update.ndim >= 3:
+        B = update.shape[0]
+        flat = update.view(B, -1)
+        flat = zeropower_via_newtonschulz5(flat, steps=ns_steps)
+        return flat.view_as(update)
+    return update
+
+
 def zeropower_via_newtonschulz5(G, steps: int):
     """
     Newton-Schulz iteration to compute the zeroth power / orthogonalization of G. We opt to use a
@@ -50,10 +62,11 @@ def zeropower_via_newtonschulz5(G, steps: int):
 def muon_update(grad, momentum, beta=0.95, ns_steps=5, nesterov=True):
     momentum.lerp_(grad, 1 - beta)
     update = grad.lerp_(momentum, beta) if nesterov else momentum
-    if update.ndim == 4: # for the case of conv filters
-        update = update.view(len(update), -1)
-    update = zeropower_via_newtonschulz5(update, steps=ns_steps)
-    update *= max(1, grad.size(-2) / grad.size(-1))**0.5
+    update = _ortho(update, ns_steps=ns_steps)
+    if update.ndim >= 2:
+        out_dim = grad.size(-2) if grad.ndim >= 2 else 1
+        in_dim = grad.size(-1) if grad.ndim >= 2 else 1
+        update *= max(1.0, float(out_dim) / float(in_dim)) ** 0.5
     return update
 
 
@@ -355,10 +368,8 @@ class SingleDeviceAdaGOWithAuxAdam(torch.optim.Optimizer):
                     buf.lerp_(grad, 1.0 - group["momentum"])
                     v.add_(min(grad.norm(p=2.0).pow(2), group["gamma"] ** 2))
                     update = grad.lerp_(buf, group["momentum"]) if group["nesterov"] else buf
-                    # orthogonalize
-                    if update.ndim > 2:
-                        update = update.view(len(update), -1)
-                    update = zeropower_via_newtonschulz5(update, steps=group["ns_steps"])
+                    # orthogonalize for all >=2D
+                    update = _ortho(update, ns_steps=group["ns_steps"])
                     # shape-adjust the LR if requested
                     g = float(p.grad.detach().norm(p=2).item())
                     v_t = float(state["v"].item()) if isinstance(state["v"], torch.Tensor) else float(state["v"])
