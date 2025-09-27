@@ -169,7 +169,8 @@ def demix(
         return ret_data
 
 
-def initialize_model_and_device(model: torch.nn.Module, device_ids: List[int]) -> Tuple[Union[torch.device, str], torch.nn.Module]:
+def initialize_model_and_device(model: torch.nn.Module, device_ids: List[int]) ->\
+        Tuple[Union[torch.device, str], torch.nn.Module]:
     """
     Move a model to the correct computation device and wrap with DataParallel if needed.
 
@@ -326,10 +327,10 @@ def apply_tta(
     config,
     model: torch.nn.Module,
     mix: torch.Tensor,
-    waveforms_orig: Dict[str, torch.Tensor],
+    waveforms_orig: dict[str, np.ndarray] | np.ndarray,
     device: torch.device,
     model_type: str
-) -> Dict[str, torch.Tensor]:
+) -> dict[str, np.ndarray] | np.ndarray:
     """
     Enhance source separation results using Test-Time Augmentation (TTA).
 
@@ -521,6 +522,26 @@ def load_lora_weights(model: torch.nn.Module, lora_path: str, device: str = 'cpu
     model.load_state_dict(lora_state_dict, strict=False)
 
 
+def get_lora(args, config, model):
+    if args.train_lora_loralib:
+        model = bind_lora_to_model(config, model)
+        lora.mark_only_lora_as_trainable(model)
+    if args.train_lora_peft:
+        if args.lora_checkpoint_peft:
+            from peft import PeftModel
+            model = PeftModel.from_pretrained(model, args.lora_checkpoint_peft)
+            for name, param in model.named_parameters():
+                if 'lora' in name.lower():
+                    param.requires_grad = True
+        else:
+            from peft import LoraConfig, get_peft_model
+            lora_config = LoraConfig(
+                **config['lora']
+            )
+            model = get_peft_model(model, lora_config)
+    return model
+
+
 def load_start_checkpoint(args: argparse.Namespace,
                           model: torch.nn.Module,
                           old_model,
@@ -548,20 +569,20 @@ def load_start_checkpoint(args: argparse.Namespace,
     if should_print:
         print(f'Start from checkpoint: {args.start_check_point}')
     if type_ in ['train']:
-        if 1:
+        if not args.load_only_compatible_weights:
             load_not_compatible_weights(model, old_model, verbose=False)
         else:
             model.load_state_dict(torch.load(args.start_check_point))
     else:
-        device='cpu'
+        device = 'cpu'
         if args.model_type in ['htdemucs', 'apollo']:
-            state_dict = torch.load(args.start_check_point, map_location=device, weights_only=False)
+            old_model = torch.load(args.start_check_point, map_location=device, weights_only=False)
             # Fix for htdemucs pretrained models
-            if 'state' in state_dict:
-                state_dict = state_dict['state']
+            if 'state' in old_model:
+                old_model = old_model['state']
             # Fix for apollo pretrained models
-            if 'state_dict' in state_dict:
-                state_dict = state_dict['state_dict']
+            if 'state_dict' in old_model:
+                old_model = old_model['state_dict']
         else:
             if 'state' in old_model:
                 # Fix for htdemucs weights loading
@@ -574,7 +595,7 @@ def load_start_checkpoint(args: argparse.Namespace,
                 old_model = old_model['model_state_dict']
         model.load_state_dict(old_model)
 
-    if args.lora_checkpoint:
+    if args.lora_checkpoint_loralib:
         if should_print:
             print(f"Loading LoRA weights from: {args.lora_checkpoint}")
         load_lora_weights(model, args.lora_checkpoint)
@@ -639,7 +660,8 @@ def bind_lora_to_model(config: Dict[str, Any], model: nn.Module) -> nn.Module:
 
     return model
 
-def log_model_info(model: torch.nn.Module, results_path):
+
+def log_model_info(model: torch.nn.Module, results_path=None):
     """Log comprehensive model information"""
     model_info = {
         "timestamp": datetime.now().isoformat(),
@@ -698,9 +720,10 @@ def log_model_info(model: torch.nn.Module, results_path):
             json.dump(model_info, f, indent=2)
 
     # Log summary
-    if not dist.is_initialized() or dist.get_rank()==0:
+    if not dist.is_initialized() or dist.get_rank() == 0:
         print(f"Model: {model_info['model_class']}")
-        print(f"Total parameters: {model_info['parameters']['total']:,} ({model_info['parameters']['total_millions']}M)")
+        print(
+            f"Total parameters: {model_info['parameters']['total']:,} ({model_info['parameters']['total_millions']}M)")
         print(
             f"Trainable parameters: {model_info['parameters']['trainable']:,} ({model_info['parameters']['trainable_millions']}M)")
         print(f"Model size: {model_info['memory']['total_mb']:.2f} MB")
@@ -708,15 +731,15 @@ def log_model_info(model: torch.nn.Module, results_path):
 
 
 def save_weights(
-    store_path: str,
-    model: nn.Module,
-    device_ids: List[int],
-    optimizer: torch.optim.Optimizer,
-    epoch: int,
-    all_time_all_metrics,
-    best_metric: float,
-    scheduler: Optional[torch.optim.lr_scheduler.ReduceLROnPlateau] = None,
-    train_lora: bool = False
+        store_path: str,
+        model: nn.Module,
+        device_ids: List[int],
+        optimizer: torch.optim.Optimizer,
+        epoch: int,
+        all_time_all_metrics,
+        best_metric: float,
+        args,
+        scheduler: Optional[torch.optim.lr_scheduler.ReduceLROnPlateau] = None
 ) -> None:
     """
     Save a training checkpoint containing model weights, optimizer/scheduler states, and metadata.
@@ -728,6 +751,7 @@ def save_weights(
     - Stores `epoch` and `best_metric` alongside optimizer/scheduler states.
 
     Args:
+        args:
         store_path: Destination file path for the checkpoint (will be overwritten).
         model: The model whose weights are being saved (may be wrapped by DDP/DataParallel).
         device_ids: List of GPU device IDs used during training (used to detect DP wrapping in non-DDP runs).
@@ -736,7 +760,6 @@ def save_weights(
         all_time_all_metrics:
         best_metric: Best validation metric achieved so far.
         scheduler: Optional learning rate scheduler; its state is saved if provided.
-        train_lora: If True, save only LoRA adapter weights instead of the full model.
 
     Returns:
         None
@@ -752,7 +775,9 @@ def save_weights(
     }
 
     # Save model weights
-    if train_lora:
+    if args.train_lora_peft:
+        model.save_pretrained(store_path + '_lora_')
+    elif args.train_lora_loralib:
         checkpoint["model_state_dict"] = lora.lora_state_dict(model)
     else:
         if dist.is_initialized():
@@ -769,14 +794,14 @@ def save_weights(
 
 
 def save_last_weights(
-    args: argparse.Namespace,
-    model: nn.Module,
-    device_ids: List[int],
-    optimizer: torch.optim.Optimizer,
-    epoch: int,
-    all_time_all_metrics,
-    best_metric: float,
-    scheduler: Optional[torch.optim.lr_scheduler.ReduceLROnPlateau] = None,
+        args: argparse.Namespace,
+        model: nn.Module,
+        device_ids: List[int],
+        optimizer: torch.optim.Optimizer,
+        epoch: int,
+        all_time_all_metrics,
+        best_metric: float,
+        scheduler: Optional[torch.optim.lr_scheduler.ReduceLROnPlateau] = None,
 ) -> None:
     """
     Save the latest training checkpoint for continuation or recovery.
@@ -811,6 +836,6 @@ def save_last_weights(
         epoch,
         all_time_all_metrics,
         best_metric,
-        scheduler,
-        args.train_lora,
+        args,
+        scheduler
     )

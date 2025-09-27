@@ -14,7 +14,7 @@ from torch import nn
 import soundfile as sf
 
 
-def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
+def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argparse.Namespace:
     """
     Parse command-line arguments for training configuration.
 
@@ -35,11 +35,15 @@ def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
                         help="One of mdx23c, htdemucs, segm_models, mel_band_roformer, bs_roformer, swin_upernet, bandit")
     parser.add_argument("--config_path", type=str, help="path to config file")
     parser.add_argument("--start_check_point", type=str, default='', help="Initial checkpoint to start training")
-    parser.add_argument("--load_optimizer", action='store_true', help="Load optimizer state from checkpoint (if available)")
-    parser.add_argument("--load_scheduler", action='store_true', help="Load scheduler state from checkpoint (if available)")
+    parser.add_argument("--load_optimizer", action='store_true',
+                        help="Load optimizer state from checkpoint (if available)")
+    parser.add_argument("--load_scheduler", action='store_true',
+                        help="Load scheduler state from checkpoint (if available)")
     parser.add_argument("--load_epoch", action='store_true', help="Load epoch number from checkpoint (if available)")
-    parser.add_argument("--load_best_metric", action='store_true', help="Load best metric from checkpoint (if available)")
-    parser.add_argument("--load_all_metrics", action='store_true', help="Load all metrics from checkpoint (if available)")
+    parser.add_argument("--load_best_metric", action='store_true',
+                        help="Load best metric from checkpoint (if available)")
+    parser.add_argument("--load_all_metrics", action='store_true',
+                        help="Load all metrics from checkpoint (if available)")
     parser.add_argument("--results_path", type=str,
                         help="path to folder where results will be stored (weights, metadata)")
     parser.add_argument("--data_path", nargs="+", type=str, help="Dataset data paths. You can provide several folders.")
@@ -52,7 +56,8 @@ def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=0, help="random seed")
     parser.add_argument("--device_ids", nargs='+', type=int, default=[0], help='list of gpu ids')
     parser.add_argument("--loss", type=str, nargs='+', choices=['masked_loss', 'mse_loss', 'l1_loss',
-                        'multistft_loss', 'spec_masked_loss', 'spec_rmse_loss', 'log_wmse_loss'],
+                                                                'multistft_loss', 'spec_masked_loss', 'spec_rmse_loss',
+                                                                'log_wmse_loss'],
                         default=['masked_loss'], help="List of loss functions to use")
     parser.add_argument("--masked_loss_coef", type=float, default=1., help="Coef for loss")
     parser.add_argument("--mse_loss_coef", type=float, default=1., help="Coef for loss")
@@ -70,8 +75,10 @@ def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser.add_argument("--metric_for_scheduler", default="sdr",
                         choices=['sdr', 'l1_freq', 'si_sdr', 'log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
                                  'fullness'], help='Metric which will be used for scheduler.')
-    parser.add_argument("--train_lora", action='store_true', help="Train with LoRA")
-    parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to LoRA weights")
+    parser.add_argument("--train_lora_peft", aaction='store_true', help="Training with LoRA from peft")
+    parser.add_argument("--train_lora_loralib", action='store_true', help="Training with LoRA from loralib")
+    parser.add_argument("--lora_checkpoint_peft", type=str, default='', help="Initial checkpoint to LoRA weights")
+    parser.add_argument("--lora_checkpoint_loralib", type=str, default='', help="Initial checkpoint to LoRA weights")
     parser.add_argument("--each_metrics_in_name", action='store_true',
                         help="All stems in naming checkpoints")
     parser.add_argument("--use_standard_loss", action='store_true',
@@ -83,6 +90,8 @@ def parse_args_train(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser.add_argument("--prefetch_factor", type=int, default=None,
                         help="dataloader prefetch_factor")
     parser.add_argument("--set_per_process_memory_fraction", action='store_true',
+                        help="using only VRAM, no RAM")
+    parser.add_argument("--load_only_compatible_weights", action='store_true',
                         help="using only VRAM, no RAM")
 
     if dict_args is not None:
@@ -142,7 +151,7 @@ def parse_args_valid(dict_args: Union[Dict, None]) -> argparse.Namespace:
     parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"],
                         choices=['sdr', 'l1_freq', 'si_sdr', 'neg_log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
                                  'fullness'], help='List of metrics to use.')
-    parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to LoRA weights")
+    parser.add_argument("--lora_checkpoint_peft", type=str, default='', help="Initial checkpoint to LoRA weights")
 
     if dict_args is not None:
         args = parser.parse_args([])
@@ -193,8 +202,8 @@ def parse_args_inference(dict_args: Union[Dict, None]) -> argparse.Namespace:
                         help="PCM type for FLAC files (PCM_16 or PCM_24)")
     parser.add_argument("--use_tta", action='store_true',
                         help="Flag adds test time augmentation during inference (polarity and channel inverse)."
-                        "While this triples the runtime, it reduces noise and slightly improves prediction quality.")
-    parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to LoRA weights")
+                             "While this triples the runtime, it reduces noise and slightly improves prediction quality.")
+    parser.add_argument("--lora_checkpoint_peft", type=str, default='', help="Initial checkpoint to LoRA weights")
 
     if dict_args is not None:
         args = parser.parse_args([])
@@ -203,8 +212,8 @@ def parse_args_inference(dict_args: Union[Dict, None]) -> argparse.Namespace:
         args = argparse.Namespace(**args_dict)
     else:
         args = parser.parse_args()
-
     args.pcm_type = validate_sndfile_subtype(args)
+
     return args
 
 
@@ -335,7 +344,7 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple[nn.Module,
     elif model_type == 'scnet_masked':
         from models.scnet.scnet_masked import SCNet
         model = SCNet(**config.model)
-    elif model_type =='conformer':
+    elif model_type == 'conformer':
         from models.conformer_model import ConformerMSS, NeuralModel
         model = ConformerMSS(
             core=NeuralModel(**config.model),
@@ -344,13 +353,39 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple[nn.Module,
             win_length=getattr(config.stft, 'win_length', config.stft.n_fft),
             center=config.stft.center
         )
-    elif model_type =='mel_band_conformer':
+    elif model_type == 'mel_band_conformer':
         from models.mel_band_conformer import MelBandConformer
         model = MelBandConformer(**config.model)
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
     return model, config
+
+
+def get_scheduler(config, optimizer):
+    scheduler_name = config.training.get('scheduler', 'ReduceLROnPlateau')
+    if scheduler_name == 'linear_scheduler':
+        from transformers import get_linear_schedule_with_warmup
+        num_training_steps = config.training.num_epochs * config.training.num_steps
+        num_warmup_steps = config.training.num_warmup_steps
+        scheduler = get_linear_schedule_with_warmup(
+            optimizer,
+            num_warmup_steps=num_warmup_steps,
+            num_training_steps=num_training_steps
+        )
+    elif scheduler_name == 'ReduceLROnPlateau':
+        from torch.optim.lr_scheduler import ReduceLROnPlateau
+        scheduler = ReduceLROnPlateau(optimizer, 'max', patience=config.training.patience,
+                                      factor=config.training.reduce_factor)
+    else:
+        available_schedulers = ['linear_scheduler', 'ReduceLROnPlateau']
+        raise ValueError(
+            f"Unknown scheduler '{scheduler_name}'. "
+            f"Available options: {available_schedulers}. "
+            f"Check your config.training.scheduler setting."
+        )
+    scheduler.name = scheduler_name
+    return scheduler
 
 
 def logging(logs: List[str], text: str, verbose_logging: bool = False) -> None:
@@ -372,7 +407,7 @@ def logging(logs: List[str], text: str, verbose_logging: bool = False) -> None:
     Returns:
         None: The function prints and may mutate `logs` in place.
     """
-    if not dist.is_initialized() or dist.get_rank()==0:
+    if not dist.is_initialized() or dist.get_rank() == 0:
         print(text)
         if verbose_logging:
             logs.append(text)
@@ -476,7 +511,7 @@ def initialize_environment_ddp(rank: int, world_size: int, seed: int = 0, resuls
     except RuntimeError as e:
         if "context has already been set" not in str(e):
             raise e
-    if not(resuls_path is None):
+    if not (resuls_path is None):
         os.makedirs(resuls_path, exist_ok=True)
 
 
@@ -502,7 +537,7 @@ def gen_wandb_name(args, config) -> str:
     return name
 
 
-def wandb_init(args: argparse.Namespace, config: Dict, batch_size: int) -> None:
+def wandb_init(args: argparse.Namespace, config: ConfigDict | OmegaConf, batch_size: int) -> None:
     """
     Initialize Weights & Biases (wandb) for experiment tracking.
 
@@ -563,7 +598,7 @@ def setup_ddp(rank: int, world_size: int) -> None:
         dist.init_process_group("nccl", rank=rank, world_size=world_size)
     except:
         dist.init_process_group("gloo", rank=rank, world_size=world_size)
-        if dist.get_rank()==0:
+        if dist.get_rank() == 0:
             print(f'NCCL are not available. Using "gloo" backend.')
 
     torch.cuda.set_device(rank)
