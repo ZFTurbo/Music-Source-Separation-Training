@@ -10,6 +10,9 @@ import soundfile as sf
 import pickle
 import itertools
 import multiprocessing
+
+from ml_collections import ConfigDict
+from omegaconf import OmegaConf
 from tqdm.auto import tqdm
 from glob import glob
 import audiomentations as AU
@@ -19,24 +22,20 @@ import torch.distributed as dist
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 warnings.filterwarnings("ignore")
-from typing import Dict
 import argparse
 
-def prepare_data(config: Dict, args: argparse.Namespace, batch_size: int) -> DataLoader:
+def prepare_data(config:  ConfigDict | OmegaConf, args: argparse.Namespace, batch_size: int) -> DataLoader:
     """
     Build the training DataLoader. If torch.distributed.is_initialized() is True,
-    construct a DDP DataLoader (with DistributedSampler and dataset batch_size scaled
-    by world_size); otherwise, construct a regular single-process DataLoader.
+    construct a DDP DataLoader with DistributedSampler; otherwise, construct a regular DataLoader.
 
     Args:
-        config (Dict): Dataset/configuration dictionary passed to MSSDataset.
-        args (argparse.Namespace): Must provide `data_path`, `results_path`, `dataset_type`,
-            and DataLoader settings (`num_workers`, `pin_memory`, `persistent_workers`,
-            `prefetch_factor`).
-        batch_size (int): Per-process mini-batch size for the DataLoader.
+        config: Dataset configuration passed to MSSDataset.
+        args: Must provide data_path, results_path, dataset_type, and DataLoader settings.
+        batch_size: Per-process mini-batch size.
 
     Returns:
-        DataLoader: Configured DataLoader for the training split.
+        Configured DataLoader for the training split.
     """
     # DDP
     if dist.is_initialized():
