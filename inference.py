@@ -98,9 +98,6 @@ def run_folder(model, args, config, device, verbose: bool = False):
 
         file_name = os.path.splitext(os.path.basename(path))[0]
 
-        output_dir = os.path.join(args.store_dir, file_name)
-        os.makedirs(output_dir, exist_ok=True)
-
         for instr in instruments:
             estimates = waveforms_orig[instr]
             if 'normalize' in config.inference:
@@ -110,14 +107,40 @@ def run_folder(model, args, config, device, verbose: bool = False):
             codec = 'flac' if getattr(args, 'flac_file', False) else 'wav'
             subtype = args.pcm_type
 
-            output_path = os.path.join(output_dir, f"{instr}.{codec}")
+            dirnames, fname = format_filename(
+                args.filename_template,
+                instr=instr,
+                start_time=int(start_time),
+                file_name=file_name,
+                dir_name=os.path.dirname(path),
+                model_type=args.model_type,
+                model=os.path.splitext(os.path.basename(args.start_check_point))[0]
+            )
+
+            output_dir = os.path.join(args.store_dir, *dirnames)
+            os.makedirs(output_dir, exist_ok=True)
+
+            output_path = os.path.join(output_dir, f"{fname}.{codec}")
             sf.write(output_path, estimates.T, sr, subtype=subtype)
+            print("Wrote file:", output_path)
             if args.draw_spectro > 0:
-                output_img_path = os.path.join(output_dir, f"{instr}.jpg")
+                output_img_path = os.path.join(output_dir, f"{fname}.jpg")
                 draw_spectrogram(estimates.T, sr, args.draw_spectro, output_img_path)
+                print("Wrote file:", output_img_path)
 
     print(f"Elapsed time: {time.time() - start_time:.2f} seconds.")
 
+def format_filename(template, **kwargs):
+    '''
+    Formats a filename from a template. e.g "{file_name}/{instr}"
+    Using slashes ('/') in template will result in directories being created
+    Returns [dirnames, fname], i.e. an array of dir names and a single file name
+    '''
+    result = template
+    for k, v in kwargs.items():
+        result = result.replace(f"{{{k}}}", str(v))
+    *dirnames, fname = result.split("/")
+    return dirnames, fname
 
 def proc_folder(dict_args):
     args = parse_args_inference(dict_args)
