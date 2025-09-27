@@ -16,6 +16,29 @@ import loralib as lora
 from .muon import SingleDeviceMuonWithAuxAdam
 import torch.distributed as dist
 
+
+def _split_params_for_muon(model: nn.Module, extra_exclude_substrings=None):
+    if extra_exclude_substrings is None:
+        extra_exclude_substrings = []
+    name_to_module = dict(model.named_modules())
+
+    muon_params, adam_params = [], []
+    for name, p in model.named_parameters():
+        owner_name = name.rsplit('.', 1)[0] if '.' in name else ''
+        owner_mod = name_to_module.get(owner_name, None)
+        name_l = name.lower()
+
+        is_embedding = isinstance(owner_mod, nn.Embedding) or ('embed' in name_l)
+        is_vector_like = (p.ndim < 2)
+        is_manually_excluded = any(s in name_l for s in extra_exclude_substrings)
+
+        if (not is_vector_like) and (not is_embedding) and (not is_manually_excluded):
+            muon_params.append(p)   # Linear/Conv weights (≥2D) → Muon/AdaGO
+        else:
+            adam_params.append(p)   # embeddings, biases, norms, any excluded → Adam
+    return muon_params, adam_params
+
+
 def demix(
     config: ConfigDict,
     model: torch.nn.Module,
@@ -254,8 +277,9 @@ def get_optimizer(config: ConfigDict, model: torch.nn.Module) -> torch.optim.Opt
     elif name_optimizer == 'muon':
         if should_print:
             print("Using Muon optimizer (Single-Device) with AdamW for auxiliary parameters.")
-        muon_params = [p for p in model.parameters() if p.ndim >= 2]
-        adam_params = [p for p in model.parameters() if p.ndim < 2]
+        extra_excludes = list(getattr(getattr(config, 'optimizer', object), 'muon_exclude', []))
+        muon_params, adam_params = _split_params_for_muon(model, extra_exclude_substrings=extra_excludes)
+
         if not hasattr(config, 'optimizer') or 'muon_group' not in config.optimizer or 'adam_group' not in config.optimizer:
             raise ValueError("For the 'muon' optimizer, the config must have an 'optimizer' section "
                              "with 'muon_group' and 'adam_group' dictionaries.")
@@ -272,8 +296,8 @@ def get_optimizer(config: ConfigDict, model: torch.nn.Module) -> torch.optim.Opt
     elif name_optimizer == 'adago':
         if should_print:
             print("Using AdaGO optimizer (Single-Device) with AdamW for auxiliary parameters.")
-        muon_params = [p for p in model.parameters() if p.ndim >= 2]
-        adam_params = [p for p in model.parameters() if p.ndim < 2]
+        extra_excludes = list(getattr(getattr(config, 'optimizer', object), 'muon_exclude', []))
+        muon_params, adam_params = _split_params_for_muon(model, extra_exclude_substrings=extra_excludes)
         if not hasattr(config, 'optimizer') or 'muon_group' not in config.optimizer or 'adam_group' not in config.optimizer:
             raise ValueError("For 'adago', the config must have an 'optimizer' section with 'muon_group' and 'adam_group' dictionaries.")
         muon_group_config = dict(config.optimizer.muon_group)
