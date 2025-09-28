@@ -10,6 +10,9 @@ import soundfile as sf
 import pickle
 import itertools
 import multiprocessing
+
+from ml_collections import ConfigDict
+from omegaconf import OmegaConf
 from tqdm.auto import tqdm
 from glob import glob
 import audiomentations as AU
@@ -19,34 +22,35 @@ import torch.distributed as dist
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 warnings.filterwarnings("ignore")
-from typing import Dict
 import argparse
 
-def prepare_data(config: Dict, args: argparse.Namespace, batch_size: int) -> DataLoader:
+def prepare_data(config:  ConfigDict | OmegaConf, args: argparse.Namespace, batch_size: int) -> DataLoader:
     """
     Build the training DataLoader. If torch.distributed.is_initialized() is True,
-    construct a DDP DataLoader (with DistributedSampler and dataset batch_size scaled
-    by world_size); otherwise, construct a regular single-process DataLoader.
+    construct a DDP DataLoader with DistributedSampler; otherwise, construct a regular DataLoader.
 
     Args:
-        config (Dict): Dataset/configuration dictionary passed to MSSDataset.
-        args (argparse.Namespace): Must provide `data_path`, `results_path`, `dataset_type`,
-            and DataLoader settings (`num_workers`, `pin_memory`, `persistent_workers`,
-            `prefetch_factor`).
-        batch_size (int): Per-process mini-batch size for the DataLoader.
+        config: Dataset configuration passed to MSSDataset.
+        args: Must provide data_path, results_path, dataset_type, and DataLoader settings.
+        batch_size: Per-process mini-batch size.
 
     Returns:
-        DataLoader: Configured DataLoader for the training split.
+        Configured DataLoader for the training split.
     """
     # DDP
     if dist.is_initialized():
         rank = dist.get_rank()
         world_size = dist.get_world_size()
 
+        if args.dataset_type != 5:
+            ddp_batch = batch_size * world_size # maintain "num_steps" semantics across the whole world
+        else:
+            ddp_batch = batch_size
+
         trainset = MSSDataset(
             config,
             args.data_path,
-            batch_size=batch_size * world_size,  # maintain "num_steps" semantics across the whole world
+            batch_size=ddp_batch,
             metadata_path=os.path.join(args.results_path, f"metadata_{args.dataset_type}.pkl"),
             dataset_type=args.dataset_type,
         )
@@ -56,6 +60,7 @@ def prepare_data(config: Dict, args: argparse.Namespace, batch_size: int) -> Dat
             num_replicas=world_size,
             rank=rank,
             shuffle=True,
+            drop_last=True
         )
 
         train_loader = DataLoader(
@@ -147,7 +152,7 @@ class MSSDataset(torch.utils.data.Dataset):
     def __init__(self, config, data_path, metadata_path="metadata.pkl", dataset_type=1, batch_size=None, verbose=True):
         self.verbose = verbose
         self.config = config
-        self.dataset_type = dataset_type # 1, 2, 3 or 4
+        self.dataset_type = dataset_type  # 1, 2, 3, 4 or 5
         self.data_path = data_path
         self.instruments = instruments = config.training.instruments
         if batch_size is None:
@@ -171,7 +176,7 @@ class MSSDataset(torch.utils.data.Dataset):
 
         metadata = self.get_metadata()
 
-        if self.dataset_type in [1, 4]:
+        if self.dataset_type in [1, 4, 5]:
             if len(metadata) > 0:
                 if self.verbose and should_print:
                     print('Found tracks in dataset: {}'.format(len(metadata)))
@@ -187,8 +192,40 @@ class MSSDataset(torch.utils.data.Dataset):
         self.chunk_size = config.audio.chunk_size
         self.min_mean_abs = config.audio.min_mean_abs
 
+        # For dataset_type 5 - precompute all chunks
+        if self.dataset_type == 5:
+            self.chunks_metadata = self._precompute_chunks()
+            if self.verbose and should_print:
+                print(f'Precomputed {len(self.chunks_metadata)} chunks with overlap 2')
+
     def __len__(self):
+        if self.dataset_type == 5:
+            return len(self.chunks_metadata)
         return self.config.training.num_steps * self.batch_size
+
+    def _precompute_chunks(self):
+        """Precompute all chunks for dataset_type 5 with overlap 2"""
+        chunks_metadata = []
+        should_print = (not dist.is_initialized() or dist.get_rank() == 0)
+
+        for track_path, track_length in self.metadata:
+            # Calculate number of chunks with overlap 2 (step = chunk_size // 2)
+            if track_length < self.chunk_size:
+                # If track is shorter than chunk_size, use only one chunk at beginning
+                chunks_metadata.append((track_path, 0))
+            else:
+                # Calculate step size for overlap 2
+                step = self.chunk_size // 2
+                num_chunks = (track_length - self.chunk_size) // step + 1
+
+                for i in range(num_chunks):
+                    offset = i * step
+                    chunks_metadata.append((track_path, offset))
+
+        if self.verbose and should_print:
+            print(f'Created {len(chunks_metadata)} chunks from {len(self.metadata)} tracks')
+
+        return chunks_metadata
 
     def read_from_metadata_cache(self, track_paths, instr=None):
         should_print = (not dist.is_initialized() or dist.get_rank() == 0)
@@ -214,7 +251,6 @@ class MSSDataset(torch.utils.data.Dataset):
             print('Old metadata was used for {} tracks.'.format(len(metadata)))
         return track_paths, metadata
 
-
     def get_metadata(self):
         read_metadata_procs = multiprocessing.cpu_count()
         should_print = not dist.is_initialized() or dist.get_rank() == 0
@@ -228,7 +264,7 @@ class MSSDataset(torch.utils.data.Dataset):
                 '\nCollecting metadata for', str(self.data_path),
             )
 
-        if self.dataset_type in [1, 4]:
+        if self.dataset_type in [1, 4, 5]:  # Added type 5
             track_paths = []
             if type(self.data_path) == list:
                 for tp in self.data_path:
@@ -332,7 +368,7 @@ class MSSDataset(torch.utils.data.Dataset):
                     print('Missing tracks: {} from {}'.format(skipped, len(df)))
         else:
             if should_print:
-                print('Unknown dataset type: {}. Must be 1, 2, 3 or 4'.format(self.dataset_type))
+                print('Unknown dataset type: {}. Must be 1, 2, 3, 4 or 5'.format(self.dataset_type))
             exit()
 
         # Save metadata
@@ -342,7 +378,7 @@ class MSSDataset(torch.utils.data.Dataset):
     def load_source(self, metadata, instr):
         should_print = (not dist.is_initialized() or dist.get_rank() == 0)
         while True:
-            if self.dataset_type in [1, 4]:
+            if self.dataset_type in [1, 4, 5]:
                 track_path, track_length = random.choice(metadata)
                 for extension in self.file_types:
                     path_to_audio_file = track_path + '/{}.{}'.format(instr, extension)
@@ -397,6 +433,45 @@ class MSSDataset(torch.utils.data.Dataset):
         res = torch.stack(res)
         return res
 
+    def _load_chunk_by_offset(self, track_path, offset):
+        """Load specific chunk by track path and offset"""
+        should_print = (not dist.is_initialized() or dist.get_rank() == 0)
+        res = []
+
+        for instr in self.instruments:
+            for extension in self.file_types:
+                path_to_audio_file = track_path + '/{}.{}'.format(instr, extension)
+                if os.path.isfile(path_to_audio_file):
+                    try:
+                        # Get track length from metadata
+                        track_length = None
+                        for path, length in self.metadata:
+                            if path == track_path:
+                                track_length = length
+                                break
+
+                        if track_length is None:
+                            source = np.zeros((2, self.chunk_size), dtype=np.float32)
+                        else:
+                            source = load_chunk(path_to_audio_file, track_length, self.chunk_size, offset=offset)
+                    except Exception as e:
+                        if should_print:
+                            print('Error: {} Path: {}'.format(e, path_to_audio_file))
+                        source = np.zeros((2, self.chunk_size), dtype=np.float32)
+                    break
+            else:
+                source = np.zeros((2, self.chunk_size), dtype=np.float32)
+
+            res.append(source)
+
+        res = np.stack(res, axis=0)
+
+        if self.aug:
+            for i, instr in enumerate(self.instruments):
+                res[i] = self.augm_data(res[i], instr)
+
+        return torch.tensor(res, dtype=torch.float32)
+
     def load_aligned_data(self):
         track_path, track_length = random.choice(self.metadata)
         should_print = (not dist.is_initialized() or dist.get_rank() == 0)
@@ -437,7 +512,8 @@ class MSSDataset(torch.utils.data.Dataset):
             res = np.stack(res, axis=0)
         except Exception as e:
             # Normally it should never happen, but if happen will let you find a problematic track
-            print('Error during stacking stems: {} Track Length: {} Track path: {}'.format(str(e), track_length, track_path))
+            print('Error during stacking stems: {} Track Length: {} Track path: {}'.format(str(e), track_length,
+                                                                                           track_path))
             res = np.zeros((len(self.instruments), 2, self.chunk_size), dtype=np.float32)
 
         if self.aug:
@@ -727,9 +803,12 @@ class MSSDataset(torch.utils.data.Dataset):
         return source
 
     def __getitem__(self, index):
-        if self.dataset_type in [1, 2, 3]:
+        if self.dataset_type == 5:
+            track_path, offset = self.chunks_metadata[index]
+            res = self._load_chunk_by_offset(track_path, offset)
+        elif self.dataset_type in [1, 2, 3]:
             res = self.load_random_mix()
-        else:
+        else:  # type 4
             res = self.load_aligned_data()
 
         # Randomly change loudness of each stem
