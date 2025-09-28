@@ -52,6 +52,33 @@ drums,/path/to/dataset/drums_good.wav
 
 The same as Type 1, but during training all instruments will be from the same position of song. 
 
+* **Type 5 (Precomputed Chunks)**:
+
+The same structure as Type 1, but all tracks are pre-split into chunks with 50% overlap (each second appears in two chunks except edges). This ensures that during one epoch the model sees every part of every track exactly once. Recommended for small datasets or when you want deterministic epoch boundaries.
+
+Key features:
+
+* Structure: Same as Type 1 (folder per song with stem files)
+
+* Chunking: Automatic splitting into chunks of config.audio.chunk_size
+
+* Overlap: 50% overlap between consecutive chunks
+
+* Epoch completeness: Each epoch covers 100% of available audio data
+
+* No random sampling: Deterministic access pattern
+
+* Memory efficient: Chunks are computed on-the-fly, not stored in memory
+
+Usage recommendations:
+
+* Use when you want reproducible training cycles
+
+* Good for small to medium datasets
+
+* Ensures no data is missed during training
+
+
 ### Dataset for validation
 
 * The validation dataset must be the same structure as type 1 datasets (regardless of what type of dataset you're using for training), but also each folder must include `mixture.wav` for each song. `mixture.wav` - is the sum of all stems for song.
