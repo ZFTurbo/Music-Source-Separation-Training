@@ -202,8 +202,11 @@ def parse_args_inference(dict_args: Union[Dict, None]) -> argparse.Namespace:
                         help="PCM type for FLAC files (PCM_16 or PCM_24)")
     parser.add_argument("--use_tta", action='store_true',
                         help="Flag adds test time augmentation during inference (polarity and channel inverse)."
-                             "While this triples the runtime, it reduces noise and slightly improves prediction quality.")
+                        "While this triples the runtime, it reduces noise and slightly improves prediction quality.")
     parser.add_argument("--lora_checkpoint_peft", type=str, default='', help="Initial checkpoint to LoRA weights")
+    parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to LoRA weights")
+    parser.add_argument("--filename_template", type=str, default='{file_name}/{instr}',
+                        help="Output filename template, without extension, using '/' for subdirectories. Default: '{file_name}/{instr}'")
 
     if dict_args is not None:
         args = parser.parse_args([])
