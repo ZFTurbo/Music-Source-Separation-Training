@@ -4,8 +4,6 @@ __version__ = '1.0.1'
 
 import torch
 import torch.multiprocessing as mp
-
-
 from train import train_model
 from utils.settings import  cleanup_ddp
 import warnings
@@ -28,6 +26,7 @@ def train_model_single(rank: int, world_size: int, args=None):
     """
     train_model(args, rank, world_size)  # Close DDP
 
+
 def train_model_ddp(args=None):
     world_size = torch.cuda.device_count()
     try:
@@ -35,6 +34,7 @@ def train_model_ddp(args=None):
     except Exception as e:
         cleanup_ddp()
         raise e
+
 
 if __name__ == "__main__":
     train_model_ddp()
