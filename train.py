@@ -305,7 +305,7 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
     else:
         all_time_all_metrics = {}
 
-    if args.start_check_point and "all_losses" in checkpoint and args.all_losses:
+    if args.start_check_point and "all_losses" in checkpoint and args.load_all_losses:
         all_losses = checkpoint["all_losses"]
     else:
         all_losses = {}
