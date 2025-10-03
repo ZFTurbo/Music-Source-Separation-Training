@@ -752,6 +752,7 @@ def save_weights(
     - Stores `epoch` and `best_metric` alongside optimizer/scheduler states.
 
     Args:
+        all_losses:
         args:
         store_path: Destination file path for the checkpoint (will be overwritten).
         model: The model whose weights are being saved (may be wrapped by DDP/DataParallel).
@@ -832,14 +833,14 @@ def save_last_weights(
     """
     store_path = f"{args.results_path}/last_{args.model_type}.ckpt"
     save_weights(
-        store_path,
-        model,
-        device_ids,
-        optimizer,
-        epoch,
-        all_time_all_metrics,
-        all_losses,
-        best_metric,
-        args,
-        scheduler
+        store_path=store_path,
+        model=model,
+        device_ids=device_ids,
+        optimizer=optimizer,
+        epoch=epoch,
+        all_time_all_metrics=all_time_all_metrics,
+        all_losses=all_losses,
+        best_metric=best_metric,
+        args=args,
+        scheduler=scheduler
     )

@@ -66,7 +66,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
         sys.stdout.flush()
     loss_val = 0.
     total = 0
-    all_losses[epoch] = []
+    all_losses[f'epoch_{epoch}'] = []
 
     normalize = getattr(config.training, 'normalize', False)
 
@@ -117,7 +117,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
                 loss_copy /= dist.get_world_size()
             if dist.get_rank() == 0:
                 li = loss_copy.item() * gradient_accumulation_steps
-                all_losses[epoch].append(li)
+                all_losses[f'epoch_{epoch}'].append(li)
                 loss_val += li
                 total += 1
                 pbar.set_postfix({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1)})
@@ -125,7 +125,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
                 wandb.log({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1), 'i': i})
         else:
             li = loss.item() * gradient_accumulation_steps
-            all_losses[epoch].append(li)
+            all_losses[f'epoch_{epoch}'].append(li)
             loss_val += li
             total += 1
             pbar.set_postfix({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1)})
@@ -195,8 +195,18 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
             )
         if should_print:
             print(f'Store weights: {store_path}')
-            save_weights(store_path, model, device_ids, optimizer, epoch, all_time_all_metrics, all_losses, metric_avg, args,
-                         scheduler)
+            save_weights(
+                store_path=store_path,
+                model=model,
+                device_ids=device_ids,
+                optimizer=optimizer,
+                epoch=epoch,
+                all_time_all_metrics=all_time_all_metrics,
+                all_losses=all_losses,
+                best_metric=best_metric,
+                args=args,
+                scheduler=scheduler
+            )
         best_metric = metric_avg
 
     if args.save_weights_every_epoch:
@@ -204,8 +214,18 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
         for m in metrics_avg:
             metric_string += '_{}_{:.4f}'.format(m, metrics_avg[m])
         store_path = f'{args.results_path}/model_{args.model_type}_ep_{epoch}{metric_string}.ckpt'
-        save_weights(store_path, model, device_ids, optimizer, epoch, all_time_all_metrics, all_losses, best_metric, args,
-                     scheduler)
+        save_weights(
+            store_path=store_path,
+            model=model,
+            device_ids=device_ids,
+            optimizer=optimizer,
+            epoch=epoch,
+            all_time_all_metrics=all_time_all_metrics,
+            all_losses=all_losses,
+            best_metric=best_metric,
+            args=args,
+            scheduler=scheduler
+        )
 
     if scheduler.name in ['ReduceLROnPlateau']:
         scheduler.step(metric_avg)
