@@ -380,7 +380,7 @@ class MSSDataset(torch.utils.data.Dataset):
 
         with tqdm(total=target_count, desc='Progress good chunks') as pbar:
             while len(chunks_metadata) < target_count:
-                batch_size = target_count * 2
+                batch_size = self.config.training.get('precompute_batch', 500)
                 tasks = []
                 need = target_count - len(chunks_metadata)
                 for i in range(batch_size):
