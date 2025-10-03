@@ -33,7 +33,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
                     scaler: torch.cuda.amp.GradScaler,
                     scheduler,
                     gradient_accumulation_steps: int, train_loader: torch.utils.data.DataLoader,
-                    multi_loss: Callable[[torch.Tensor, torch.Tensor, torch.Tensor,], torch.Tensor], world_size=None) -> None:
+                    multi_loss: Callable[[torch.Tensor, torch.Tensor, torch.Tensor,], torch.Tensor], all_losses=None, world_size=None) -> None:
     """
     Train the model for one epoch.
 
@@ -64,6 +64,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
         sys.stdout.flush()
     loss_val = 0.
     total = 0
+    all_losses[epoch] = []
 
     normalize = getattr(config.training, 'normalize', False)
 
@@ -114,6 +115,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
                 loss_copy /= dist.get_world_size()
             if dist.get_rank() == 0:
                 li = loss_copy.item() * gradient_accumulation_steps
+                all_losses[epoch].append(li)
                 loss_val += li
                 total += 1
                 pbar.set_postfix({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1)})
@@ -121,6 +123,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
                 wandb.log({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1), 'i': i})
         else:
             li = loss.item() * gradient_accumulation_steps
+            all_losses[epoch].append(li)
             loss_val += li
             total += 1
             pbar.set_postfix({'loss': 100 * li, 'avg_loss': 100 * loss_val / (i + 1)})
@@ -135,12 +138,13 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
 def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, config: ConfigDict,
                           device: torch.device, device_ids: List[int], best_metric: float,
                           epoch: int, scheduler: torch.optim.lr_scheduler, optimizer,
-                          all_time_all_metrics,  world_size=None, metrics_avg=None, all_metrics=None) -> float:
+                          all_time_all_metrics, all_losses,  world_size=None, metrics_avg=None, all_metrics=None) -> float:
 
     """
     Compute and log the metrics for the current epoch, and save model weights if the metric improves.
 
     Args:
+        all_losses:
         all_metrics:
         metrics_avg:
         world_size:
@@ -189,7 +193,7 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
             )
         if should_print:
             print(f'Store weights: {store_path}')
-            save_weights(store_path, model, device_ids, optimizer, epoch, all_time_all_metrics, metric_avg, args,
+            save_weights(store_path, model, device_ids, optimizer, epoch, all_time_all_metrics, all_losses, metric_avg, args,
                          scheduler)
         best_metric = metric_avg
 
@@ -198,7 +202,7 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
         for m in metrics_avg:
             metric_string += '_{}_{:.4f}'.format(m, metrics_avg[m])
         store_path = f'{args.results_path}/model_{args.model_type}_ep_{epoch}{metric_string}.ckpt'
-        save_weights(store_path, model, device_ids, optimizer, epoch, all_time_all_metrics, best_metric, args,
+        save_weights(store_path, model, device_ids, optimizer, epoch, all_time_all_metrics, all_losses, best_metric, args,
                      scheduler)
 
     if scheduler.name in ['ReduceLROnPlateau']:
@@ -300,6 +304,11 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
     else:
         all_time_all_metrics = {}
 
+    if args.start_check_point and "all_losses" in checkpoint and args.all_losses:
+        all_losses = checkpoint["all_losses"]
+    else:
+        all_losses = {}
+
     multi_loss = choice_loss(args, config)
     scaler = GradScaler()
 
@@ -341,18 +350,18 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
             train_loader.sampler.set_epoch(epoch)
 
         train_one_epoch(model, config, args, optimizer, device, device_ids, epoch,
-                        use_amp, scaler, scheduler, gradient_accumulation_steps, train_loader, multi_loss, world_size)
+                        use_amp, scaler, scheduler, gradient_accumulation_steps, train_loader, multi_loss, all_losses, world_size)
         if should_print:
             save_last_weights(args, model, device_ids, optimizer, epoch, all_time_all_metrics, best_metric, scheduler)
         if ddp:
             metrics_avg, all_metrics = valid_multi_gpu(model, args, config, args.device_ids, verbose=False)
             if rank == 0:
                 all_time_all_metrics[f"epoch_{epoch}"] = all_metrics
-                best_metric = compute_epoch_metrics(model, args, config, device, device_ids, best_metric, epoch, scheduler, optimizer, all_time_all_metrics,
+                best_metric = compute_epoch_metrics(model, args, config, device, device_ids, best_metric, epoch, scheduler, optimizer, all_time_all_metrics, all_losses,
                                                     world_size, metrics_avg, all_metrics)
         else:
             best_metric = compute_epoch_metrics(model, args, config, device, device_ids, best_metric, epoch, scheduler,
-                                                optimizer, all_time_all_metrics)
+                                                optimizer, all_time_all_metrics, all_losses)
 
 
 if __name__ == "__main__":

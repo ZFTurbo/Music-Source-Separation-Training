@@ -597,8 +597,8 @@ def load_start_checkpoint(args: argparse.Namespace,
 
     if args.lora_checkpoint_loralib:
         if should_print:
-            print(f"Loading LoRA weights from: {args.lora_checkpoint}")
-        load_lora_weights(model, args.lora_checkpoint)
+            print(f"Loading LoRA weights from: {args.lora_checkpoint_loralib}")
+        load_lora_weights(model, args.lora_checkpoint_loralib)
 
 
 def bind_lora_to_model(config: Dict[str, Any], model: nn.Module) -> nn.Module:
@@ -737,6 +737,7 @@ def save_weights(
         optimizer: torch.optim.Optimizer,
         epoch: int,
         all_time_all_metrics,
+        all_losses,
         best_metric: float,
         args,
         scheduler: Optional[torch.optim.lr_scheduler.ReduceLROnPlateau] = None
@@ -771,7 +772,8 @@ def save_weights(
         "optimizer_state_dict": optimizer.state_dict(),
         "scheduler_state_dict": scheduler.state_dict() if scheduler else None,
         "best_metric": best_metric,
-        "all_metrics": all_time_all_metrics
+        "all_metrics": all_time_all_metrics,
+        "all_losses": all_losses
     }
 
     # Save model weights
@@ -800,6 +802,7 @@ def save_last_weights(
         optimizer: torch.optim.Optimizer,
         epoch: int,
         all_time_all_metrics,
+        all_losses,
         best_metric: float,
         scheduler: Optional[torch.optim.lr_scheduler.ReduceLROnPlateau] = None,
 ) -> None:
@@ -835,6 +838,7 @@ def save_last_weights(
         optimizer,
         epoch,
         all_time_all_metrics,
+        all_losses,
         best_metric,
         args,
         scheduler
