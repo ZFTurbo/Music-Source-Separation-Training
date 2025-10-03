@@ -148,6 +148,34 @@ def get_track_length(params):
     return (path, length)
 
 
+def process_chunk_worker(args):
+    task, instruments, file_types, min_mean_abs, default_chunk_size = args
+    track_path, track_length, offset, chunk_size = task
+
+    try:
+        for instrument in instruments:
+            instrument_loud_enough = False
+            for extension in file_types:
+                path_to_audio_file = track_path + '/{}.{}'.format(instrument, extension)
+                if os.path.isfile(path_to_audio_file):
+                    try:
+                        source = load_chunk(path_to_audio_file, length=track_length, offset=offset,
+                                            chunk_size=chunk_size)
+                        if np.abs(source).mean() >= min_mean_abs:
+                            instrument_loud_enough = True
+                            break
+                    except Exception as e:
+                        return (track_path, offset, False)
+
+            if not instrument_loud_enough:
+                return (track_path, offset, False)
+
+        return (track_path, offset, True)
+
+    except Exception:
+        return (track_path, offset, False)
+
+
 class MSSDataset(torch.utils.data.Dataset):
     def __init__(self, config, data_path, metadata_path="metadata.pkl", dataset_type=1, batch_size=None, verbose=True):
         self.verbose = verbose
@@ -191,41 +219,258 @@ class MSSDataset(torch.utils.data.Dataset):
         self.metadata = metadata
         self.chunk_size = config.audio.chunk_size
         self.min_mean_abs = config.audio.min_mean_abs
-
+        self.do_chunks = config.training.get('precompute_chunks', False)
         # For dataset_type 5 - precompute all chunks
-        if self.dataset_type == 5:
-            self.chunks_metadata = self._precompute_chunks()
-            if self.verbose and should_print:
-                print(f'Precomputed {len(self.chunks_metadata)} chunks with overlap 2')
+        if self.dataset_type == 5 or self.dataset_type == 4 and self.do_chunks:
+             self._initialize_chunks_metadata()
 
     def __len__(self):
         if self.dataset_type == 5:
             return len(self.chunks_metadata)
         return self.config.training.num_steps * self.batch_size
 
-    def _precompute_chunks(self):
-        """Precompute all chunks for dataset_type 5 with overlap 2"""
-        chunks_metadata = []
-        should_print = (not dist.is_initialized() or dist.get_rank() == 0)
 
-        for track_path, track_length in self.metadata:
-            # Calculate number of chunks with overlap 2 (step = chunk_size // 2)
-            if track_length < self.chunk_size:
-                # If track is shorter than chunk_size, use only one chunk at beginning
-                chunks_metadata.append((track_path, 0))
+    def __getitem__(self, index):
+        if self.dataset_type == 5:
+            track_path, offset = self.chunks_metadata[index]
+            res = self._load_chunk_by_offset(track_path, offset)
+        elif self.dataset_type in [1, 2, 3]:
+            res = self.load_random_mix()
+        else:  # type 4
+            if self.do_chunks:
+                track_path, offset = self.chunks_metadata[np.random.randint(len(self.chunks_metadata))]
+                res = self._load_chunk_by_offset(track_path, offset)
             else:
-                # Calculate step size for overlap 2
-                step = self.chunk_size // 2
-                num_chunks = (track_length - self.chunk_size) // step + 1
+                res = self.load_aligned_data()
 
-                for i in range(num_chunks):
-                    offset = i * step
-                    chunks_metadata.append((track_path, offset))
+        # Randomly change loudness of each stem
+        if self.aug:
+            if 'loudness' in self.config['augmentations']:
+                if self.config['augmentations']['loudness']:
+                    loud_values = np.random.uniform(
+                        low=self.config['augmentations']['loudness_min'],
+                        high=self.config['augmentations']['loudness_max'],
+                        size=(len(res),)
+                    )
+                    loud_values = torch.tensor(loud_values, dtype=torch.float32)
+                    res *= loud_values[:, None, None]
+
+        mix = res.sum(0)
+
+        if self.aug:
+            if 'mp3_compression_on_mixture' in self.config['augmentations']:
+                apply_aug = AU.Mp3Compression(
+                    min_bitrate=self.config['augmentations']['mp3_compression_on_mixture_bitrate_min'],
+                    max_bitrate=self.config['augmentations']['mp3_compression_on_mixture_bitrate_max'],
+                    backend=self.config['augmentations']['mp3_compression_on_mixture_backend'],
+                    p=self.config['augmentations']['mp3_compression_on_mixture']
+                )
+                mix_conv = mix.cpu().numpy().astype(np.float32)
+                required_shape = mix_conv.shape
+                mix = apply_aug(samples=mix_conv, sample_rate=44100)
+                # Sometimes it gives longer audio (so we cut)
+                if mix.shape != required_shape:
+                    mix = mix[..., :required_shape[-1]]
+                mix = torch.tensor(mix, dtype=torch.float32)
+
+        # If we need to optimize only given stem
+        if self.config.training.target_instrument is not None:
+            index = self.config.training.instruments.index(self.config.training.target_instrument)
+            return res[index:index+1], mix
+
+        return res, mix
+
+
+    def _initialize_chunks_metadata(self):
+        should_print = (not dist.is_initialized() or dist.get_rank() == 0)
+        chunks_cache_path = self.metadata_path.replace('.pkl', '_chunks.pkl')
+        current_config = {
+            'chunk_size': self.chunk_size,
+            'min_mean_abs': self.min_mean_abs,
+            'instruments': sorted(self.instruments)
+        }
+        if os.path.exists(chunks_cache_path):
+            try:
+                cached_chunks = pickle.load(open(chunks_cache_path, 'rb'))
+                cached_config = cached_chunks.get('config', {})
+                config_matches = (
+                        cached_config.get('chunk_size') == current_config['chunk_size'] and
+                        cached_config.get('min_mean_abs') == current_config['min_mean_abs'] and
+                        cached_config.get('instruments') == current_config['instruments']
+                )
+                if config_matches:
+                    self.chunks_metadata = cached_chunks['chunks_metadata']
+                    if self.verbose and should_print:
+                        print(f'Loaded {len(self.chunks_metadata)} cached chunks from {chunks_cache_path}')
+                else:
+                    if self.verbose and should_print:
+                        print('Config changed, recomputing chunks...')
+                        print(f'Cached config: {cached_config}')
+                        print(f'Current config: {current_config}')
+                    self.chunks_metadata = self._precompute_and_cache_chunks(
+                        chunks_cache_path, current_config)
+            except Exception as e:
+                if self.verbose and should_print:
+                    print(f'Chunks cache corrupted ({e}), recomputing...')
+                self.chunks_metadata = self._precompute_and_cache_chunks(
+                    chunks_cache_path, current_config)
+        else:
+            self.chunks_metadata = self._precompute_and_cache_chunks(
+                chunks_cache_path, current_config)
 
         if self.verbose and should_print:
-            print(f'Created {len(chunks_metadata)} chunks from {len(self.metadata)} tracks')
+            print(f'Precomputed {len(self.chunks_metadata)} chunks')
+
+
+    def _precompute_and_cache_chunks(self, cache_path, config):
+        """Precompute all chunks and save to cache with config"""
+        if self.dataset_type == 4:
+            chunks_metadata = self._precompute_random_chunks()
+        elif self.dataset_type == 5:
+            chunks_metadata = self._precompute_chunks()
+        else:
+            raise 'Only dataset type 4, 5 can be precomputed'
+        cache_data = {
+            'chunks_metadata': chunks_metadata,
+            'config': config
+        }
+        pickle.dump(cache_data, open(cache_path, 'wb'))
 
         return chunks_metadata
+
+
+    def _precompute_chunks(self):
+        """Precompute all chunks for dataset_type 5 with overlap 2 using multiprocessing"""
+        should_print = (not dist.is_initialized() or dist.get_rank() == 0)
+
+        tasks = []
+        for track_path, track_length in self.metadata:
+            if track_length < self.chunk_size:
+                tasks.append((track_path, track_length, 0, track_length))
+            else:
+                step = self.chunk_size // 2
+                num_chunks = (track_length - self.chunk_size) // step + 1
+                for i in range(num_chunks):
+                    offset = i * step
+                    tasks.append((track_path, track_length, offset, self.chunk_size))
+
+        if should_print:
+            print(f"Total tasks to process: {len(tasks)}")
+
+        if multiprocessing.cpu_count() > 1:
+            chunks_metadata = self._process_tasks_parallel(tasks, should_print)
+        else:
+            chunks_metadata = self._process_tasks_sequential(tasks, should_print)
+
+        if self.verbose and should_print:
+            print(
+                f'Created {len(chunks_metadata)} good chunks from {len(self.metadata)} tracks')
+
+        return chunks_metadata
+
+    def _precompute_random_chunks(self):
+        """Precompute exact number of good chunks"""
+        should_print = (not dist.is_initialized() or dist.get_rank() == 0)
+
+        target_count = self.config.training.get('num_precompute_chunks', self.config.training.num_steps * self.batch_size * self.config.training.num_epochs)
+        chunks_metadata = []
+
+        if should_print:
+            print(f"Generating exactly {target_count} good chunks...")
+
+        with tqdm(total=target_count, desc='Progress good chunks') as pbar:
+            while len(chunks_metadata) < target_count:
+                batch_size = self.config.training.get('precompute_batch_for_chunks', 500)
+                tasks = []
+                need = target_count - len(chunks_metadata)
+                for i in range(batch_size):
+                    track_path, track_length = random.choice(self.metadata)
+                    if track_length < self.chunk_size:
+                        tasks.append((track_path, track_length, 0, track_length))
+                    else:
+                        offset = np.random.randint(track_length - self.chunk_size + 1)
+                        tasks.append((track_path, track_length, offset, self.chunk_size))
+
+                if multiprocessing.cpu_count() > 1:
+                    good_chunks = self._process_tasks_parallel(tasks, False)
+                else:
+                    good_chunks = self._process_tasks_sequential(tasks, False)
+
+                chunks_metadata.extend(good_chunks)
+                pbar.update(min(len(good_chunks),need))
+
+        chunks_metadata = chunks_metadata[:target_count]
+
+        return chunks_metadata
+
+
+    def _process_tasks_sequential(self, tasks, should_print):
+        chunks_metadata = []
+
+        pbar = tqdm(tasks, desc='Processing chunks') if should_print else tasks
+        for task in pbar:
+            track_path, track_length, offset, chunk_size = task
+            if self._is_chunk_loud_enough(track_path, offset, chunk_size, track_length):
+                chunks_metadata.append((track_path, offset))
+
+        return chunks_metadata
+
+
+    def _process_tasks_parallel(self, tasks, should_print):
+        chunks_metadata = []
+
+        with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
+
+            worker_args = [(task, self.instruments, self.file_types, self.min_mean_abs, self.chunk_size) for task in
+                           tasks]
+
+            results = []
+            if should_print:
+                with tqdm(total=len(tasks), desc='Processing chunks') as pbar:
+                    for i, result in enumerate(pool.imap_unordered(process_chunk_worker, worker_args)):
+                        results.append(result)
+                        pbar.update(1)
+            else:
+                for result in pool.imap_unordered(process_chunk_worker, worker_args):
+                    results.append(result)
+
+            for result in results:
+                track_path, offset, is_loud_enough = result
+                if is_loud_enough:
+                    chunks_metadata.append((track_path, offset))
+
+        return chunks_metadata
+
+
+    def _is_chunk_loud_enough(self, track_path, offset, chunk_size, track_length):
+
+        try:
+            for instrument in self.instruments:
+                instrument_loud_enough = False
+                for extension in self.file_types:
+                    path_to_audio_file = track_path + '/{}.{}'.format(instrument, extension)
+                    if os.path.isfile(path_to_audio_file):
+                        try:
+                            source = load_chunk(path_to_audio_file, length=track_length, offset=offset,
+                                                chunk_size=chunk_size)
+                            if np.abs(source).mean() >= self.min_mean_abs:
+                                instrument_loud_enough = True
+                                break
+                        except Exception as e:
+                            if not dist.is_initialized() or dist.get_rank() == 0:
+                                print('Error loading: {} Path: {}'.format(e, path_to_audio_file))
+                            return False
+
+                if not instrument_loud_enough:
+                    return False
+
+            return True
+
+        except Exception as e:
+            if not dist.is_initialized() or dist.get_rank() == 0:
+                print('Error checking chunk loudness: {} Path: {}'.format(e, track_path))
+            return False
+
 
     def read_from_metadata_cache(self, track_paths, instr=None):
         should_print = (not dist.is_initialized() or dist.get_rank() == 0)
@@ -250,6 +495,7 @@ class MSSDataset(torch.utils.data.Dataset):
         if len(metadata) > 0 and should_print:
             print('Old metadata was used for {} tracks.'.format(len(metadata)))
         return track_paths, metadata
+
 
     def get_metadata(self):
         read_metadata_procs = multiprocessing.cpu_count()
@@ -375,6 +621,7 @@ class MSSDataset(torch.utils.data.Dataset):
         pickle.dump(metadata, open(self.metadata_path, 'wb'))
         return metadata
 
+
     def load_source(self, metadata, instr):
         should_print = (not dist.is_initialized() or dist.get_rank() == 0)
         while True:
@@ -407,6 +654,7 @@ class MSSDataset(torch.utils.data.Dataset):
             source = self.augm_data(source, instr)
         return torch.tensor(source, dtype=torch.float32)
 
+
     def load_random_mix(self):
         res = []
         for instr in self.instruments:
@@ -432,6 +680,7 @@ class MSSDataset(torch.utils.data.Dataset):
             res.append(s1)
         res = torch.stack(res)
         return res
+
 
     def _load_chunk_by_offset(self, track_path, offset):
         """Load specific chunk by track path and offset"""
@@ -471,6 +720,7 @@ class MSSDataset(torch.utils.data.Dataset):
                 res[i] = self.augm_data(res[i], instr)
 
         return torch.tensor(res, dtype=torch.float32)
+
 
     def load_aligned_data(self):
         track_path, track_length = random.choice(self.metadata)
@@ -520,6 +770,7 @@ class MSSDataset(torch.utils.data.Dataset):
             for i, instr in enumerate(self.instruments):
                 res[i] = self.augm_data(res[i], instr)
         return torch.tensor(res, dtype=torch.float32)
+
 
     def augm_data(self, source, instr):
         # source.shape = (2, 261120) - first channels, second length
@@ -801,49 +1052,3 @@ class MSSDataset(torch.utils.data.Dataset):
 
         # print(applied_augs)
         return source
-
-    def __getitem__(self, index):
-        if self.dataset_type == 5:
-            track_path, offset = self.chunks_metadata[index]
-            res = self._load_chunk_by_offset(track_path, offset)
-        elif self.dataset_type in [1, 2, 3]:
-            res = self.load_random_mix()
-        else:  # type 4
-            res = self.load_aligned_data()
-
-        # Randomly change loudness of each stem
-        if self.aug:
-            if 'loudness' in self.config['augmentations']:
-                if self.config['augmentations']['loudness']:
-                    loud_values = np.random.uniform(
-                        low=self.config['augmentations']['loudness_min'],
-                        high=self.config['augmentations']['loudness_max'],
-                        size=(len(res),)
-                    )
-                    loud_values = torch.tensor(loud_values, dtype=torch.float32)
-                    res *= loud_values[:, None, None]
-
-        mix = res.sum(0)
-
-        if self.aug:
-            if 'mp3_compression_on_mixture' in self.config['augmentations']:
-                apply_aug = AU.Mp3Compression(
-                    min_bitrate=self.config['augmentations']['mp3_compression_on_mixture_bitrate_min'],
-                    max_bitrate=self.config['augmentations']['mp3_compression_on_mixture_bitrate_max'],
-                    backend=self.config['augmentations']['mp3_compression_on_mixture_backend'],
-                    p=self.config['augmentations']['mp3_compression_on_mixture']
-                )
-                mix_conv = mix.cpu().numpy().astype(np.float32)
-                required_shape = mix_conv.shape
-                mix = apply_aug(samples=mix_conv, sample_rate=44100)
-                # Sometimes it gives longer audio (so we cut)
-                if mix.shape != required_shape:
-                    mix = mix[..., :required_shape[-1]]
-                mix = torch.tensor(mix, dtype=torch.float32)
-
-        # If we need to optimize only given stem
-        if self.config.training.target_instrument is not None:
-            index = self.config.training.instruments.index(self.config.training.target_instrument)
-            return res[index:index+1], mix
-
-        return res, mix

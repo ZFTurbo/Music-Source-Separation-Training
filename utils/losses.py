@@ -102,7 +102,7 @@ def spec_rmse_loss(
         torch.Tensor: Scalar loss tensor.
     """
 
-    _, _, _, lenc = estimate.shape
+    lenc = estimate.shape[-1]
     spec_estimate = estimate.view(-1, lenc)
     spec_sources = sources.view(-1, lenc)
 
@@ -151,7 +151,7 @@ def spec_masked_loss(
         torch.Tensor: Scalar loss tensor.
     """
 
-    _, _, _, lenc = estimate.shape
+    lenc = estimate.shape[-1]
     spec_estimate = estimate.view(-1, lenc)
     spec_sources = sources.view(-1, lenc)
 
