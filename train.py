@@ -59,6 +59,8 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
     ddp = True if world_size else False
     should_print = not dist.is_initialized() or dist.get_rank() == 0
     model.train()
+    if not ddp:
+        model.to(device)
     if should_print:
         print(f'Train epoch: {epoch} Learning rate: {optimizer.param_groups[0]["lr"]}')
         sys.stdout.flush()
