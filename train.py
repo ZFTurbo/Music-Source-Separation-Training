@@ -380,11 +380,36 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
             metrics_avg, all_metrics = valid_multi_gpu(model, args, config, args.device_ids, verbose=False)
             if rank == 0:
                 all_time_all_metrics[f"epoch_{epoch}"] = all_metrics
-                best_metric = compute_epoch_metrics(model, args, config, device, device_ids, best_metric, epoch, scheduler, optimizer, all_time_all_metrics, all_losses,
-                                                    world_size, metrics_avg, all_metrics)
+                best_metric = compute_epoch_metrics(
+                    model=model,
+                    args=args,
+                    config=config,
+                    device=device,
+                    device_ids=device_ids,
+                    best_metric=best_metric,
+                    epoch=epoch,
+                    scheduler=scheduler,
+                    optimizer=optimizer,
+                    all_time_all_metrics=all_time_all_metrics,
+                    all_losses=all_losses,
+                    world_size=world_size,
+                    metrics_avg=metrics_avg,
+                    all_metrics=all_metrics
+                )
         else:
-            best_metric = compute_epoch_metrics(model, args, config, device, device_ids, best_metric, epoch, scheduler,
-                                                optimizer, all_time_all_metrics, all_losses)
+            best_metric = compute_epoch_metrics(
+                model=model,
+                args=args,
+                config=config,
+                device=device,
+                device_ids=device_ids,
+                best_metric=best_metric,
+                epoch=epoch,
+                scheduler=scheduler,
+                optimizer=optimizer,
+                all_time_all_metrics=all_time_all_metrics,
+                all_losses=all_losses,
+            )
 
 
 if __name__ == "__main__":
