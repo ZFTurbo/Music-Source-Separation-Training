@@ -237,8 +237,8 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
     from torch.cuda.amp.grad_scaler import GradScaler
     from utils.model_utils import get_optimizer, log_model_info
 
-    ddp = True if world_size else False
     args = parse_args_train(args)
+    ddp = True if world_size else False
     if ddp:
         initialize_environment_ddp(rank, world_size, args.seed, args.results_path)
     else:
@@ -251,7 +251,8 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
     else:
         batch_size = config.training.batch_size * len(device_ids)
 
-    wandb_init(args, config, batch_size)
+    if not dist.is_initialized() or dist.get_rank() == 0:
+        wandb_init(args, config, batch_size)
 
     train_loader = prepare_data(config, args, batch_size)
 

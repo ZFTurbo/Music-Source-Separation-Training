@@ -206,7 +206,6 @@ def parse_args_inference(dict_args: Union[Dict, None]) -> argparse.Namespace:
                         help="Flag adds test time augmentation during inference (polarity and channel inverse)."
                         "While this triples the runtime, it reduces noise and slightly improves prediction quality.")
     parser.add_argument("--lora_checkpoint_peft", type=str, default='', help="Initial checkpoint to LoRA weights")
-    parser.add_argument("--lora_checkpoint", type=str, default='', help="Initial checkpoint to LoRA weights")
     parser.add_argument("--filename_template", type=str, default='{file_name}/{instr}',
                         help="Output filename template, without extension, using '/' for subdirectories. Default: '{file_name}/{instr}'")
     parser.add_argument("--lora_checkpoint_loralib", type=str, default='', help="Initial checkpoint to LoRA weights")
@@ -561,22 +560,21 @@ def wandb_init(args: argparse.Namespace, config: ConfigDict | OmegaConf, batch_s
         None
     """
 
-    if not dist.is_initialized() or dist.get_rank() == 0:
-        if args.wandb_offline:
-            wandb.init(mode='offline',
-                       project='msst',
-                       name=gen_wandb_name(args, config),
-                       config={'config': config, 'args': args, 'device_ids': args.device_ids, 'batch_size': batch_size}
-                       )
-        elif args.wandb_key is None or args.wandb_key.strip() == '':
-            wandb.init(mode='disabled')
-        else:
-            wandb.login(key=args.wandb_key)
-            wandb.init(
-                project='msst',
-                name=gen_wandb_name(args, config),
-                config={'config': config, 'args': args, 'device_ids': args.device_ids, 'batch_size': batch_size}
-            )
+    if args.wandb_offline:
+        wandb.init(mode='offline',
+                   project='msst',
+                   name=gen_wandb_name(args, config),
+                   config={'config': config, 'args': args, 'device_ids': args.device_ids, 'batch_size': batch_size}
+                   )
+    elif args.wandb_key is None or args.wandb_key.strip() == '':
+        wandb.init(mode='disabled')
+    else:
+        wandb.login(key=args.wandb_key)
+        wandb.init(
+            project='msst',
+            name=gen_wandb_name(args, config),
+            config={'config': config, 'args': args, 'device_ids': args.device_ids, 'batch_size': batch_size}
+        )
 
 
 def setup_ddp(rank: int, world_size: int) -> None:
