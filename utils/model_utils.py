@@ -640,7 +640,7 @@ def bind_lora_to_model(config: Dict[str, Any], model: nn.Module) -> nn.Module:
                 setattr(
                     parent_module,
                     layer_name,
-                    lora.MergedLinear(
+                    lora.Linear(
                         in_features=module.in_features,
                         out_features=module.out_features,
                         bias=module.bias is not None,
