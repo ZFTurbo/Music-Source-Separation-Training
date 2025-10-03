@@ -372,7 +372,7 @@ class MSSDataset(torch.utils.data.Dataset):
         """Precompute exact number of good chunks"""
         should_print = (not dist.is_initialized() or dist.get_rank() == 0)
 
-        target_count = self.config.training.num_steps * self.batch_size * self.config.training.num_epochs
+        target_count = self.config.training.get('num_precompute_chunks', self.config.training.num_steps * self.batch_size * self.config.training.num_epochs)
         chunks_metadata = []
 
         if should_print:
@@ -380,7 +380,7 @@ class MSSDataset(torch.utils.data.Dataset):
 
         with tqdm(total=target_count, desc='Progress good chunks') as pbar:
             while len(chunks_metadata) < target_count:
-                batch_size = self.config.training.get('precompute_batch', 500)
+                batch_size = self.config.training.get('precompute_batch_for_chunks', 500)
                 tasks = []
                 need = target_count - len(chunks_metadata)
                 for i in range(batch_size):
