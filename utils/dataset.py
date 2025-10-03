@@ -238,7 +238,7 @@ class MSSDataset(torch.utils.data.Dataset):
             res = self.load_random_mix()
         else:  # type 4
             if self.do_chunks:
-                track_path, offset = self.chunks_metadata[index]
+                track_path, offset = self.chunks_metadata[np.random.randint(len(self.chunks_metadata))]
                 res = self._load_chunk_by_offset(track_path, offset)
             else:
                 res = self.load_aligned_data()
@@ -380,7 +380,7 @@ class MSSDataset(torch.utils.data.Dataset):
 
         with tqdm(total=target_count, desc='Progress good chunks') as pbar:
             while len(chunks_metadata) < target_count:
-                batch_size = 5000
+                batch_size = target_count * 2
                 tasks = []
                 need = target_count - len(chunks_metadata)
                 for i in range(batch_size):
