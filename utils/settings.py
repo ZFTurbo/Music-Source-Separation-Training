@@ -6,6 +6,7 @@ import wandb
 import numpy as np
 import torch
 import argparse
+import socket
 from typing import Dict, List, Tuple, Union
 from omegaconf import OmegaConf
 from ml_collections import ConfigDict
@@ -579,6 +580,12 @@ def wandb_init(args: argparse.Namespace, config: Union[ConfigDict, OmegaConf], b
         )
 
 
+def find_free_port():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(('', 0))              # 0 → OS chooses free port
+        return s.getsockname()[1]
+
+
 def setup_ddp(rank: int, world_size: int) -> None:
     """
     Initialize a Distributed Data Parallel (DDP) process group.
@@ -597,7 +604,7 @@ def setup_ddp(rank: int, world_size: int) -> None:
     """
 
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12355'  # We can change and use another
+    os.environ['MASTER_PORT'] = str(find_free_port())
     os.environ["USE_LIBUV"] = "0"
     try:
         dist.init_process_group("nccl", rank=rank, world_size=world_size)
