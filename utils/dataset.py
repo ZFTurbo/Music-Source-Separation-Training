@@ -11,6 +11,7 @@ import pickle
 import itertools
 import multiprocessing
 
+from typing import Union
 from ml_collections import ConfigDict
 from omegaconf import OmegaConf
 from tqdm.auto import tqdm
@@ -24,7 +25,7 @@ from torch.utils.data.distributed import DistributedSampler
 warnings.filterwarnings("ignore")
 import argparse
 
-def prepare_data(config:  ConfigDict | OmegaConf, args: argparse.Namespace, batch_size: int) -> DataLoader:
+def prepare_data(config: Union[ConfigDict, OmegaConf], args: argparse.Namespace, batch_size: int) -> DataLoader:
     """
     Build the training DataLoader. If torch.distributed.is_initialized() is True,
     construct a DDP DataLoader with DistributedSampler; otherwise, construct a regular DataLoader.

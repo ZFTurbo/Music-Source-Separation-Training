@@ -327,10 +327,10 @@ def apply_tta(
     config,
     model: torch.nn.Module,
     mix: torch.Tensor,
-    waveforms_orig: dict[str, np.ndarray] | np.ndarray,
+    waveforms_orig: Union[dict[str, np.ndarray], np.ndarray],
     device: torch.device,
     model_type: str
-) -> dict[str, np.ndarray] | np.ndarray:
+) -> Union[dict[str, np.ndarray], np.ndarray]:
     """
     Enhance source separation results using Test-Time Augmentation (TTA).
 

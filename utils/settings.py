@@ -543,7 +543,7 @@ def gen_wandb_name(args, config) -> str:
     return name
 
 
-def wandb_init(args: argparse.Namespace, config: ConfigDict | OmegaConf, batch_size: int) -> None:
+def wandb_init(args: argparse.Namespace, config: Union[ConfigDict, OmegaConf], batch_size: int) -> None:
     """
     Initialize Weights & Biases (wandb) for experiment tracking.
 
