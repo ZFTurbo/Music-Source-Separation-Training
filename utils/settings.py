@@ -604,7 +604,7 @@ def setup_ddp(rank: int, world_size: int) -> None:
     """
 
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = str(find_free_port())
+    os.environ['MASTER_PORT'] = '12345'
     os.environ["USE_LIBUV"] = "0"
     try:
         dist.init_process_group("nccl", rank=rank, world_size=world_size)
