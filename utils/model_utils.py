@@ -13,7 +13,7 @@ from torch.optim import Adam, AdamW, SGD, RAdam, RMSprop
 from tqdm.auto import tqdm
 from typing import Dict, List, Tuple, Any, Union, Optional
 import loralib as lora
-from .muon import SingleDeviceMuonWithAuxAdam
+from .muon import Muon as Muon, AdaGO as AdaGO
 import torch.distributed as dist
 
 def demix(
@@ -254,49 +254,54 @@ def get_optimizer(config: ConfigDict, model: torch.nn.Module) -> torch.optim.Opt
         optimizer = bnb.optim.AdamW8bit(model.parameters(), lr=config.training.lr, **optim_params)
     elif name_optimizer == 'muon':
         if should_print:
-            print("Using Muon optimizer (Single-Device) with AdamW for auxiliary parameters.")
+            print("Using Muon optimizer with AdamW-like branch for non-muon params.")
         muon_params = [p for p in model.parameters() if p.ndim >= 2]
         adam_params = [p for p in model.parameters() if p.ndim < 2]
+
         if not hasattr(config, 'optimizer') or 'muon_group' not in config.optimizer or 'adam_group' not in config.optimizer:
             raise ValueError("For the 'muon' optimizer, the config must have an 'optimizer' section "
                              "with 'muon_group' and 'adam_group' dictionaries.")
+
         muon_group_config = dict(config.optimizer.muon_group)
         adam_group_config = dict(config.optimizer.adam_group)
+
+        muon_group_config.setdefault('weight_decouple', True)
+        adam_group_config.setdefault('weight_decouple', True)
+
         if should_print:
             print(f"Muon group params: {muon_group_config}")
             print(f"Adam group params: {adam_group_config}")
+
         param_groups = [
-            dict(params=muon_params, use_muon=True, **muon_group_config),
+            dict(params=muon_params, use_muon=True,  **muon_group_config),
             dict(params=adam_params, use_muon=False, **adam_group_config),
         ]
-        optimizer = SingleDeviceMuonWithAuxAdam(param_groups)
+        optimizer = Muon(param_groups)
     elif name_optimizer == 'adago':
         if should_print:
-            print("Using AdaGO optimizer (Single-Device) with AdamW for auxiliary parameters.")
+            print("Using AdaGO optimizer with AdamW-like branch for non-muon params.")
         muon_params = [p for p in model.parameters() if p.ndim >= 2]
         adam_params = [p for p in model.parameters() if p.ndim < 2]
+
         if not hasattr(config, 'optimizer') or 'muon_group' not in config.optimizer or 'adam_group' not in config.optimizer:
             raise ValueError("For 'adago', the config must have an 'optimizer' section with 'muon_group' and 'adam_group' dictionaries.")
+
         muon_group_config = dict(config.optimizer.muon_group)
         adam_group_config = dict(config.optimizer.adam_group)
+
+        muon_group_config.setdefault('weight_decouple', True)
+        adam_group_config.setdefault('weight_decouple', True)
+
         if should_print:
             print(f"AdaGO muon group params: {muon_group_config}")
             print(f"AdaGO adam group params: {adam_group_config}")
-        from .muon import SingleDeviceAdaGOWithAuxAdam
+
         param_groups = [
-            dict(params=muon_params, use_muon=True, **muon_group_config),
+            dict(params=muon_params, use_muon=True,  **muon_group_config),
             dict(params=adam_params, use_muon=False, **adam_group_config),
         ]
-        optimizer = SingleDeviceAdaGOWithAuxAdam(param_groups)
-    elif name_optimizer == 'sgd':
-        if should_print:
-            print('Use SGD optimizer')
-        optimizer = SGD(model.parameters(), lr=config.training.lr, **optim_params)
-    else:
-        if should_print:
-            print(f'Unknown optimizer: {name_optimizer}')
-        exit()
-    return optimizer
+        optimizer = AdaGO(param_groups)
+        return optimizer
 
 
 def normalize_batch(x: torch.Tensor, y: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
