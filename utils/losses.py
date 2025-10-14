@@ -83,7 +83,8 @@ def masked_loss(
 def spec_rmse_loss(
     estimate: torch.Tensor,
     sources: torch.Tensor,
-    stft_config: dict
+    stft_config: dict,
+    eps: float = 1e-8
 ) -> torch.Tensor:
     """
     RMSE in the complex STFT domain.
@@ -119,7 +120,7 @@ def spec_rmse_loss(
     loss = F.mse_loss(spec_estimate, spec_sources, reduction='none')
 
     dims = tuple(range(2, loss.dim()))
-    loss = loss.mean(dims).sqrt().mean(dim=(0, 1))
+    loss = (loss.mean(dims) + eps).sqrt().mean(dim=(0, 1))
 
     return loss
 
