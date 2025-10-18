@@ -290,7 +290,8 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple[nn.Module,
     """
 
     config = load_config(model_type, config_path)
-
+    if 'model_type' in config.training:
+        model_type = config.training.model_type
     if model_type == 'mdx23c':
         from models.mdx23c_tfc_tdf_v3 import TFC_TDF_net
         model = TFC_TDF_net(config)
