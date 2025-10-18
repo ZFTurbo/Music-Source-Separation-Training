@@ -159,7 +159,8 @@ def proc_folder(dict_args):
     torch.backends.cudnn.benchmark = True
 
     model, config = get_model_from_config(args.model_type, args.config_path)
-
+    if 'model_type' in config.training:
+        args.model_type = config.training.model_type
     if args.start_check_point:
         checkpoint = torch.load(args.start_check_point, weights_only=False, map_location='cpu')
         load_start_checkpoint(args, model, checkpoint, type_='inference')

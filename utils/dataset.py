@@ -220,7 +220,7 @@ class MSSDataset(torch.utils.data.Dataset):
         self.metadata = metadata
         self.chunk_size = config.audio.chunk_size
         self.min_mean_abs = config.audio.min_mean_abs
-        self.do_chunks = config.training.get('precompute_chunks', False)
+        self.do_chunks = config.training.get('precompute_chunks', False) and float(self.min_mean_abs) > 0
         # For dataset_type 5 - precompute all chunks
         if self.dataset_type == 5 or self.dataset_type == 4 and self.do_chunks:
              self._initialize_chunks_metadata()

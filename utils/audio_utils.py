@@ -127,3 +127,55 @@ def draw_spectrogram(waveform: np.ndarray, sample_rate: int, length: float, outp
     fig.colorbar(img, ax=ax, format="%+2.f dB")
     if output_file is not None:
         plt.savefig(output_file)
+
+
+def draw_mel_spectrogram(waveform: np.ndarray, sample_rate: int, length: float, output_file: str) -> None:
+    """
+    Generate and save a spectrogram image from an audio waveform.
+
+    Converts the provided waveform into a mono signal, computes its Short-Time
+    Fourier Transform (STFT), converts the amplitude spectrogram to dB scale,
+    and plots it using a plasma colormap.
+
+    Args:
+        waveform (np.ndarray): Input audio waveform array of shape (time, channels)
+            or (time,).
+        sample_rate (int): Sampling rate of the waveform in Hz.
+        length (float): Duration (in seconds) of the waveform to include in the
+            spectrogram.
+        output_file (str): Path to save the resulting spectrogram image.
+
+    Returns:
+        None
+    """
+
+    import librosa.display
+
+    # Cut only required part of spectrogram
+    x = waveform
+
+    # Compute mel-spectrogram instead of STFT
+    S = librosa.feature.melspectrogram(
+        y=x.mean(axis=-1),  # mono signal
+        sr=sample_rate
+    )
+
+    # Convert to dB scale
+    S_db = librosa.power_to_db(S, ref=np.max)
+
+    fig, ax = plt.subplots()
+    try:
+        img = librosa.display.specshow(
+            S_db,
+            cmap='plasma',
+            sr=sample_rate,
+            x_axis='time',
+            y_axis='mel',
+            ax=ax
+        )
+        ax.set(title='Mel-spectrogram: ' + os.path.basename(output_file))
+        fig.colorbar(img, ax=ax, format="%+2.f dB")
+        if output_file is not None:
+            plt.savefig(output_file)
+    finally:
+        plt.close(fig)

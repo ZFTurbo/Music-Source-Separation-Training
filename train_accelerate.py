@@ -119,6 +119,8 @@ def train_model(args):
     torch.multiprocessing.set_start_method('spawn')
 
     model, config = get_model_from_config(args.model_type, args.config_path)
+    if 'model_type' in config.training:
+        args.model_type = config.training.model_type
     accelerator.print("Instruments: {}".format(config.training.instruments))
 
     os.makedirs(args.results_path, exist_ok=True)

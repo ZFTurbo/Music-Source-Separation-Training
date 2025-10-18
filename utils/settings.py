@@ -290,7 +290,8 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple[nn.Module,
     """
 
     config = load_config(model_type, config_path)
-
+    if 'model_type' in config.training:
+        model_type = config.training.model_type
     if model_type == 'mdx23c':
         from models.mdx23c_tfc_tdf_v3 import TFC_TDF_net
         model = TFC_TDF_net(config)
@@ -509,8 +510,8 @@ def initialize_environment_ddp(rank: int, world_size: int, seed: int = 0, resuls
     Returns:
         None
     """
-
-    setup_ddp(rank, world_size)
+    seed = (seed + int(time.time())) % 55535 + 10000
+    setup_ddp(rank, world_size, seed)
     manual_seed(seed)
 
     try:
@@ -586,7 +587,7 @@ def find_free_port():
         return s.getsockname()[1]
 
 
-def setup_ddp(rank: int, world_size: int) -> None:
+def setup_ddp(rank: int, world_size: int, seed: int) -> None:
     """
     Initialize a Distributed Data Parallel (DDP) process group.
 
@@ -598,13 +599,13 @@ def setup_ddp(rank: int, world_size: int) -> None:
     Args:
         rank (int): Rank of the current process in the DDP group.
         world_size (int): Total number of processes participating in DDP.
-
+        seed:
     Returns:
         None
     """
 
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12345'
+    os.environ['MASTER_PORT'] = str(seed)
     os.environ["USE_LIBUV"] = "0"
     try:
         dist.init_process_group("nccl", rank=rank, world_size=world_size)
