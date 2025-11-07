@@ -205,7 +205,7 @@ class MSSDataset(torch.utils.data.Dataset):
 
         metadata = self.get_metadata()
 
-        if self.dataset_type in [1, 4, 5]:
+        if self.dataset_type in [1, 4, 5, 6]:
             if len(metadata) > 0:
                 if self.verbose and should_print:
                     print('Found tracks in dataset: {}'.format(len(metadata)))
@@ -222,7 +222,7 @@ class MSSDataset(torch.utils.data.Dataset):
         self.min_mean_abs = config.audio.min_mean_abs
         self.do_chunks = config.training.get('precompute_chunks', False) and float(self.min_mean_abs) > 0
         # For dataset_type 5 - precompute all chunks
-        if self.dataset_type == 5 or self.dataset_type == 4 and self.do_chunks:
+        if self.dataset_type == 5 or (self.dataset_type == 4 or self.dataset_type == 6) and self.do_chunks:
              self._initialize_chunks_metadata()
 
     def __len__(self):
@@ -237,12 +237,15 @@ class MSSDataset(torch.utils.data.Dataset):
             res = self._load_chunk_by_offset(track_path, offset)
         elif self.dataset_type in [1, 2, 3]:
             res = self.load_random_mix()
-        else:  # type 4
+        else:  # type 4 or 6
             if self.do_chunks:
                 track_path, offset = self.chunks_metadata[np.random.randint(len(self.chunks_metadata))]
                 res = self._load_chunk_by_offset(track_path, offset)
             else:
-                res = self.load_aligned_data()
+                if self.dataset_type == 6:
+                    res, mix = self.load_aligned_data()
+                else:
+                    res, _ = self.load_aligned_data()
 
         # Randomly change loudness of each stem
         if self.aug:
@@ -255,8 +258,8 @@ class MSSDataset(torch.utils.data.Dataset):
                     )
                     loud_values = torch.tensor(loud_values, dtype=torch.float32)
                     res *= loud_values[:, None, None]
-
-        mix = res.sum(0)
+        if self.dataset_type != 6:
+            mix = res.sum(0)
 
         if self.aug:
             if 'mp3_compression_on_mixture' in self.config['augmentations']:
@@ -325,7 +328,7 @@ class MSSDataset(torch.utils.data.Dataset):
 
     def _precompute_and_cache_chunks(self, cache_path, config):
         """Precompute all chunks and save to cache with config"""
-        if self.dataset_type == 4:
+        if self.dataset_type == 4 or self.dataset_type == 6:
             chunks_metadata = self._precompute_random_chunks()
         elif self.dataset_type == 5:
             chunks_metadata = self._precompute_chunks()
@@ -511,7 +514,7 @@ class MSSDataset(torch.utils.data.Dataset):
                 '\nCollecting metadata for', str(self.data_path),
             )
 
-        if self.dataset_type in [1, 4, 5]:  # Added type 5
+        if self.dataset_type in [1, 4, 5, 6]:  # Added type 5
             track_paths = []
             if type(self.data_path) == list:
                 for tp in self.data_path:
@@ -615,7 +618,7 @@ class MSSDataset(torch.utils.data.Dataset):
                     print('Missing tracks: {} from {}'.format(skipped, len(df)))
         else:
             if should_print:
-                print('Unknown dataset type: {}. Must be 1, 2, 3, 4 or 5'.format(self.dataset_type))
+                print('Unknown dataset type: {}. Must be 1, 2, 3, 4, 5 or 6'.format(self.dataset_type))
             exit()
 
         # Save metadata
@@ -626,7 +629,7 @@ class MSSDataset(torch.utils.data.Dataset):
     def load_source(self, metadata, instr):
         should_print = (not dist.is_initialized() or dist.get_rank() == 0)
         while True:
-            if self.dataset_type in [1, 4, 5]:
+            if self.dataset_type in [1, 4, 5, 6]:
                 track_path, track_length = random.choice(metadata)
                 for extension in self.file_types:
                     path_to_audio_file = track_path + '/{}.{}'.format(instr, extension)
@@ -741,7 +744,6 @@ class MSSDataset(torch.utils.data.Dataset):
                         try:
                             source = load_chunk(path_to_audio_file, track_length, self.chunk_size, offset=common_offset)
                         except Exception as e:
-                            # Sometimes error during FLAC reading, catch it and use zero stem
                             if should_print:
                                 print('Error: {} Path: {}'.format(e, path_to_audio_file))
                             source = np.zeros((2, self.chunk_size), dtype=np.float32)
@@ -749,28 +751,39 @@ class MSSDataset(torch.utils.data.Dataset):
                 res.append(source)
                 if np.abs(source).mean() < self.min_mean_abs:  # remove quiet chunks
                     silent_chunks += 1
-            if silent_chunks == 0:
+
+            mix = None
+            for extension in self.file_types:
+                path_to_mix_file = track_path + '/mixture.{}'.format(extension)
+                if os.path.isfile(path_to_mix_file):
+                    try:
+                        mix = load_chunk(path_to_mix_file, track_length, self.chunk_size, offset=common_offset)
+                    except Exception as e:
+                        if should_print:
+                            print('Error loading mix: {} Path: {}'.format(e, path_to_mix_file))
+                    break
+
+            if silent_chunks == 0 and mix is not None:
                 break
 
             attempts -= 1
             if attempts <= 0 and should_print:
                 print('Attempts max!', track_path)
             if common_offset is None:
-                # If track is too small break immediately
                 break
 
         try:
             res = np.stack(res, axis=0)
         except Exception as e:
-            # Normally it should never happen, but if happen will let you find a problematic track
             print('Error during stacking stems: {} Track Length: {} Track path: {}'.format(str(e), track_length,
                                                                                            track_path))
             res = np.zeros((len(self.instruments), 2, self.chunk_size), dtype=np.float32)
-
+        if mix is None:
+            mix = res.sum(0)
         if self.aug:
             for i, instr in enumerate(self.instruments):
                 res[i] = self.augm_data(res[i], instr)
-        return torch.tensor(res, dtype=torch.float32)
+        return torch.tensor(res, dtype=torch.float32), torch.tensor(mix, dtype=torch.float32)
 
 
     def augm_data(self, source, instr):
