@@ -763,7 +763,7 @@ class MSSDataset(torch.utils.data.Dataset):
                             print('Error loading mix: {} Path: {}'.format(e, path_to_mix_file))
                     break
 
-            if silent_chunks == 0 and mix is not None:
+            if silent_chunks == 0:
                 break
 
             attempts -= 1
