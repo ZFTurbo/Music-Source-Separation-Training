@@ -792,7 +792,7 @@ class AdaGO(BaseOptimizer):
 
                     p.add_(
                         update.reshape(p.shape),
-                        alpha=-max(group['eps'], lr * min(grad.norm(2), group['gamma']) / v).item(),
+                        alpha=-max(group['eps'], (lr * min(grad.norm(2), group['gamma']) / v).item()),
                     )
                 else:
                     exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
