@@ -20,6 +20,7 @@ from torch.optim import Adam, AdamW, SGD, RAdam, RMSprop
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch.nn.functional as F
+from torch.optim.swa_utils import AveragedModel, get_ema_multi_avg_fn
 from accelerate import Accelerator
 
 from utils.dataset import MSSDataset
@@ -232,8 +233,15 @@ def train_model(args):
 
     model, optimizer, train_loader, scheduler = accelerator.prepare(model, optimizer, train_loader, scheduler)
 
+    ema_model = None
+    if hasattr(config.training, 'ema_momentum') and config.training.ema_momentum > 0:
+        accelerator.print(f"Initializing EMA with decay: {config.training.ema_momentum}")
+        ema_model = AveragedModel(accelerator.unwrap_model(model), multi_avg_fn=get_ema_multi_avg_fn(config.training.ema_momentum))
+        ema_model.to(device)
+    
     if args.pre_valid:
-        sdr_list = valid(model, valid_loader, args, config, device, verbose=accelerator.is_main_process)
+        model_to_valid = ema_model if ema_model is not None else model
+        sdr_list = valid(model_to_valid, valid_loader, args, config, device, verbose=accelerator.is_main_process)
         sdr_list = accelerator.gather(sdr_list)
         accelerator.wait_for_everyone()
 
@@ -301,6 +309,10 @@ def train_model(args):
 
             optimizer.step()
             optimizer.zero_grad()
+
+            if ema_model is not None:
+                ema_model.update_parameters(accelerator.unwrap_model(model))
+            
             li = loss.item()
             loss_val += li
             total += 1
@@ -316,10 +328,15 @@ def train_model(args):
         store_path = args.results_path + '/last_{}.ckpt'.format(args.model_type)
         accelerator.wait_for_everyone()
         if accelerator.is_main_process:
-            unwrapped_model = accelerator.unwrap_model(model)
-            accelerator.save(unwrapped_model.state_dict(), store_path)
+            if ema_model is not None:
+                accelerator.save(ema_model.module.state_dict(), store_path)
+            else:
+                unwrapped_model = accelerator.unwrap_model(model)
+                accelerator.save(unwrapped_model.state_dict(), store_path)
 
-        sdr_list = valid(model, valid_loader, args, config, device, verbose=accelerator.is_main_process)
+        # Validation
+        model_to_valid = ema_model if ema_model is not None else model
+        sdr_list = valid(model_to_valid, valid_loader, args, config, device, verbose=accelerator.is_main_process)
         sdr_list = accelerator.gather(sdr_list)
         accelerator.wait_for_everyone()
 
@@ -346,8 +363,11 @@ def train_model(args):
             if sdr_avg > best_sdr:
                 store_path = args.results_path + '/model_{}_ep_{}_sdr_{:.4f}.ckpt'.format(args.model_type, epoch, sdr_avg)
                 print('Store weights: {}'.format(store_path))
-                unwrapped_model = accelerator.unwrap_model(model)
-                accelerator.save(unwrapped_model.state_dict(), store_path)
+                if ema_model is not None:
+                    accelerator.save(ema_model.module.state_dict(), store_path)
+                else:
+                    unwrapped_model = accelerator.unwrap_model(model)
+                    accelerator.save(unwrapped_model.state_dict(), store_path)
                 best_sdr = sdr_avg
 
             scheduler.step(sdr_avg)
