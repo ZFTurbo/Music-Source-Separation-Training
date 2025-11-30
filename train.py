@@ -14,6 +14,7 @@ from torch.utils.data import DataLoader
 from ml_collections import ConfigDict
 from typing import List, Callable, Union
 import torch.distributed as dist
+from torch.optim.swa_utils import AveragedModel, get_ema_multi_avg_fn
 
 from utils.settings import get_scheduler, parse_args_train, initialize_environment_ddp, \
     initialize_environment, get_model_from_config, wandb_init
@@ -33,7 +34,8 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
                     scaler: torch.cuda.amp.GradScaler,
                     scheduler,
                     gradient_accumulation_steps: int, train_loader: torch.utils.data.DataLoader,
-                    multi_loss: Callable[[torch.Tensor, torch.Tensor, torch.Tensor,], torch.Tensor], all_losses=None, world_size=None) -> None:
+                    multi_loss: Callable[[torch.Tensor, torch.Tensor, torch.Tensor,], torch.Tensor],
+                    all_losses=None, world_size=None, ema_model=None) -> None:
     """
     Train the model for one epoch.
 
@@ -107,6 +109,13 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
 
             scaler.step(optimizer)
             scaler.update()
+
+            if ema_model is not None:
+                if ddp:
+                    ema_model.update_parameters(model.module)
+                else:
+                    ema_model.update_parameters(model)
+
             if scheduler.name in ['linear_scheduler']:
                 scheduler.step()
             optimizer.zero_grad(set_to_none=True)
@@ -291,7 +300,26 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[rank])
     else:
         device, model = initialize_model_and_device(model, args.device_ids)
-        model.to(device)
+        # If model is DataParallel, get underlying module
+        model_module = model.module if hasattr(model, 'module') else model
+
+    ema_model = None
+    if hasattr(config.training, 'ema_momentum') and config.training.ema_momentum > 0:
+        if not dist.is_initialized() or dist.get_rank() == 0:
+            print(f"Initializing EMA with decay: {config.training.ema_momentum}")
+        ema_model = AveragedModel(model_module, multi_avg_fn=get_ema_multi_avg_fn(config.training.ema_momentum))
+
+    if args.pre_valid:
+        model_to_valid = ema_model if ema_model is not None else model
+        if ddp:
+            valid_multi_gpu(model_to_valid, args, config, args.device_ids, verbose=False)
+        else:
+            if torch.cuda.is_available() and len(args.device_ids) > 1:
+                valid_multi_gpu(model_to_valid, args, config, args.device_ids, verbose=True)
+            else:
+                valid(model_to_valid, args, config, device, verbose=True)
+
+    gradient_accumulation_steps = int(getattr(config.training, 'gradient_accumulation_steps', 1))
     if args.pre_valid:
         if ddp:
             valid_multi_gpu(model, args, config, args.device_ids, verbose=False)
@@ -375,7 +403,10 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
             train_loader.sampler.set_epoch(epoch)
 
         train_one_epoch(model, config, args, optimizer, device, device_ids, epoch,
-                        use_amp, scaler, scheduler, gradient_accumulation_steps, train_loader, multi_loss, all_losses, world_size)
+                        use_amp, scaler, scheduler, gradient_accumulation_steps, train_loader, multi_loss, all_losses, world_size, ema_model=ema_model)
+
+        model_to_valid = ema_model if ema_model is not None else model
+        
         if should_print:
             save_last_weights(args, model, device_ids, optimizer, epoch, all_time_all_metrics, best_metric, scheduler)
         if ddp:
