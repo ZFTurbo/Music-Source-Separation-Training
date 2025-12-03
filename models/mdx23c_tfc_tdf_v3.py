@@ -232,9 +232,8 @@ class TFC_TDF_net(nn.Module):
 
         x = self.cws2cac(x)
 
-        if self.num_target_instruments > 1:
-            b, c, f, t = x.shape
-            x = x.reshape(b, self.num_target_instruments, -1, f, t)
+        b, c, f, t = x.shape
+        x = x.reshape(b, self.num_target_instruments, -1, f, t)
 
         x = self.stft.inverse(x)
 
