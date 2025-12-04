@@ -311,6 +311,7 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
         device = torch.device(f'cuda:{rank}')
         model.to(device)
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[rank])
+        model_module = model.module
     else:
         device, model = initialize_model_and_device(model, args.device_ids)
         # If model is DataParallel, get underlying module
