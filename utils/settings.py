@@ -96,6 +96,9 @@ def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argpar
                         help="using only VRAM, no RAM")
     parser.add_argument("--load_only_compatible_weights", action='store_true',
                         help="using only VRAM, no RAM")
+    parser.add_argument("--freeze_layers", nargs="+", type=str,
+                        help="List of layers to freeze. Use prefixes e.g. layer1 - will freeze all layers whose names "
+                             "starts with layer1. You can set mulitple parameters.")
 
     if dict_args is not None:
         args = parser.parse_args([])

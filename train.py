@@ -294,6 +294,19 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
         load_start_checkpoint(args, model, checkpoint, type_='train')
     model = get_lora(args, config, model)
 
+    if args.freeze_layers is not None:
+        freeze_layers = []
+        train_layers = []
+        for name, param in model.named_parameters():
+            if any(name.startswith(prefix) for prefix in args.freeze_layers):
+                freeze_layers.append(name)
+                print('Freezing layer:', name)
+                param.requires_grad = False
+            else:
+                train_layers.append(name)
+        print('Trainable layers: {}'.format(len(train_layers)))
+        print('Frozen layers: {}'.format(len(freeze_layers)))
+
     if ddp:
         device = torch.device(f'cuda:{rank}')
         model.to(device)
