@@ -222,8 +222,274 @@ def proc_folder(dict_args):
 
     print("Model load time: {:.2f} sec".format(time.time() - model_load_start_time))
 
-    run_folder(model, args, config, device, verbose=True)
+    run_folder(model, args, config, device, verbose=False)
+
+
+def do(input_folder, store_dir, config_path, start_check_point):
+
+    args = {
+        'model_type': 'bs_roformer',
+        'input_folder': input_folder,
+        'store_dir': store_dir,
+        'config_path': config_path,
+        'start_check_point': start_check_point,
+        'filename_template': '{dir_name}/{instr}',
+
+    }
+    proc_folder(args)
+
+
+def main():
+
+    input_folder = r"E:\datasets\uvr_1"
+    store_dir = r"E:\datasets\uvr_50_stems"
+
+#     # wind-chimes
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn230_bs_roformer_wind_chimes\config.yaml",
+#     r"E:\trash\weights\mvsep-2021\mss_code\weights\nn230_bs_roformer_wind_chimes\model_bs_roformer_wind_chimes_sdr_8.9242.ckpt")
+#
+#     # dobro
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn229_bs_roformer_dobro\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn229_bs_roformer_dobro\model_bs_roformer_dobro_sdr_8.4506.ckpt")
+#
+    # ukulele
+    do(input_folder,
+           store_dir,
+           r"E:\trash\weights\mvsep-2021\mss_code\weights\nn228_bs_roformer_ukulele\config.yaml",
+        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn228_bs_roformer_ukulele\model_bs_roformer_ukulele_sdr_9.1350.ckpt")
+
+    # bells
+    do(input_folder,
+           store_dir,
+           r"weights/mvsep-2021/mss_code/weights/nn227_bs_roformer_bells/config.yaml",
+        r"weights/mvsep-2021/mss_code/weights/nn227_bs_roformer_bells/model_bs_roformer_bells_sdr_5.9385.ckpt")
+#
+#     # congas
+#     do(input_folder,
+#            store_dir,
+#            r"E:\trash\weights\mvsep-2021\mss_code\weights\nn226_bs_roformer_congas\config.yaml",
+#         r"E:\trash\weights\mvsep-2021\mss_code\weights\nn226_bs_roformer_congas\model_bs_roformer_congas_sdr_12.6609.ckpt")
+#
+#     # bassoon
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn225_bs_roformer_bassoon\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn225_bs_roformer_bassoon\model_bs_roformer_bassoon_sdr_6.5313.ckpt")
+#
+    # tuba
+    do(input_folder,
+       store_dir,
+       r"E:\trash\weights\mvsep-2021\mss_code\weights\nn224_bs_roformer_tuba\config.yaml",
+       r"E:\trash\weights\mvsep-2021\mss_code\weights\nn224_bs_roformer_tuba\model_bs_roformer_tuba_sdr_11.2987.ckpt")
+#
+    # harpsichord
+    do(input_folder,
+       store_dir,
+       r"weights\mvsep-2021\mss_code\weights\nn223_bs_roformer_harpsichord\config.yaml",
+       r"weights\mvsep-2021\mss_code\weights\nn223_bs_roformer_harpsichord\model_bs_roformer_harpsichord_sdr_4.7593.ckpt")
+
+#     # sitar
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn222_bs_roformer_sitar\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn222_bs_roformer_sitar\model_bs_roformer_sitar_sdr_5.9296.ckpt")
+#
+#     # triangle
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn221_bs_roformer_triangle\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn221_bs_roformer_triangle\model_bs_roformer_triangle_sdr_11.0587.ckpt")
+#
+#     # harmonica
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn220_bsroformer_harmonica\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn220_bsroformer_harmonica\harmonica_bs_roformer_sdr_11.39.ckpt"
+#        )
+#
+    # timpani
+    do('timpani',
+       input_folder,
+       store_dir,
+       r"E:\trash\weights\mvsep-2021\mss_code\weights\nn219_bsroformer_timpani\config.yaml",
+       r"E:\trash\weights\mvsep-2021\mss_code\weights\nn219_bsroformer_timpani\timpani_bs_roformer_sdr_7.05.ckpt",
+       )
+#
+#
+#
+#     # glockenspiel
+#     do(input_folder,
+#        store_dir,
+#     r"E:\trash\weights\mvsep-2021\mss_code\weights\nn218_bsroformer_glockenspiel\config.yaml",
+#     r"E:\trash\weights\mvsep-2021\mss_code\weights\nn218_bsroformer_glockenspiel\glockenspiel_bs_roformer_sdr_8.43.ckpt"
+#        )
+#
+#     # marimba
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn217_bsroformer_marimba\config.yaml",
+# r"E:\trash\weights\mvsep-2021\mss_code\weights\nn217_bsroformer_marimba\marimba_bs_roformer_sdr_6.88.ckpt")
+#
+#     # banjo
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn216_bsroformer_banjo\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn216_bsroformer_banjo\banjo_bs_roformer_sdr_6.11.ckpt"
+# )
+#
+#     # french_horn
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn215_bsroformer_french_horn\config.yaml",
+# r"E:\trash\weights\mvsep-2021\mss_code\weights\nn215_bsroformer_french_horn\french_horn_bs_roformer_sdr_5.18.ckpt")
+#
+#     # electric guitar
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn214_bsroformer_electric_guitar\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn214_bsroformer_electric_guitar\electric_guitar_bs_roformer_sdr_8.63.ckpt")
+#
+#     # synth
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn213_bsroformer_synth\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn213_bsroformer_synth\fused_model_synth_sdr_3.77.ckpt")
+#
+#     # digital_piano
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn210_bsroformer_digital_piano\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn210_bsroformer_digital_piano\fused_model_digital_piano_2.61.ckpt")
+#
+#     # clarinet
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn209_bsroformer_clarinet\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn209_bsroformer_clarinet\fused_model_clarinet_5.96.ckpt")
+#
+#     # oboe
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn208_bsroformer_oboe\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn208_bsroformer_oboe\fused_model_oboe_7.37.ckpt")
+#
+#     # tambourine
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn207_bsroformer_tambourine\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn207_bsroformer_tambourine\fused_model_tambourine_4.33.ckpt")
+#
+#     # trombone
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn205_bsroformer_trombone\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn205_bsroformer_trombone\fused_model_trombone_7.13.ckpt")
+#
+    # mandolin
+    do(input_folder,
+       store_dir,
+       r"E:\trash\weights\mvsep-2021\mss_code\weights\nn204_bsroformer_mandolin\config.yaml",
+       r"E:\trash\weights\mvsep-2021\mss_code\weights\nn204_bsroformer_mandolin\fused_model_mandolin_4.05.ckpt")
+
+#     # # organ
+#     # do(input_folder,
+#     #    store_dir,
+#     #    r"E:\trash\weights\mvsep-2021\mss_code\weights\nn203_bsroformer_organ\config.yaml",
+#     #    r"E:\trash\weights\mvsep-2021\mss_code\weights\nn203_bsroformer_organ\fused_model_organ_5.08.ckpt")
+#
+#     # double_bass
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn202_bsroformer_double_bass\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn202_bsroformer_double_bass\fused_model_double_bass_15.07.ckpt")
+#
+#     # harp
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn200_bsroformer_harp\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn200_bsroformer_harp\fused_model_harp_6.61.ckpt")
+#
+#     # trumpet
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn198_bsroformer_trumpet\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn198_bsroformer_trumpet\fused_model_9.77.ckpt")
+#
+#     # cello
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn196_bsroformer_cello\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn196_bsroformer_cello\fused_model_11.81.ckpt")
+#
+#     # viola
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn195_bsroformer_viola\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn195_bsroformer_viola\fused_model_5.46.ckpt")
+#
+#     # strings
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn194_bsroformer_strings\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn194_bsroformer_strings\fused_model_5.41.ckpt")
+#
+#     # flute
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn189_bsroformer_flute\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn189_bsroformer_flute\fused_model_9.46.ckpt")
+#
+    # acoustic_guitar
+    do('acoustic-guitar',
+        input_folder,
+       store_dir,
+       r"weights\mvsep-2021\mss_code\weights\nn188_bsroformer_acoustic_guitar\config.yaml",
+       r"weights\mvsep-2021\mss_code\weights\nn188_bsroformer_acoustic_guitar\fused_model_6.54_11.51.ckpt")
+
+#     # violin
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn186_bsroformer_violin\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn186_bsroformer_violin\fused_model_sdr_7.2997.ckpt")
+#
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn199_bsroformer_lead_back_vocals_model_v1\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn199_bsroformer_lead_back_vocals_model_v1\fused_model_12.11_v2.ckpt")
+#
+#     do(input_folder,
+#        store_dir,
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn175_bs_roformer_sw_6_stem\config.yaml",
+#        r"E:\trash\weights\mvsep-2021\mss_code\weights\nn175_bs_roformer_sw_6_stem\bs_roformer_sw_6_stems_fixed.chpt")
+
+    do(input_folder,
+       store_dir,
+       r"E:\trash\weights\mvsep-2021\mss_code\weights\nn201_bsroformer_saxophone\config.yaml",
+       r"E:\trash\weights\mvsep-2021\mss_code\weights\nn201_bsroformer_saxophone\fused_model_saxophone_9.77.ckpt")
+
+    # wind
+    do(input_folder,
+       store_dir,
+       r"weights\mvsep-2021\mss_code\weights\nn191_bsroformer_wind\config.yaml",
+       r"weights\mvsep-2021\mss_code\weights\nn191_bsroformer_wind\fused_model_9.82.ckpt")
+
+
+
+    args = {
+        'model_type': 'mel_band_roformer',
+        'input_folder': input_folder,
+        'store_dir': store_dir,
+        'config_path': r"weights\mss_code/weights/nn156_drumsep_melband_roformer_6_stems/config.yaml",
+        'start_check_point': r"weights\mss_code/weights/nn156_drumsep_melband_roformer_6_stems/model_mel_band_roformer_6_stems_ep_86_sdr_12.4821.ckpt",
+        'filename_template': '{dir_name}/{instr}',
+
+    }
+    proc_folder(args)
 
 
 if __name__ == "__main__":
-    proc_folder(None)
+    main()
