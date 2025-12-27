@@ -26,6 +26,17 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
+def forward_step(x, y, active_stem_ids, get_internal_loss, model, multi_loss, device_ids):
+    if get_internal_loss:
+        loss =model(x, y, active_stem_ids=active_stem_ids)
+        if isinstance(device_ids, (list, tuple)):
+            loss = loss.mean()
+        return loss
+    else:
+        y_ = model(x)
+        return multi_loss(y_, y, x)
+
+
 
 def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.Namespace,
                     optimizer: torch.optim.Optimizer,
@@ -33,7 +44,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
                     scaler: torch.cuda.amp.GradScaler,
                     scheduler,
                     gradient_accumulation_steps: int, train_loader: torch.utils.data.DataLoader,
-                    multi_loss: Callable[[torch.Tensor, torch.Tensor, torch.Tensor,], torch.Tensor], all_losses=None, world_size=None) -> None:
+                    multi_loss: Callable[[torch.Tensor, torch.Tensor, torch.Tensor,], torch.Tensor], all_losses=None, world_size=None, safe_mode=None) -> None:
     """
     Train the model for one epoch.
 
@@ -79,22 +90,29 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
     else:
         pbar = tqdm(train_loader)
 
-    for i, (batch, mixes) in enumerate(pbar):
+    for i, data in enumerate(pbar):
+        if len(data)==3:
+            batch, mixes, active_stem_ids = data
+        elif len(data)==2:
+            batch, mixes = data
+            active_stem_ids = None
+        else:
+            raise ValueError(f'len data is {len(data)}')
         x = mixes.to(device)
         y = batch.to(device)
 
         if normalize:
             x, y = normalize_batch(x, y)
-
-        with torch.cuda.amp.autocast(enabled=use_amp):
-            if get_internal_loss:
-                loss = model(x, y)
-                if isinstance(device_ids, (list, tuple)):
-                    loss = loss.mean()
-            else:
-                y_ = model(x)
-                loss = multi_loss(y_, y, x)
-
+        if safe_mode:
+            try:
+                with torch.cuda.amp.autocast(enabled=use_amp):
+                    loss = forward_step(x, y, active_stem_ids, get_internal_loss, model, multi_loss, device_ids)
+            except Exception as e:
+                print(f'Error: {e}')
+                continue
+        else:
+            with torch.cuda.amp.autocast(enabled=use_amp):
+                loss = forward_step(x, y, active_stem_ids, get_internal_loss, model, multi_loss, device_ids)
         loss /= gradient_accumulation_steps
         scaler.scale(loss).backward()
 
@@ -288,7 +306,7 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
     if ddp:
         device = torch.device(f'cuda:{rank}')
         model.to(device)
-        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[rank])
+        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[rank], find_unused_parameters=True)
     else:
         device, model = initialize_model_and_device(model, args.device_ids)
         model.to(device)
@@ -297,9 +315,9 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
             valid_multi_gpu(model, args, config, args.device_ids, verbose=False)
         else:
             if torch.cuda.is_available() and len(args.device_ids) > 1:
-                valid_multi_gpu(model, args, config, args.device_ids, verbose=True)
+                valid_multi_gpu(model, args, config, args.device_ids, verbose=False)
             else:
-                valid(model, args, config, device, verbose=True)
+                valid(model, args, config, device, verbose=False)
 
     gradient_accumulation_steps = int(getattr(config.training, 'gradient_accumulation_steps', 1))
 
