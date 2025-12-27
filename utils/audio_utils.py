@@ -129,6 +129,170 @@ def draw_spectrogram(waveform: np.ndarray, sample_rate: int, length: float, outp
         plt.savefig(output_file)
 
 
+def draw_2_mel_spectrogram(
+    estimates_waveform: np.ndarray,
+    track_waveform: np.ndarray,
+    sample_rate: int,
+    length: float,
+    output_base: str
+) -> None:
+    """
+    Generate and save separate images for spectrograms and waveforms
+    for both estimated and original audio.
+
+    Creates two separate images:
+    - One with mel-spectrograms (estimated vs original)
+    - One with waveforms (estimated vs original)
+
+    Args:
+        estimates_waveform (np.ndarray): Estimated audio waveform
+        track_waveform (np.ndarray): Original audio waveform
+        sample_rate (int): Sampling rate in Hz
+        length (float): Duration in seconds to include
+        output_base (str): Base path for output files (without extension)
+
+    Returns:
+        None
+    """
+    import librosa.display
+
+    # Prepare both waveforms
+    waveforms = [estimates_waveform, track_waveform]
+    titles = ["Estimated", "Original"]
+
+    # Store processed (mono, possibly decimated) waveforms
+    processed_waveforms: list[tuple[np.ndarray, int]] = []
+
+    for waveform in waveforms:
+        # Convert to mono if multi-channel
+        mono_signal = waveform.mean(axis=-1) if len(waveform.shape) > 1 else waveform
+
+        # Apply decimation for long audio signals
+        if len(mono_signal) > 60 * sample_rate:
+            # Decimation: take every second sample
+            mono_signal = mono_signal[::2]
+            effective_sr = sample_rate // 2
+        else:
+            effective_sr = sample_rate
+
+        processed_waveforms.append((mono_signal, effective_sr))
+
+    # Create mel-spectrograms figure
+    fig_spec, axes_spec = plt.subplots(2, 1, figsize=(16, 10))
+
+    for i, ((mono_signal, effective_sr), title) in enumerate(
+        zip(processed_waveforms, titles)
+    ):
+        # Compute mel-spectrogram with reduced number of mel bins
+        S = librosa.feature.melspectrogram(
+            y=mono_signal,
+            sr=effective_sr,
+            n_mels=128
+        )
+        S_db = librosa.power_to_db(S, ref=np.max)
+
+        # Plot mel-spectrogram
+        img = librosa.display.specshow(
+            S_db,
+            cmap="plasma",
+            sr=effective_sr,
+            x_axis="time",
+            y_axis="mel",
+            ax=axes_spec[i]
+        )
+        axes_spec[i].set_title(
+            f"Mel-spectrogram: {title}",
+            fontsize=14,
+            fontweight="bold"
+        )
+        axes_spec[i].set_xlabel("Time (seconds)", fontsize=12)
+        axes_spec[i].set_ylabel("Frequency (Mel)", fontsize=12)
+
+        # Colorbar intentionally disabled
+        # fig_spec.colorbar(img, ax=axes_spec, format="%+2.f dB",
+        #                   shrink=0.8, pad=0.02, location="right")
+
+    # Set global title for spectrograms
+    fig_spec.suptitle(
+        f"Mel-spectrograms: {os.path.basename(output_base)}",
+        fontsize=16,
+        fontweight="bold",
+        y=0.98
+    )
+
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.94, hspace=0.4, right=0.88)
+
+    # Save spectrograms image with reduced DPI
+    spec_output = f"{output_base}_spectrograms.jpg"
+    plt.savefig(spec_output, dpi=150, bbox_inches="tight")
+    plt.close(fig_spec)
+
+    # Create waveforms figure
+    fig_wave, axes_wave = plt.subplots(2, 1, figsize=(16, 8))
+
+    for i, ((mono_signal, effective_sr), title) in enumerate(
+        zip(processed_waveforms, titles)
+    ):
+        # Generate time axis
+        time = np.linspace(
+            0,
+            len(mono_signal) / effective_sr,
+            len(mono_signal)
+        )
+
+        # Plot simplified waveform for very long signals
+        if len(mono_signal) > 100000:
+            # Take every 10th sample for plotting
+            plot_indices = np.arange(0, len(mono_signal), 10)
+            axes_wave[i].plot(
+                time[plot_indices],
+                mono_signal[plot_indices],
+                color="#00ff88",
+                alpha=0.9,
+                linewidth=0.5
+            )
+        else:
+            axes_wave[i].plot(
+                time,
+                mono_signal,
+                color="#00ff88",
+                alpha=0.9,
+                linewidth=0.8
+            )
+
+        axes_wave[i].fill_between(
+            time,
+            mono_signal,
+            alpha=0.3,
+            color="#00ff8833"
+        )
+        axes_wave[i].set_xlabel("Time (seconds)", fontsize=12)
+        axes_wave[i].set_ylabel("Amplitude", fontsize=12)
+        axes_wave[i].set_title(
+            f"Waveform: {title}",
+            fontsize=14,
+            fontweight="bold"
+        )
+        axes_wave[i].grid(True, alpha=0.3, color="gray")
+        axes_wave[i].set_xlim(0, time[-1])
+
+    # Set global title for waveforms
+    fig_wave.suptitle(
+        f"Waveforms: {os.path.basename(output_base)}",
+        fontsize=16,
+        fontweight="bold",
+        y=0.98
+    )
+
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.94, hspace=0.4)
+
+    # Save waveforms image
+    wave_output = f"{output_base}_waveforms.jpg"
+    plt.savefig(wave_output, dpi=150, bbox_inches="tight")
+    plt.close(fig_wave)
+
 def draw_mel_spectrogram(waveform: np.ndarray, sample_rate: int, length: float, output_file: str) -> None:
     """
     Generate and save a spectrogram image from an audio waveform.
@@ -179,3 +343,47 @@ def draw_mel_spectrogram(waveform: np.ndarray, sample_rate: int, length: float, 
             plt.savefig(output_file)
     finally:
         plt.close(fig)
+
+    plot_waveform_basic(waveform, sample_rate, output_file.replace('.jpg', '_waveform.jpg'))
+
+
+def plot_waveform_basic(waveform, samplerate, output_path=None,  theme='dark'):
+    data = waveform
+    if len(data.shape) > 1:
+        data = np.mean(data, axis=1)
+    try:
+
+        themes = {
+            'dark': {'bg': '#0f0f0f', 'wave': '#00ff88', 'fill': '#00ff8833'},
+            'light': {'bg': 'white', 'wave': '#2563eb', 'fill': '#3b82f633'},
+            'purple': {'bg': '#1a1a2e', 'wave': '#e94560', 'fill': '#e9456033'}
+        }
+
+        colors = themes.get(theme, themes['dark'])
+
+        fig, ax = plt.subplots(figsize=(12, 3), facecolor=colors['bg'])
+
+        time = np.linspace(0, len(data) / samplerate, len(data))
+
+        ax.plot(time, data, color=colors['wave'], alpha=0.9, linewidth=0.8)
+        ax.fill_between(time, data, alpha=0.3, color=colors['fill'])
+
+        ax.set_facecolor(colors['bg'])
+        if theme == 'dark' or theme == 'purple':
+            ax.tick_params(colors='white', labelsize=8)
+            ax.set_xlabel('Time (seconds)', color='white', fontsize=10)
+            ax.set_ylabel('Amplitude', color='white', fontsize=10)
+        else:
+            ax.tick_params(colors='black', labelsize=8)
+
+        ax.grid(True, alpha=0.2, color='gray')
+        ax.set_xlim(0, time[-1])
+
+        plt.tight_layout()
+
+        if output_path:
+            plt.savefig(output_path, dpi=200, bbox_inches='tight',
+                        facecolor=colors['bg'], edgecolor='none')
+
+    finally:
+        plt.close()
