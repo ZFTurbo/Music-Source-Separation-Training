@@ -14,9 +14,10 @@ from tqdm.auto import tqdm
 from ml_collections import ConfigDict
 from typing import Tuple, Dict, List, Union, Any, Optional
 import torch.distributed as dist
-
+from pathlib import Path
 from utils.settings import get_model_from_config, logging, write_results_in_file, parse_args_valid
-from utils.audio_utils import draw_spectrogram, normalize_audio, denormalize_audio, read_audio_transposed
+from utils.audio_utils import normalize_audio, denormalize_audio, read_audio_transposed, \
+    draw_2_mel_spectrogram
 from utils.model_utils import demix, prefer_target_instrument, apply_tta, load_start_checkpoint
 from utils.metrics import get_metrics
 
@@ -69,11 +70,20 @@ def get_mixture_paths(
 
     # --- collect mixture files ---
     all_mixtures_path: List[str] = []
-    ext = extension.lstrip(".")
-    pattern = os.path.join("*", f"mixture.{ext}")   # matches "<dir>/*/mixture.ext"
+
+    def find_mixture_files(root_dir):
+        from pathlib import Path
+        root_path = Path(root_dir)
+        wav_files = list(root_path.rglob("mixture.wav"))
+        flac_files = list(root_path.rglob("mixture.flac"))
+        if not(extension in ['wav', 'flac']):
+            ext_file = list(root_path.rglob(f"mixture.{extension}"))
+        else:
+            ext_file = []
+        return wav_files + flac_files + ext_file
 
     for root in valid_paths:
-        part = sorted(glob.glob(os.path.join(root, pattern)))
+        part = find_mixture_files(root)
         if not part and verbose and should_print:
             print(f"No validation data found in: {root}")
         all_mixtures_path.extend(part)
@@ -242,12 +252,28 @@ def process_audio_files(
     if is_tqdm and should_print:
         mixture_paths = tqdm(mixture_paths)
 
+
+    def get_instruments(path: str) -> dict[str, str]:
+        """Detect available instrument files and their extensions."""
+        real_instruments: dict[str, str] = {}
+
+        for instr in instruments:
+            # Check supported extensions for each instrument
+            for ext in [extension, "flac", "wav"]:
+                file_path = Path(path) / f"{instr}.{ext}"
+                if file_path.exists():
+                    real_instruments[instr] = ext
+                    break
+
+        return real_instruments
+
+
     for path in mixture_paths:
         start_time = time.time()
         mix, sr = read_audio_transposed(path)
         mix_orig = mix.copy()
         folder = os.path.dirname(path)
-
+        real_instruments = get_instruments(folder)
         # resample input to config SR if needed
         if 'audio' in config and 'sample_rate' in config.audio:
             target_sr = config.audio['sample_rate']
@@ -273,7 +299,7 @@ def process_audio_files(
 
         pbar_dict = {}
 
-        for instr in instruments:
+        for instr, extension in real_instruments.items():
             if verbose and should_print:
                 print(f"Instr: {instr}")
 
@@ -314,16 +340,17 @@ def process_audio_files(
 
                 draw_spec = getattr(args, 'draw_spectro', 0)
                 if draw_spec and draw_spec > 0:
-                    draw_spectrogram(estimates.T, sr, draw_spec, f"{base}.jpg")
-                    draw_spectrogram(track.T,     sr, draw_spec, f"{base}_orig.jpg")
+                    draw_2_mel_spectrogram(estimates.T, track.T, sr, draw_spec, base)
 
             # --- metrics ---
+            k = config.training.get("k_sdr", 10)
             track_metrics = get_metrics(
                 args.metrics,
                 track,
                 estimates,
                 mix_orig,
                 device=device,
+                k=k
             )
 
             # --- update metrics + progress ---
@@ -395,7 +422,7 @@ def compute_metric_avg(
     if verbose_logging:
         logs.append(str(args))
 
-    logging(logs, text=f"Num overlap: {config.inference.num_overlap}", verbose_logging=verbose_logging)
+    logs = logging(logs, text=f"Num overlap: {config.inference.num_overlap}", verbose_logging=verbose_logging)
 
     metric_sum: Dict[str, float] = {}
 
@@ -417,7 +444,7 @@ def compute_metric_avg(
                 mean_val = float(arr.mean())
                 std_val = float(arr.std())
 
-            logging(
+            logs = logging(
                 logs,
                 text=f"Instr {instr} {metric_name}: {mean_val:.4f} (Std: {std_val:.4f})",
                 verbose_logging=verbose_logging
@@ -432,11 +459,11 @@ def compute_metric_avg(
 
     if len(instruments) > 1:
         for metric_name, avg in metric_avg.items():
-            logging(logs, text=f"Metric avg {metric_name:11s}: {avg:.4f}", verbose_logging=verbose_logging)
+            logs = logging(logs, text=f"Metric avg {metric_name:11s}: {avg:.4f}", verbose_logging=verbose_logging)
 
-    logging(logs, text=f"Elapsed time: {time.time() - start_time:.2f} sec", verbose_logging=verbose_logging)
+    logs = logging(logs, text=f"Elapsed time: {time.time() - start_time:.2f} sec", verbose_logging=verbose_logging)
 
-    if store_dir and should_print:
+    if store_dir:
         write_results_in_file(store_dir, logs)
 
     return metric_avg
