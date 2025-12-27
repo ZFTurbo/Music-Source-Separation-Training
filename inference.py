@@ -26,7 +26,13 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-def run_folder(model, args, config, device, verbose: bool = False):
+def run_folder(
+    model: "torch.nn.Module",
+    args: "argparse.Namespace",
+    config: dict,
+    device: "torch.device",
+    verbose: bool = False
+) -> None:
     """
     Process a folder of audio files for source separation.
 
@@ -34,9 +40,9 @@ def run_folder(model, args, config, device, verbose: bool = False):
     ----------
     model : torch.nn.Module
         Pre-trained model for source separation.
-    args : Namespace
+    args : argparse.Namespace
         Arguments containing input folder, output folder, and processing options.
-    config : Dict
+    config : dict
         Configuration object with audio and inference settings.
     device : torch.device
         Device for model inference (CPU or CUDA).
@@ -47,82 +53,123 @@ def run_folder(model, args, config, device, verbose: bool = False):
     start_time = time.time()
     model.eval()
 
-    mixture_paths = sorted(glob.glob(os.path.join(args.input_folder, '*.*')))
-    sample_rate = getattr(config.audio, 'sample_rate', 44100)
+    # Recursively collect all files from input directory
+    mixture_paths = sorted(
+        glob.glob(os.path.join(args.input_folder, "**/*.*"), recursive=True)
+    )
+    mixture_paths = [p for p in mixture_paths if os.path.isfile(p)]
+
+    sample_rate: int = getattr(config.audio, "sample_rate", 44100)
 
     print(f"Total files found: {len(mixture_paths)}. Using sample rate: {sample_rate}")
 
-    instruments = prefer_target_instrument(config)[:]
+    instruments: list[str] = prefer_target_instrument(config)[:]
     os.makedirs(args.store_dir, exist_ok=True)
 
+    # Wrap paths with progress bar if not in verbose mode
     if not verbose:
         mixture_paths = tqdm(mixture_paths, desc="Total progress")
 
+    # Determine whether to use detailed progress bar
     if args.disable_detailed_pbar:
         detailed_pbar = False
     else:
         detailed_pbar = True
 
     for path in mixture_paths:
-        print(f"Processing track: {path}")
+        # Get relative path from input folder
+        relative_path: str = os.path.relpath(path, args.input_folder)
+        # Extract directory and file name
+        dir_name: str = os.path.dirname(relative_path)
+        file_name: str = os.path.splitext(os.path.basename(path))[0]
+
         try:
             mix, sr = librosa.load(path, sr=sample_rate, mono=False)
         except Exception as e:
-            print(f'Cannot read track: {format(path)}')
-            print(f'Error message: {str(e)}')
+            print(f"Cannot read track: {format(path)}")
+            print(f"Error message: {str(e)}")
             continue
 
-        # If mono audio we must adjust it depending on model
+        # Convert mono audio to expected channel format if needed
         if len(mix.shape) == 1:
             mix = np.expand_dims(mix, axis=0)
-            if 'num_channels' in config.audio:
-                if config.audio['num_channels'] == 2:
-                    print(f'Convert mono track to stereo...')
+            if "num_channels" in config.audio:
+                if config.audio["num_channels"] == 2:
+                    print("Convert mono track to stereo...")
                     mix = np.concatenate([mix, mix], axis=0)
 
         mix_orig = mix.copy()
-        if 'normalize' in config.inference:
-            if config.inference['normalize'] is True:
+
+        # Normalize input audio if enabled
+        if "normalize" in config.inference:
+            if config.inference["normalize"] is True:
                 mix, norm_params = normalize_audio(mix)
 
-        waveforms_orig = demix(config, model, mix, device, model_type=args.model_type, pbar=detailed_pbar)
+        # Perform source separation
+        waveforms_orig = demix(
+            config,
+            model,
+            mix,
+            device,
+            model_type=args.model_type,
+            pbar=detailed_pbar
+        )
 
+        # Apply test-time augmentation if enabled
         if args.use_tta:
-            waveforms_orig = apply_tta(config, model, mix, waveforms_orig, device, args.model_type)
+            waveforms_orig = apply_tta(
+                config,
+                model,
+                mix,
+                waveforms_orig,
+                device,
+                args.model_type
+            )
 
+        # Extract instrumental track if requested
         if args.extract_instrumental:
-            instr = 'vocals' if 'vocals' in instruments else instruments[0]
-            waveforms_orig['instrumental'] = mix_orig - waveforms_orig[instr]
-            if 'instrumental' not in instruments:
-                instruments.append('instrumental')
-
-        file_name = os.path.splitext(os.path.basename(path))[0]
+            instr = "vocals" if "vocals" in instruments else instruments[0]
+            waveforms_orig["instrumental"] = mix_orig - waveforms_orig[instr]
+            if "instrumental" not in instruments:
+                instruments.append("instrumental")
 
         for instr in instruments:
             estimates = waveforms_orig[instr]
-            if 'normalize' in config.inference:
-                if config.inference['normalize'] is True:
+
+            # Denormalize output audio if normalization was applied
+            if "normalize" in config.inference:
+                if config.inference["normalize"] is True:
                     estimates = denormalize_audio(estimates, norm_params)
 
-            codec = 'flac' if getattr(args, 'flac_file', False) else 'wav'
+            peak: float = float(np.abs(estimates).max())
+            if peak <= 1.0:
+                codec = "flac"
+            else:
+                codec = "wav"
+
             subtype = args.pcm_type
 
+            # Generate output directory structure using relative paths
             dirnames, fname = format_filename(
                 args.filename_template,
                 instr=instr,
                 start_time=int(start_time),
                 file_name=file_name,
-                dir_name=os.path.dirname(path),
+                dir_name=dir_name,
                 model_type=args.model_type,
-                model=os.path.splitext(os.path.basename(args.start_check_point))[0]
+                model=os.path.splitext(
+                    os.path.basename(args.start_check_point)
+                )[0],
             )
 
-            output_dir = os.path.join(args.store_dir, *dirnames)
+            # Create output directory
+            output_dir: str = os.path.join(args.store_dir, *dirnames)
             os.makedirs(output_dir, exist_ok=True)
 
-            output_path = os.path.join(output_dir, f"{fname}.{codec}")
+            output_path: str = os.path.join(output_dir, f"{fname}.{codec}")
             sf.write(output_path, estimates.T, sr, subtype=subtype)
-            print("Wrote file:", output_path)
+
+            # Draw and save spectrogram if enabled
             if args.draw_spectro > 0:
                 output_img_path = os.path.join(output_dir, f"{fname}.jpg")
                 draw_spectrogram(estimates.T, sr, args.draw_spectro, output_img_path)
