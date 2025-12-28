@@ -1,4 +1,3 @@
-import math
 import numpy as np
 import torch
 import librosa
@@ -31,33 +30,7 @@ def sdr(references: np.ndarray, estimates: np.ndarray) -> float:
     den = np.sum(np.square(references - estimates), axis=(1, 2))
     num += eps
     den += eps
-    sdr = 10 * np.log10(num / den)
-    return sdr
-
-
-def k_sdr(sdr: float, K: float = 10.0) -> float:
-    """
-    Apply a bounded logarithmic normalization to an SDR value.
-
-    The input SDR value is first clipped to the range [-K + epsilon, K]
-    to avoid numerical instability, then mapped to a normalized scale
-    using a logarithmic transformation.
-
-    Args:
-        sdr (float): Signal-to-Distortion Ratio value in decibels (dB).
-        K (float, optional): Clipping and scaling constant.
-            Default is 10.0.
-
-    Returns:
-        float: Normalized K-SDR score.
-    """
-    # Clip SDR value to avoid division by zero and extreme values
-    sdr = max(min(sdr, K), -K + 1e-6)
-
-    # Apply logarithmic normalization
-    return 100.0 * math.log1p(sdr + K) / math.log1p(2 * K)
-
-
+    return 10 * np.log10(num / den)
 
 
 def si_sdr(reference: np.ndarray, estimate: np.ndarray) -> float:
@@ -418,11 +391,10 @@ def get_metrics(
     estimate = estimate[..., :min_length]
     mix = mix[..., :min_length]
 
-    if 'sdr' in metrics or 'k_sdr' in metrics:
+    if 'sdr' in metrics:
         references = np.expand_dims(reference, axis=0)
         estimates = np.expand_dims(estimate, axis=0)
         result['sdr'] = float(sdr(references, estimates))
-        result['k_sdr'] = k_sdr(result['sdr'], k)
 
     if 'si_sdr' in metrics:
         result['si_sdr'] = float(si_sdr(reference, estimate))
