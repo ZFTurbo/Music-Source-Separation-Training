@@ -47,6 +47,8 @@ def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argpar
                         help="Load all metrics from checkpoint (if available)")
     parser.add_argument("--load_all_losses", action='store_true',
                         help="Load all losses from checkpoint (if available)")
+    parser.add_argument("--safe_mode", action='store_true',
+                        help="Ignore forward errors")
     parser.add_argument("--results_path", type=str,
                         help="path to folder where results will be stored (weights, metadata)")
     parser.add_argument("--data_path", nargs="+", type=str, help="Dataset data paths. You can provide several folders.")

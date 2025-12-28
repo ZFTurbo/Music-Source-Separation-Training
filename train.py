@@ -382,6 +382,8 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
         torch.cuda.set_per_process_memory_fraction(1.0)
     torch.cuda.empty_cache()
 
+    safe_mode = args.safe_mode
+
     should_print = not dist.is_initialized() or dist.get_rank() == 0
 
     if should_print:
