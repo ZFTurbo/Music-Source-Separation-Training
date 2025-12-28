@@ -678,6 +678,7 @@ class MSSDataset(torch.utils.data.Dataset):
                             track_paths,
                             itertools.repeat(self.instruments),
                             itertools.repeat(self.file_types),
+                            itertools.repeat(self.dataset_type),
                         )
                     ]
 
