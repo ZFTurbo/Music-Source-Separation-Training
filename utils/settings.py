@@ -47,11 +47,13 @@ def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argpar
                         help="Load all metrics from checkpoint (if available)")
     parser.add_argument("--load_all_losses", action='store_true',
                         help="Load all losses from checkpoint (if available)")
+    parser.add_argument("--safe_mode", action='store_true',
+                        help="Ignore forward errors")
     parser.add_argument("--results_path", type=str,
                         help="path to folder where results will be stored (weights, metadata)")
     parser.add_argument("--data_path", nargs="+", type=str, help="Dataset data paths. You can provide several folders.")
     parser.add_argument("--dataset_type", type=int, default=1,
-                        help="Dataset type. Must be one of: 1, 2, 3 or 4. Details here: https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/dataset_types.md")
+                        help="Dataset type. Must be one of: 1, 2, 3, 4, 5, 6, 7. Details here: https://github.com/ZFTurbo/Music-Source-Separation-Training/blob/main/docs/dataset_types.md")
     parser.add_argument("--valid_path", nargs="+", type=str,
                         help="validation data paths. You can provide several folders.")
     parser.add_argument("--num_workers", type=int, default=0, help="dataloader num_workers")
@@ -73,10 +75,10 @@ def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argpar
     parser.add_argument("--wandb_offline", action='store_true', help='local wandb')
     parser.add_argument("--pre_valid", action='store_true', help='Run validation before training')
     parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"],
-                        choices=['sdr', 'l1_freq', 'si_sdr', 'log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
+                        choices=['k_sdr', 'sdr', 'l1_freq', 'si_sdr', 'log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
                                  'fullness'], help='List of metrics to use.')
     parser.add_argument("--metric_for_scheduler", default="sdr",
-                        choices=['sdr', 'l1_freq', 'si_sdr', 'log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
+                        choices=['k_sdr','sdr', 'l1_freq', 'si_sdr', 'log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
                                  'fullness'], help='Metric which will be used for scheduler.')
     parser.add_argument("--train_lora_peft", action='store_true', help="Training with LoRA from peft")
     parser.add_argument("--train_lora_loralib", action='store_true', help="Training with LoRA from loralib")
@@ -155,7 +157,7 @@ def parse_args_valid(dict_args: Union[Dict, None]) -> argparse.Namespace:
                         help="Flag adds test time augmentation during inference (polarity and channel inverse)."
                              "While this triples the runtime, it reduces noise and slightly improves prediction quality.")
     parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"],
-                        choices=['sdr', 'l1_freq', 'si_sdr', 'neg_log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
+                        choices=['k_sdr', 'sdr', 'l1_freq', 'si_sdr', 'neg_log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
                                  'fullness'], help='List of metrics to use.')
     parser.add_argument("--lora_checkpoint_peft", type=str, default='', help="Initial checkpoint to LoRA weights")
     parser.add_argument("--lora_checkpoint_loralib", type=str, default='', help="Initial checkpoint to LoRA weights")
@@ -399,7 +401,7 @@ def get_scheduler(config, optimizer):
     return scheduler
 
 
-def logging(logs: List[str], text: str, verbose_logging: bool = False) -> None:
+def logging(logs: List[str], text: str, verbose_logging: bool = False) -> Union[List[str], None]:
     """
     Print a log message and optionally append it to an in-memory list.
 
@@ -416,13 +418,13 @@ def logging(logs: List[str], text: str, verbose_logging: bool = False) -> None:
             Defaults to False.
 
     Returns:
-        None: The function prints and may mutate `logs` in place.
+        List[str]: The function prints and may mutate `logs` in place.
     """
     if not dist.is_initialized() or dist.get_rank() == 0:
         print(text)
         if verbose_logging:
             logs.append(text)
-
+    return logs
 
 def write_results_in_file(store_dir: str, logs: List[str]) -> None:
     """

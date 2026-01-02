@@ -13,7 +13,6 @@ from torch.optim import Adam, AdamW, SGD, RAdam, RMSprop
 from tqdm.auto import tqdm
 from typing import Dict, List, Tuple, Any, Union, Optional
 import loralib as lora
-from .muon import Muon as Muon, AdaGO as AdaGO
 import torch.distributed as dist
 
 def demix(
@@ -253,6 +252,7 @@ def get_optimizer(config: ConfigDict, model: torch.nn.Module) -> torch.optim.Opt
         import bitsandbytes as bnb
         optimizer = bnb.optim.AdamW8bit(model.parameters(), lr=config.training.lr, **optim_params)
     elif name_optimizer == 'muon':
+        from .muon import Muon as Muon
         if should_print:
             print("Using Muon optimizer with AdamW-like branch for non-muon params.")
         muon_params = [p for p in model.parameters() if p.ndim >= 2]
@@ -278,6 +278,7 @@ def get_optimizer(config: ConfigDict, model: torch.nn.Module) -> torch.optim.Opt
         ]
         optimizer = Muon(param_groups)
     elif name_optimizer == 'adago':
+        from .muon import AdaGO as AdaGO
         if should_print:
             print("Using AdaGO optimizer with AdamW-like branch for non-muon params.")
         muon_params = [p for p in model.parameters() if p.ndim >= 2]

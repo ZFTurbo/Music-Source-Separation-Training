@@ -10,7 +10,9 @@ import soundfile as sf
 import pickle
 import itertools
 import multiprocessing
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import itertools
+from tqdm import tqdm
 from typing import Union
 from ml_collections import ConfigDict
 from omegaconf import OmegaConf
@@ -115,9 +117,8 @@ def load_chunk(path, length, chunk_size, offset=None):
 
 
 def get_track_set_length(params):
-    should_print = not dist.is_initialized() or dist.get_rank() == 0
-
-    path, instruments, file_types = params
+    path, instruments, file_types, dataset_type = params
+    should_print = (not dist.is_initialized() or dist.get_rank() == 0) and dataset_type != 7
     # Check lengths of all instruments (it can be different in some cases)
     lengths_arr = []
     for instr in instruments:
@@ -133,11 +134,7 @@ def get_track_set_length(params):
         lengths_arr.append(length)
     lengths_arr = np.array(lengths_arr)
     if lengths_arr.min() != lengths_arr.max() and should_print:
-        print('Warning: lengths of stems are different for path: {}. ({} != {})'.format(
-            path,
-            lengths_arr.min(),
-            lengths_arr.max())
-        )
+        print(f'Warning: lengths of stems are different for path: {path}. ({lengths_arr.min()} != {lengths_arr.max()})')
     # We use minimum to allow overflow for soundfile read in non-equal length cases
     return path, lengths_arr.min()
 
@@ -205,7 +202,7 @@ class MSSDataset(torch.utils.data.Dataset):
 
         metadata = self.get_metadata()
 
-        if self.dataset_type in [1, 4, 5]:
+        if self.dataset_type in [1, 4, 5, 6, 7]:
             if len(metadata) > 0:
                 if self.verbose and should_print:
                     print('Found tracks in dataset: {}'.format(len(metadata)))
@@ -222,9 +219,10 @@ class MSSDataset(torch.utils.data.Dataset):
         self.min_mean_abs = config.audio.min_mean_abs
         self.do_chunks = config.training.get('precompute_chunks', False) and float(self.min_mean_abs) > 0
         # For dataset_type 5 - precompute all chunks
-        if self.dataset_type == 5 or self.dataset_type == 4 and self.do_chunks:
+        if self.dataset_type == 5 or (self.dataset_type == 4 or self.dataset_type == 6) and self.do_chunks:
              self._initialize_chunks_metadata()
-
+        if self.dataset_type == 7:
+            self._build_class_to_tracks()
     def __len__(self):
         if self.dataset_type == 5:
             return len(self.chunks_metadata)
@@ -232,17 +230,22 @@ class MSSDataset(torch.utils.data.Dataset):
 
 
     def __getitem__(self, index):
-        if self.dataset_type == 5:
+        if self.dataset_type == 7:
+            res, mix, active_stem_ids = self.load_class_balanced_aligned()
+        elif self.dataset_type == 5:
             track_path, offset = self.chunks_metadata[index]
             res = self._load_chunk_by_offset(track_path, offset)
         elif self.dataset_type in [1, 2, 3]:
             res = self.load_random_mix()
-        else:  # type 4
+        else:  # type 4 or 6
             if self.do_chunks:
                 track_path, offset = self.chunks_metadata[np.random.randint(len(self.chunks_metadata))]
                 res = self._load_chunk_by_offset(track_path, offset)
             else:
-                res = self.load_aligned_data()
+                if self.dataset_type == 6:
+                    res, mix = self.load_aligned_data()
+                else:
+                    res, _ = self.load_aligned_data()
 
         # Randomly change loudness of each stem
         if self.aug:
@@ -255,8 +258,8 @@ class MSSDataset(torch.utils.data.Dataset):
                     )
                     loud_values = torch.tensor(loud_values, dtype=torch.float32)
                     res *= loud_values[:, None, None]
-
-        mix = res.sum(0)
+        if self.dataset_type != 6 and self.dataset_type!=7:
+            mix = res.sum(0)
 
         if self.aug:
             if 'mp3_compression_on_mixture' in self.config['augmentations']:
@@ -279,7 +282,141 @@ class MSSDataset(torch.utils.data.Dataset):
             index = self.config.training.instruments.index(self.config.training.target_instrument)
             return res[index:index+1], mix
 
+        if self.dataset_type==7:
+            return res, mix, active_stem_ids
+
         return res, mix
+
+    def _build_class_to_tracks(self):
+        should_print = (not dist.is_initialized() or dist.get_rank() == 0)
+
+        total_tracks = len(self.metadata)
+        max_ratio = self.config.training.get('max_class_presence_ratio', 0.4)
+        max_tracks = int(total_tracks * max_ratio)
+
+        class_to_tracks = {instr: [] for instr in self.instruments}
+
+        for track_path, _ in self.metadata:
+            for instr in self.instruments:
+                for ext in self.file_types:
+                    path = f"{track_path}/{instr}.{ext}"
+                    if os.path.isfile(path):
+                        class_to_tracks[instr].append(track_path)
+                        break
+
+        filtered_class_to_tracks = {}
+
+        for instr, tracks in class_to_tracks.items():
+            count = len(tracks)
+            ratio = count / total_tracks
+
+            if count == 0:
+                continue  # stem нигде не встречается
+
+            if ratio > max_ratio:
+                if should_print:
+                    print(
+                        f"[dataset_type=7] Skip frequent stem '{instr}': "
+                        f"{count}/{total_tracks} ({ratio:.1%})"
+                    )
+                continue
+
+            filtered_class_to_tracks[instr] = tracks
+
+        if len(filtered_class_to_tracks) == 0:
+            raise RuntimeError(
+                "dataset_type 7: all classes were filtered out by frequency threshold"
+            )
+
+        self.class_to_tracks = filtered_class_to_tracks
+        self.available_classes = list(filtered_class_to_tracks.keys())
+
+        if should_print:
+            print(
+                f"[dataset_type=7] Using {len(self.available_classes)} balanced classes "
+                f"out of {len(self.instruments)} instruments"
+            )
+
+    def load_class_balanced_aligned(self):
+        """
+        1) Randomly choose instrument (class)
+        2) Randomly choose track containing this instrument
+        3) Load aligned chunk from this track
+        """
+        should_print = (not dist.is_initialized() or dist.get_rank() == 0)
+
+        instr = random.choice(self.available_classes)
+        track_path = random.choice(self.class_to_tracks[instr])
+
+        # Find track length
+        track_length = None
+        for path, length in self.metadata:
+            if path == track_path:
+                track_length = length
+                break
+
+        if track_length is None:
+            raise RuntimeError(f"Track length not found: {track_path}")
+
+        if track_length >= self.chunk_size:
+            offset = np.random.randint(track_length - self.chunk_size + 1)
+        else:
+            offset = None
+
+        mix = None
+        for extension in self.file_types:
+            path_to_mix_file = f"{track_path}/mixture.{extension}"
+            if os.path.isfile(path_to_mix_file):
+                try:
+                    mix = load_chunk(
+                        path_to_mix_file,
+                        track_length,
+                        self.chunk_size,
+                        offset=offset
+                    )
+                    break
+                except Exception as e:
+                    print(e)
+        res = []
+        active_stem_ids = []
+
+        for idx, instr in enumerate(self.instruments):
+            found = False
+            for extension in self.file_types:
+                path_to_audio_file = f"{track_path}/{instr}.{extension}"
+                if os.path.isfile(path_to_audio_file):
+                    try:
+                        source = load_chunk(
+                            path_to_audio_file,
+                            track_length,
+                            self.chunk_size,
+                            offset=offset
+                        )
+                        active_stem_ids.append(idx)
+                        found = True
+                        break
+                    except Exception as e:
+                        print(e)
+
+            if not found:
+                source = np.zeros((2, self.chunk_size), dtype=np.float32)
+
+            res.append(source)
+
+        res = np.stack(res, axis=0)
+
+        if mix is None:
+            mix = np.sum(res, axis=0)
+
+        if self.aug:
+            for i, instr in enumerate(self.instruments):
+                res[i] = self.augm_data(res[i], instr)
+
+        return (
+            torch.tensor(res, dtype=torch.float32),
+            torch.tensor(mix, dtype=torch.float32),
+            active_stem_ids
+        )
 
 
     def _initialize_chunks_metadata(self):
@@ -325,7 +462,7 @@ class MSSDataset(torch.utils.data.Dataset):
 
     def _precompute_and_cache_chunks(self, cache_path, config):
         """Precompute all chunks and save to cache with config"""
-        if self.dataset_type == 4:
+        if self.dataset_type == 4 or self.dataset_type == 6:
             chunks_metadata = self._precompute_random_chunks()
         elif self.dataset_type == 5:
             chunks_metadata = self._precompute_chunks()
@@ -499,7 +636,7 @@ class MSSDataset(torch.utils.data.Dataset):
 
 
     def get_metadata(self):
-        read_metadata_procs = multiprocessing.cpu_count()
+        read_metadata_procs = multiprocessing.cpu_count() - 2
         should_print = not dist.is_initialized() or dist.get_rank() == 0
         if 'read_metadata_procs' in self.config['training']:
             read_metadata_procs = int(self.config['training']['read_metadata_procs'])
@@ -511,7 +648,7 @@ class MSSDataset(torch.utils.data.Dataset):
                 '\nCollecting metadata for', str(self.data_path),
             )
 
-        if self.dataset_type in [1, 4, 5]:  # Added type 5
+        if self.dataset_type in [1, 4, 5, 6, 7]:  # Added type 7
             track_paths = []
             if type(self.data_path) == list:
                 for tp in self.data_path:
@@ -528,20 +665,30 @@ class MSSDataset(torch.utils.data.Dataset):
             if read_metadata_procs <= 1:
                 pbar = tqdm(track_paths) if should_print else track_paths
                 for path in pbar:
-                    track_path, track_length = get_track_set_length((path, self.instruments, self.file_types))
+                    track_path, track_length = get_track_set_length((path, self.instruments, self.file_types, self.dataset_type))
                     metadata.append((track_path, track_length))
             else:
-                p = multiprocessing.Pool(processes=read_metadata_procs)
-                if should_print:
-                    with tqdm(total=len(track_paths)) as pbar:
-                        track_iter = p.imap(
+                with ThreadPoolExecutor(max_workers=read_metadata_procs) as executor:
+                    futures = [
+                        executor.submit(
                             get_track_set_length,
-                            zip(track_paths, itertools.repeat(self.instruments), itertools.repeat(self.file_types))
+                            args
                         )
-                        for track_path, track_length in track_iter:
+                        for args in zip(
+                            track_paths,
+                            itertools.repeat(self.instruments),
+                            itertools.repeat(self.file_types),
+                            itertools.repeat(self.dataset_type),
+                        )
+                    ]
+
+                    if should_print:
+                        for f in tqdm(as_completed(futures), total=len(futures)):
+                            track_path, track_length = f.result()
                             metadata.append((track_path, track_length))
-                            pbar.update()
-                p.close()
+                    else:
+                        for f in as_completed(futures):
+                            metadata.append(f.result())
 
         elif self.dataset_type == 2:
             metadata = dict()
@@ -615,7 +762,7 @@ class MSSDataset(torch.utils.data.Dataset):
                     print('Missing tracks: {} from {}'.format(skipped, len(df)))
         else:
             if should_print:
-                print('Unknown dataset type: {}. Must be 1, 2, 3, 4 or 5'.format(self.dataset_type))
+                print('Unknown dataset type: {}. Must be 1, 2, 3, 4, 5 or 6'.format(self.dataset_type))
             exit()
 
         # Save metadata
@@ -626,7 +773,7 @@ class MSSDataset(torch.utils.data.Dataset):
     def load_source(self, metadata, instr):
         should_print = (not dist.is_initialized() or dist.get_rank() == 0)
         while True:
-            if self.dataset_type in [1, 4, 5]:
+            if self.dataset_type in [1, 4, 5, 6, 7]:
                 track_path, track_length = random.choice(metadata)
                 for extension in self.file_types:
                     path_to_audio_file = track_path + '/{}.{}'.format(instr, extension)
@@ -735,20 +882,42 @@ class MSSDataset(torch.utils.data.Dataset):
             res = []
             silent_chunks = 0
             for i in self.instruments:
+                found = False
                 for extension in self.file_types:
-                    path_to_audio_file = track_path + '/{}.{}'.format(i, extension)
+                    path_to_audio_file = f"{track_path}/{i}.{extension}"
                     if os.path.isfile(path_to_audio_file):
+                        found = True
                         try:
-                            source = load_chunk(path_to_audio_file, track_length, self.chunk_size, offset=common_offset)
+                            source = load_chunk(
+                                path_to_audio_file,
+                                track_length,
+                                self.chunk_size,
+                                offset=common_offset
+                            )
                         except Exception as e:
-                            # Sometimes error during FLAC reading, catch it and use zero stem
                             if should_print:
-                                print('Error: {} Path: {}'.format(e, path_to_audio_file))
+                                print(f"Error: {e} Path: {path_to_audio_file}")
                             source = np.zeros((2, self.chunk_size), dtype=np.float32)
                         break
+
+                if not found:
+                    source = np.zeros((2, self.chunk_size), dtype=np.float32)
+
                 res.append(source)
                 if np.abs(source).mean() < self.min_mean_abs:  # remove quiet chunks
                     silent_chunks += 1
+
+            mix = None
+            for extension in self.file_types:
+                path_to_mix_file = track_path + '/mixture.{}'.format(extension)
+                if os.path.isfile(path_to_mix_file):
+                    try:
+                        mix = load_chunk(path_to_mix_file, track_length, self.chunk_size, offset=common_offset)
+                    except Exception as e:
+                        if should_print:
+                            print('Error loading mix: {} Path: {}'.format(e, path_to_mix_file))
+                    break
+
             if silent_chunks == 0:
                 break
 
@@ -756,21 +925,20 @@ class MSSDataset(torch.utils.data.Dataset):
             if attempts <= 0 and should_print:
                 print('Attempts max!', track_path)
             if common_offset is None:
-                # If track is too small break immediately
                 break
 
         try:
             res = np.stack(res, axis=0)
         except Exception as e:
-            # Normally it should never happen, but if happen will let you find a problematic track
             print('Error during stacking stems: {} Track Length: {} Track path: {}'.format(str(e), track_length,
                                                                                            track_path))
             res = np.zeros((len(self.instruments), 2, self.chunk_size), dtype=np.float32)
-
+        if mix is None:
+            mix = res.sum(0)
         if self.aug:
             for i, instr in enumerate(self.instruments):
                 res[i] = self.augm_data(res[i], instr)
-        return torch.tensor(res, dtype=torch.float32)
+        return torch.tensor(res, dtype=torch.float32), torch.tensor(mix, dtype=torch.float32)
 
 
     def augm_data(self, source, instr):

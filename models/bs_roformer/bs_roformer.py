@@ -489,6 +489,7 @@ class BSRoformer(Module):
             self,
             raw_audio,
             target=None,
+            active_stem_ids=None,
             return_loss_breakdown=False
     ):
         """
@@ -504,15 +505,16 @@ class BSRoformer(Module):
         """
 
         device = raw_audio.device
-
-        # defining whether model is loaded on MPS (MacOS GPU accelerator)
         x_is_mps = True if device.type == "mps" else False
 
         if raw_audio.ndim == 2:
             raw_audio = rearrange(raw_audio, 'b t -> b 1 t')
 
         channels = raw_audio.shape[1]
-        assert (not self.stereo and channels == 1) or (self.stereo and channels == 2), 'stereo needs to be set to True if passing in audio signal that is stereo (channel dimension of 2). also need to be False if mono (channel dimension of 1)'
+        assert (not self.stereo and channels == 1) or (
+                    self.stereo and channels == 2),\
+            ('stereo needs to be set to True if passing in audio signal that is stereo (channel dimension of 2).'
+             ' also need to be False if mono (channel dimension of 1)')
 
         # to stft
 
@@ -520,14 +522,20 @@ class BSRoformer(Module):
 
         stft_window = self.stft_window_fn(device=device)
 
-        # RuntimeError: FFT operations are only supported on MacOS 14+
-        # Since it's tedious to define whether we're on correct MacOS version - simple try-catch is used
         try:
-            stft_repr = torch.stft(raw_audio, **self.stft_kwargs, window=stft_window, return_complex=True)
+            stft_repr = torch.stft(
+                raw_audio,
+                **self.stft_kwargs,
+                window=stft_window,
+                return_complex=True
+            )
         except:
-            stft_repr = torch.stft(raw_audio.cpu() if x_is_mps else raw_audio, **self.stft_kwargs,
-                                   window=stft_window.cpu() if x_is_mps else stft_window, return_complex=True).to(
-                device)
+            stft_repr = torch.stft(
+                raw_audio.cpu() if x_is_mps else raw_audio,
+                **self.stft_kwargs,
+                window=stft_window.cpu() if x_is_mps else stft_window,
+                return_complex=True
+            ).to(device)
         stft_repr = torch.view_as_real(stft_repr)
 
         stft_repr = unpack_one(stft_repr, batch_audio_channel_packed_shape, '* f t c')
@@ -588,12 +596,19 @@ class BSRoformer(Module):
 
         x = self.final_norm(x)
 
-        num_stems = len(self.mask_estimators)
+        if active_stem_ids is None:
+            heads = self.mask_estimators
+            stem_ids = list(range(len(self.mask_estimators)))
+        else:
+            heads = [self.mask_estimators[i] for i in active_stem_ids]
+            stem_ids = active_stem_ids
+
+        num_stems = len(heads)
 
         if self.use_torch_checkpoint:
-            mask = torch.stack([checkpoint(fn, x, use_reentrant=False) for fn in self.mask_estimators], dim=1)
+            mask = torch.stack([checkpoint(fn, x, use_reentrant=False) for fn in heads], dim=1)
         else:
-            mask = torch.stack([fn(x) for fn in self.mask_estimators], dim=1)
+            mask = torch.stack([fn(x) for fn in heads], dim=1)
         mask = rearrange(mask, 'b n t (f c) -> b n f t c', c=2)
 
         # modulate frequency representation
@@ -615,31 +630,34 @@ class BSRoformer(Module):
             # whether to dc filter
             stft_repr = stft_repr.index_fill(1, tensor(0, device = device), 0.)
 
-        # same as torch.stft() fix for MacOS MPS above
         try:
             recon_audio = torch.istft(stft_repr, **self.stft_kwargs, window=stft_window, return_complex=False, length=raw_audio.shape[-1])
         except:
-            recon_audio = torch.istft(stft_repr.cpu() if x_is_mps else stft_repr, **self.stft_kwargs, window=stft_window.cpu() if x_is_mps else stft_window, return_complex=False, length=raw_audio.shape[-1]).to(device)
+            recon_audio = torch.istft(
+                stft_repr.cpu() if x_is_mps else stft_repr,
+                **self.stft_kwargs,
+                window=stft_window.cpu() if x_is_mps else stft_window,
+                return_complex=False,
+                length=raw_audio.shape[-1]
+            ).to(device)
 
-        recon_audio = rearrange(recon_audio, '(b n s) t -> b n s t', s=self.audio_channels, n=num_stems)
-
-        if num_stems == 1:
-            recon_audio = rearrange(recon_audio, 'b 1 s t -> b s t')
-
-        # if a target is passed in, calculate loss for learning
+        recon_audio = rearrange(
+            recon_audio,
+            '(b n s) t -> b n s t',
+            s=self.audio_channels,
+            n=num_stems
+        )
 
         if not exists(target):
             return recon_audio
-
-        if self.num_stems > 1:
-            assert target.ndim == 4 and target.shape[1] == self.num_stems
 
         if target.ndim == 2:
             target = rearrange(target, '... t -> ... 1 t')
 
         target = target[..., :recon_audio.shape[-1]]  # protect against lost length on istft
 
-        loss = F.l1_loss(recon_audio, target)
+        target_sel = target[:, stem_ids]
+        loss = F.l1_loss(recon_audio, target_sel)
 
         multi_stft_resolution_loss = 0.
 
@@ -652,8 +670,8 @@ class BSRoformer(Module):
                 **self.multi_stft_kwargs,
             )
 
-            recon_Y = torch.stft(rearrange(recon_audio, '... s t -> (... s) t'), **res_stft_kwargs)
-            target_Y = torch.stft(rearrange(target, '... s t -> (... s) t'), **res_stft_kwargs)
+            recon_Y = torch.stft(rearrange(recon_audio, 'b n s t -> (b n s) t'),**res_stft_kwargs)
+            target_Y = torch.stft(rearrange(target_sel, 'b n s t -> (b n s) t'),**res_stft_kwargs)
 
             multi_stft_resolution_loss = multi_stft_resolution_loss + F.l1_loss(recon_Y, target_Y)
 
