@@ -128,8 +128,9 @@ def get_track_set_length(params):
             if os.path.isfile(path_to_audio_file):
                 length = sf.info(path_to_audio_file).frames
                 break
-        if length == -1 and should_print:
-            print('Cant find file "{}" in folder {}'.format(instr, path))
+        if length == -1:
+            if should_print:
+                print('Cant find file "{}" in folder {}'.format(instr, path))
             continue
         lengths_arr.append(length)
     lengths_arr = np.array(lengths_arr)
@@ -287,16 +288,50 @@ class MSSDataset(torch.utils.data.Dataset):
 
         return res, mix
 
+
     def _build_class_to_tracks(self):
+        import json
         should_print = (not dist.is_initialized() or dist.get_rank() == 0)
+
+        cache_path = "class_to_tracks_cache.json"
 
         total_tracks = len(self.metadata)
         max_ratio = self.config.training.get('max_class_presence_ratio', 0.4)
-        max_tracks = int(total_tracks * max_ratio)
+
+        if os.path.isfile(cache_path):
+            if should_print:
+                print(f"[dataset_type=7] Loading class_to_tracks from cache")
+
+            with open(cache_path, "r", encoding="utf8") as f:
+                cache = json.load(f)
+
+            if (
+                    cache.get("total_tracks") == total_tracks and
+                    cache.get("max_ratio") == max_ratio
+            ):
+                self.class_to_tracks = cache["class_to_tracks"]
+                self.available_classes = list(self.class_to_tracks.keys())
+
+                if should_print:
+                    print(
+                        f"[dataset_type=7] Loaded {len(self.available_classes)} classes from cache"
+                    )
+                return
+            else:
+                if should_print:
+                    print("[dataset_type=7] Cache invalid, rebuilding")
 
         class_to_tracks = {instr: [] for instr in self.instruments}
 
-        for track_path, _ in self.metadata:
+        track_iter = self.metadata
+        if should_print:
+            track_iter = tqdm(
+                self.metadata,
+                desc="[dataset_type=7] Building class_to_tracks",
+                total=total_tracks
+            )
+
+        for track_path, _ in track_iter:
             for instr in self.instruments:
                 for ext in self.file_types:
                     path = f"{track_path}/{instr}.{ext}"
@@ -311,7 +346,7 @@ class MSSDataset(torch.utils.data.Dataset):
             ratio = count / total_tracks
 
             if count == 0:
-                continue  # stem нигде не встречается
+                continue
 
             if ratio > max_ratio:
                 if should_print:
@@ -330,6 +365,20 @@ class MSSDataset(torch.utils.data.Dataset):
 
         self.class_to_tracks = filtered_class_to_tracks
         self.available_classes = list(filtered_class_to_tracks.keys())
+
+        if should_print:
+            print(f"[dataset_type=7] Saving class_to_tracks cache")
+
+        with open(cache_path, "w", encoding="utf8") as f:
+            json.dump(
+                {
+                    "total_tracks": total_tracks,
+                    "max_ratio": max_ratio,
+                    "class_to_tracks": filtered_class_to_tracks,
+                },
+                f,
+                indent=2
+            )
 
         if should_print:
             print(
