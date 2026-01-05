@@ -142,7 +142,7 @@ def run_folder(
                     estimates = denormalize_audio(estimates, norm_params)
 
             peak: float = float(np.abs(estimates).max())
-            if peak <= 1.0:
+            if peak <= 1.0 and args.pcm_type != 'FLOAT':
                 codec = "flac"
             else:
                 codec = "wav"
