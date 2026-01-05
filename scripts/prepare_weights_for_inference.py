@@ -17,13 +17,12 @@ def clean_weights(args):
     torch.save(weights, args.output_file)
 
 
-def parse_args(dict_args):
-    parser = argparse.ArgumentParser(
-        description="Clean all except weights from checkpoint file. Optionally converts to float16.")
+if __name__ == "__main__":
+    dict_args = None
+    parser = argparse.ArgumentParser(description="Clean all except weights from checkpoint file. Optionally converts to float16.")
     parser.add_argument('--checkpoint', type=str, help="Input checkpoint to clean")
     parser.add_argument('--output_file', type=str, help="File to save cleaned checkpoint")
-    parser.add_argument('--float16', action='store_true',
-                        help="Convert weights to float16 instead of float32. Reduce weights size two times.")
+    parser.add_argument('--float16', action='store_true', help="Convert weights to float16 instead of float32. Reduce weights size two times.")
 
     if dict_args is not None:
         args = parser.parse_args([])
@@ -33,22 +32,5 @@ def parse_args(dict_args):
         print(args)
     else:
         args = parser.parse_args()
-    return args
 
-
-def main(dict_args):
-    args = parse_args(dict_args)
     clean_weights(args)
-
-
-if __name__ == "__main__":
-
-    name_stem = 'percussion'
-
-    dict_args = {
-        'checkpoint': rf'E:\trash\weights\{name_stem}\model_bs_roformer_ep_7_sdr_6.2084.ckpt',
-        'output_file': fr'checkpoints\model_bs_roformer_{name_stem}_sdr_6.2084.ckpt',
-        'float16': True,
-    }
-
-    main(dict_args)
