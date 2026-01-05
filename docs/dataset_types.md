@@ -1,24 +1,34 @@
-### Dataset types for training
+ Dataset types for training
 
-* **Type 1 (MUSDB)**: different folders. Each folder contains all needed stems in format _< stem name >.wav_. The same as in MUSDBHQ18 dataset. In latest code releases it's possible to use `flac` instead of `wav`. 
+### Type 1 (MUSDB)
+
+Different folders. Each folder contains all needed stems in format  
+`<stem_name>.wav` (or `flac` in latest releases).
+
+The structure is the same as in MUSDBHQ18.
 
 Example:
 ```
 --- Song 1:
------- vocals.wav  
------- bass.wav 
+------ vocals.wav
+------ bass.wav
 ------ drums.wav
 ------ other.wav
 --- Song 2:
------- vocals.wav  
------- bass.wav 
+------ vocals.wav
+------ bass.wav
 ------ drums.wav
 ------ other.wav
 --- Song 3:
 ...........
 ```
 
-* **Type 2 (Stems)**: each folder is "stem name". Folder contains wav files which consists only of required stem.
+### Type 2 (Stems)
+
+Each folder represents a single stem name.  
+The folder contains audio files consisting only of that stem.
+
+Example:
 ```
 --- vocals:
 ------ vocals_1.wav
@@ -35,9 +45,10 @@ Example:
 ...........
 ```
 
-* **Type 3 (CSV file)**:
+### Type 3 (CSV file)
 
-You can provide CSV-file (or list of CSV-files) with following structure:
+You can provide a CSV file (or a list of CSV files) with the following structure:
+
 ```
 instrum,path
 vocals,/path/to/dataset/vocals_1.wav
@@ -48,36 +59,75 @@ drums,/path/to/dataset/drums_good.wav
 ...
 ```
 
-* **Type 4 (MUSDB Aligned)**:
+### Type 4 (MUSDB Aligned)
 
-The same as Type 1, but during training all instruments will be from the same position of song. 
+The same structure as Type 1, but during training all instruments are loaded from the same position of the song.
 
-* **Type 5 (Precomputed Chunks)**:
+### Type 5 (Precomputed Chunks)
 
-The same structure as Type 1, but all tracks are pre-split into chunks with 50% overlap (each second appears in two chunks except edges). This ensures that during one epoch the model sees every part of every track exactly once. Recommended for small datasets or when you want deterministic epoch boundaries.
+The same structure as Type 1, but all tracks are pre-split into chunks with 50% overlap.
 
-Key features:
+### Type 6 (MUSDB Aligned + Explicit Mixture)
 
-* Structure: Same as Type 1 (folder per song with stem files)
+An extension of Type 4, designed for scenarios where the **mixture is treated as a separate signal**, rather than always being reconstructed as `sum(stems)`.
 
-* Chunking: Automatic splitting into chunks of config.audio.chunk_size
+Structure is the same as Type 1 / Type 4, but it is recommended that each song folder contains `mixture.wav`.
 
-* Overlap: 50% overlap between consecutive chunks
+Example:
+```
+--- Song 1:
+------ vocals.wav
+------ bass.wav
+------ drums.wav
+------ other.wav
+------ mixture.wav
+```
 
-* Epoch completeness: Each epoch covers 100% of available audio data
+Key properties:
+- All stems are loaded aligned from the same song position
+- `mixture.wav` is loaded explicitly if present
+- If `mixture.wav` is missing, mixture is computed as sum of stems
+- Supports precomputed random chunks (same logic as Type 4)
 
-* No random sampling: Deterministic access pattern
+Typical use cases:
+- Teacher–student or distillation training
+- Consistency losses
+- Training with real mixes not equal to sum of stems
 
-* Memory efficient: Chunks are computed on-the-fly, not stored in memory
 
-Usage recommendations:
+### Type 7 (Class-Balanced Aligned Dataset)
 
-* Use when you want reproducible training cycles
+A class-balanced aligned dataset designed to reduce class frequency bias and improve learning of rare instruments.
 
-* Good for small to medium datasets
+Structure is the same as Type 6:
+```
+--- Song 1:
+------ flute.wav
+------ violin.wav
+------ mixture.wav
+```
 
-* Ensures no data is missed during training
+How it works:
+1. A random instrument (class) is selected
+2. A random track containing this instrument is chosen
+3. An aligned chunk is loaded from that track
+4. The dataset returns which stems are actually present
 
+Class frequency filtering:
+- For each instrument, the ratio of tracks where it appears is computed
+- Instruments appearing in more than `max_class_presence_ratio`
+  (default: 0.4) of tracks are excluded
+- Prevents dominant classes (e.g. vocals) from overwhelming training
+
+Returned values:
+- Stems tensor
+- Mixture tensor (from `mixture.wav` if available, otherwise sum of stems)
+- `active_stem_ids`: indices of instruments present in the current sample
+
+Typical use cases:
+- Training on sparse multi-instrument datasets
+- Improving performance on rare instruments
+- Conditional or multi-head source separation models
 
 ### Dataset for validation
 
