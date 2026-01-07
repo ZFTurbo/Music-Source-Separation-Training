@@ -521,6 +521,7 @@ class MelBandRoformer(Module):
             self,
             raw_audio,
             target=None,
+            active_stem_ids=None,
             return_loss_breakdown=False
     ):
         """
@@ -622,11 +623,19 @@ class MelBandRoformer(Module):
             if self.skip_connection:
                 store[i] = x
 
-        num_stems = len(self.mask_estimators)
-        if self.use_torch_checkpoint:
-            masks = torch.stack([checkpoint(fn, x, use_reentrant=False) for fn in self.mask_estimators], dim=1)
+        if active_stem_ids is None:
+            heads = self.mask_estimators
+            stem_ids = list(range(len(self.mask_estimators)))
         else:
-            masks = torch.stack([fn(x) for fn in self.mask_estimators], dim=1)
+            heads = [self.mask_estimators[i] for i in active_stem_ids]
+            stem_ids = active_stem_ids
+
+        num_stems = len(heads)
+
+        if self.use_torch_checkpoint:
+            masks = torch.stack([checkpoint(fn, x, use_reentrant=False) for fn in heads], dim=1)
+        else:
+            masks = torch.stack([fn(x) for fn in heads], dim=1)
         masks = rearrange(masks, 'b n t (f c) -> b n f t c', c=2)
 
         # modulate frequency representation
@@ -684,7 +693,9 @@ class MelBandRoformer(Module):
 
         target = target[..., :recon_audio.shape[-1]]  # protect against lost length on istft
 
-        loss = F.l1_loss(recon_audio, target)
+        target_sel = target[:, stem_ids]
+
+        loss = F.l1_loss(recon_audio, target_sel)
 
         multi_stft_resolution_loss = 0.
 
@@ -697,8 +708,14 @@ class MelBandRoformer(Module):
                 **self.multi_stft_kwargs,
             )
 
-            recon_Y = torch.stft(rearrange(recon_audio, '... s t -> (... s) t'), **res_stft_kwargs)
-            target_Y = torch.stft(rearrange(target, '... s t -> (... s) t'), **res_stft_kwargs)
+            recon_Y = torch.stft(
+                rearrange(recon_audio, 'b n s t -> (b n s) t'),
+                **res_stft_kwargs
+            )
+            target_Y = torch.stft(
+                rearrange(target_sel, 'b n s t -> (b n s) t'),
+                **res_stft_kwargs
+            )
 
             multi_stft_resolution_loss = multi_stft_resolution_loss + F.l1_loss(recon_Y, target_Y)
 

@@ -581,10 +581,11 @@ class BSConformer(Module):
         )
 
     def forward(
-        self,
-        raw_audio,
-        target = None,
-        return_loss_breakdown = False
+            self,
+            raw_audio,
+            target=None,
+            active_stem_ids=None,
+            return_loss_breakdown=False
     ):
         """
         einops
@@ -676,11 +677,19 @@ class BSConformer(Module):
         x = self.final_norm(x)
 
         # masks
-        num_stems = len(self.mask_estimators)
-        if self.use_torch_checkpoint:
-            mask = torch.stack([checkpoint(fn, x, use_reentrant = False) for fn in self.mask_estimators], dim = 1)
+        if active_stem_ids is None:
+            heads = self.mask_estimators
+            stem_ids = list(range(len(self.mask_estimators)))
         else:
-            mask = torch.stack([fn(x) for fn in self.mask_estimators], dim = 1)
+            heads = [self.mask_estimators[i] for i in active_stem_ids]
+            stem_ids = active_stem_ids
+
+        num_stems = len(heads)
+
+        if self.use_torch_checkpoint:
+            mask = torch.stack([checkpoint(fn, x, use_reentrant=False) for fn in heads], dim=1)
+        else:
+            mask = torch.stack([fn(x) for fn in heads], dim=1)
 
         mask = rearrange(mask, 'b n t (f c) -> b n f t c', c = 2)
 
@@ -713,15 +722,13 @@ class BSConformer(Module):
         if not exists(target):
             return recon_audio
 
-        if self.num_stems > 1:
-            assert target.ndim == 4 and target.shape[1] == self.num_stems
-
         if target.ndim == 2:
             target = rearrange(target, '... t -> ... 1 t')
 
         target = target[..., :recon_audio.shape[-1]]
+        target_sel = target[:, stem_ids]
 
-        loss = F.l1_loss(recon_audio, target)
+        loss = F.l1_loss(recon_audio, target_sel)
 
         multi_stft_resolution_loss = 0.
         for window_size in self.multi_stft_resolutions_window_sizes:
@@ -732,8 +739,14 @@ class BSConformer(Module):
                 window = self.multi_stft_window_fn(window_size, device = device),
                 **self.multi_stft_kwargs,
             )
-            recon_Y = torch.stft(rearrange(recon_audio, '... s t -> (... s) t'), **res_stft_kwargs)
-            target_Y = torch.stft(rearrange(target, '... s t -> (... s) t'), **res_stft_kwargs)
+            recon_Y = torch.stft(
+                rearrange(recon_audio, 'b n s t -> (b n s) t'),
+                **res_stft_kwargs
+            )
+            target_Y = torch.stft(
+                rearrange(target_sel, 'b n s t -> (b n s) t'),
+                **res_stft_kwargs
+            )
             multi_stft_resolution_loss = multi_stft_resolution_loss + F.l1_loss(recon_Y, target_Y)
 
         weighted_multi_resolution_loss = multi_stft_resolution_loss * self.multi_stft_resolution_loss_weight
