@@ -1,0 +1,81 @@
+# MoisesLight: lightweight music source separation
+# This config uses the paper_large preset (4.7M params, 0-14.7 kHz).
+# Other presets available via the moises-light package:
+#   paper_small (2.5M), fullband_large (4.9M), fullband_small (2.8M),
+#   fullband_large_wide (8.4M), fullband_small_wide (4.1M)
+# See: https://github.com/crlandsc/moises-light
+
+audio:
+  chunk_size: 396900 # 44100 * 9 (9 seconds, matches paper's best model)
+  num_channels: 2
+  sample_rate: 44100
+  min_mean_abs: 0.001
+
+model:
+  sources:
+    - drums
+    - bass
+    - other
+    - vocals
+  audio_channels: 2
+  n_fft: 6144
+  hop_size: 1024
+  win_size: 6144
+  freq_dim: 2048
+  n_bands: 4
+  G: 56
+  n_enc: 3
+  n_dec: 1
+  n_split_enc: 3
+  n_split_dec: 1
+  n_rope: 5
+  bn_factor: 4
+  normalized: true
+  use_mask: true
+  transformer_params:
+    heads: 4
+    dim_head: 32
+    ff_mult: 2
+    attn_dropout: 0.0
+    proj_dropout: 0.0
+    ff_dropout: 0.0
+    flash_attn: true
+
+training:
+  batch_size: 4
+  gradient_accumulation_steps: 1
+  grad_clip: 0
+  instruments:
+    - drums
+    - bass
+    - other
+    - vocals
+  lr: 5.0e-04
+  patience: 2
+  reduce_factor: 0.95
+  target_instrument: null
+  num_epochs: 1000
+  num_steps: 1000
+  q: 0.95
+  coarse_loss_clip: true
+  ema_momentum: 0.999
+  optimizer: adamw
+  other_fix: false
+  use_amp: true
+
+augmentations:
+  enable: true
+  loudness: true
+  loudness_min: 0.5
+  loudness_max: 1.5
+  mixup: true
+  mixup_probs:
+    !!python/tuple
+    - 0.2
+    - 0.02
+  mixup_loudness_min: 0.5
+  mixup_loudness_max: 1.5
+
+inference:
+  batch_size: 1
+  num_overlap: 4
