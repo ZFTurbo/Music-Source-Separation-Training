@@ -419,6 +419,7 @@ class BSRoformer(Module):
         )
 
         if use_pope:
+            assert _HAS_POPE, "PoPE requested but PoPE_pytorch is not installed"
             time_pope_embed = PoPE(dim=dim_head, heads=heads)
             freq_pope_embed = PoPE(dim=dim_head, heads=heads)
             time_rotary_embed = None
