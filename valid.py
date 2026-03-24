@@ -5,6 +5,7 @@ import argparse
 import math
 import time
 import os
+import gc
 import glob
 import torch
 import librosa
@@ -861,6 +862,10 @@ def check_validation(dict_args):
         metrics = valid_multi_gpu(model, args, config, device_ids, verbose=False)
     else:
         metrics = valid(model, args, config, device, verbose=True)
+
+    del model
+    torch.cuda.empty_cache()
+    gc.collect()
     return metrics
 
 
