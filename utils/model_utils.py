@@ -15,6 +15,58 @@ from typing import Dict, List, Tuple, Any, Union, Optional
 import loralib as lora
 import torch.distributed as dist
 
+def bigshifts_wrapper(
+    config: ConfigDict,
+    model: torch.nn.Module,
+    mix: torch.Tensor,
+    device: torch.device,
+    model_type: str,
+    pbar: bool = False,
+    bigshifts: int = 1
+) -> Union[Dict[str, np.ndarray], np.ndarray]:
+    """BigShifts wrapper for inference-time demixing."""
+
+    should_print = not dist.is_initialized() or dist.get_rank() == 0
+
+    if bigshifts <= 0:
+        bigshifts = 1
+
+    if isinstance(mix, torch.Tensor):
+        mix = mix.detach().cpu().numpy()
+
+    shift_in_samples = mix.shape[1] // bigshifts
+    shifts = [x * shift_in_samples for x in range(bigshifts)]
+    results = []
+
+    if pbar and should_print:
+        shifts_iterator = tqdm(shifts, desc="BigShifts passes...", leave=False)
+    else:
+        shifts_iterator = shifts
+
+    for shift in shifts_iterator:
+        shifted_mix = np.concatenate((mix[:, -shift:], mix[:, :-shift]), axis=-1)
+        sources = demix(config, model, shifted_mix, device, model_type, pbar)
+
+        if isinstance(sources, dict):
+            unshifted = {
+                k: np.concatenate((v[..., shift:], v[..., :shift]), axis=-1)
+                for k, v in sources.items()
+            }
+            results.append(unshifted)
+        elif isinstance(sources, np.ndarray):
+            unshifted = np.concatenate((sources[..., shift:], sources[..., :shift]), axis=-1)
+            results.append(unshifted)
+        else:
+            raise ValueError("Unsupported return type from demix")
+
+    if isinstance(results[0], dict):
+        avg_result = {}
+        for k in results[0]:
+            avg_result[k] = np.mean([r[k] for r in results], axis=0)
+        return avg_result
+    return np.mean(results, axis=0)
+
+
 def demix(
     config: ConfigDict,
     model: torch.nn.Module,
@@ -335,7 +387,8 @@ def apply_tta(
     mix: torch.Tensor,
     waveforms_orig: Union[dict[str, np.ndarray], np.ndarray],
     device: torch.device,
-    model_type: str
+    model_type: str,
+    bigshifts: int = 1
 ) -> Union[dict[str, np.ndarray], np.ndarray]:
     """
     Enhance source separation results using Test-Time Augmentation (TTA).
@@ -362,7 +415,14 @@ def apply_tta(
 
     # Process each augmented mixture
     for i, augmented_mix in enumerate(track_proc_list):
-        waveforms = demix(config, model, augmented_mix, device, model_type=model_type)
+        waveforms = bigshifts_wrapper(
+            config,
+            model,
+            augmented_mix,
+            device,
+            model_type=model_type,
+            bigshifts=bigshifts
+        )
         for el in waveforms:
             if i == 0:
                 waveforms_orig[el] += waveforms[el][::-1].copy()
