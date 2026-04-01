@@ -18,7 +18,7 @@ sys.path.append(current_dir)
 
 from utils.audio_utils import normalize_audio, denormalize_audio, draw_spectrogram
 from utils.settings import get_model_from_config, parse_args_inference
-from utils.model_utils import demix
+from utils.model_utils import bigshifts_wrapper
 from utils.model_utils import prefer_target_instrument, apply_tta, load_start_checkpoint
 
 import warnings
@@ -106,13 +106,14 @@ def run_folder(
                 mix, norm_params = normalize_audio(mix)
 
         # Perform source separation
-        waveforms_orig = demix(
+        waveforms_orig = bigshifts_wrapper(
             config,
             model,
             mix,
             device,
             model_type=args.model_type,
-            pbar=detailed_pbar
+            pbar=detailed_pbar,
+            bigshifts=args.bigshifts
         )
 
         # Apply test-time augmentation if enabled
@@ -123,7 +124,8 @@ def run_folder(
                 mix,
                 waveforms_orig,
                 device,
-                args.model_type
+                args.model_type,
+                bigshifts=args.bigshifts
             )
 
         # Extract instrumental track if requested
