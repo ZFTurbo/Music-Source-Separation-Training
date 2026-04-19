@@ -23,6 +23,11 @@ augmentations:
   mp3_compression_on_mixture_bitrate_max: 320
   mp3_compression_on_mixture_backend: "lameenc"
 
+  # Random chunk sizes (be careful with GPU memory)
+  chunk_size_augm: true
+  chunk_size_min: 44100
+  chunk_size_max: 661500
+  
   all:
     channel_shuffle: 0.5 # Set 0 or lower to disable
     random_inverse: 0.1 # inverse track (better lower probability)

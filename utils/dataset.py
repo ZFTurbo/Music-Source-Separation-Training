@@ -7,6 +7,7 @@ import random
 import numpy as np
 import torch
 import soundfile as sf
+from functools import partial
 import pickle
 import itertools
 import multiprocessing
@@ -27,6 +28,25 @@ from torch.utils.data.distributed import DistributedSampler
 warnings.filterwarnings("ignore")
 import argparse
 
+
+def music_collate_fn(batch, min_size=1 * 44100, max_size=30 * 44100):
+    """
+    batch: list of elements from Dataset.__getitem__
+    """
+    min_len_in_batch = min([t[1].shape[-1] for t in batch])
+    min_len_in_batch = min(min_len_in_batch, max_size)
+    target_length = random.randint(min_size, min_len_in_batch)
+
+    new_batch = []
+    for stems, mix in batch:
+        stems_crop = stems[..., :target_length]
+        mix_crop = mix[..., :target_length]
+        # print(stems_crop.shape, mix_crop.shape)
+        new_batch.append((stems_crop, mix_crop))
+
+    return torch.utils.data._utils.collate.default_collate(new_batch)
+
+
 def prepare_data(config: Union[ConfigDict, OmegaConf], args: argparse.Namespace, batch_size: int) -> DataLoader:
     """
     Build the training DataLoader. If torch.distributed.is_initialized() is True,
@@ -40,6 +60,26 @@ def prepare_data(config: Union[ConfigDict, OmegaConf], args: argparse.Namespace,
     Returns:
         Configured DataLoader for the training split.
     """
+
+    actionable_collate = None
+    if 'augmentations' in config:
+        if 'enable' in config['augmentations']:
+            if config['augmentations']['enable']:
+                if 'chunk_size_augm' in config['augmentations']:
+                    if config['augmentations']['chunk_size_augm']:
+                        if 'chunk_size_min' in config['augmentations'] and 'chunk_size_max' in config['augmentations']:
+                            min_size = int(config['augmentations']['chunk_size_min'])
+                            max_size = int(config['augmentations']['chunk_size_max'])
+                            print("Use chunk size augmentation with range: {} up to {}".format(min_size, max_size))
+                            try:
+                                if max_size > config['audio']['chunk_size']:
+                                    print('Warning: you need to increase config.audio.chunk_size from {} up to: {}'.format(
+                                        config['audio']['chunk_size'], max_size
+                                    ))
+                            except:
+                                pass
+                            actionable_collate = partial(music_collate_fn, min_size=min_size, max_size=max_size)
+
     # DDP
     if dist.is_initialized():
         rank = dist.get_rank()
@@ -74,6 +114,7 @@ def prepare_data(config: Union[ConfigDict, OmegaConf], args: argparse.Namespace,
             pin_memory=args.pin_memory,
             persistent_workers=args.persistent_workers,
             prefetch_factor=args.prefetch_factor,
+            collate_fn=actionable_collate,
         )
     else:
         trainset = MSSDataset(
@@ -92,6 +133,7 @@ def prepare_data(config: Union[ConfigDict, OmegaConf], args: argparse.Namespace,
             pin_memory=args.pin_memory,
             persistent_workers=args.persistent_workers,
             prefetch_factor=args.prefetch_factor,
+            collate_fn=actionable_collate,
         )
 
     return train_loader
