@@ -125,8 +125,8 @@ def run_folder(
                 waveforms_orig,
                 device,
                 args.model_type,
-                pbar=detailed_pbar,
-                bigshifts=args.bigshifts
+                bigshifts=args.bigshifts,
+                pbar=detailed_pbar
             )
 
         # Extract instrumental track if requested

@@ -388,8 +388,8 @@ def apply_tta(
     waveforms_orig: Union[dict[str, np.ndarray], np.ndarray],
     device: torch.device,
     model_type: str,
-    pbar: bool = False,
-    bigshifts: int = 1
+    bigshifts: int = 1,
+    pbar: bool = False
 ) -> Union[dict[str, np.ndarray], np.ndarray]:
     """
     Enhance source separation results using Test-Time Augmentation (TTA).
@@ -422,8 +422,8 @@ def apply_tta(
             augmented_mix,
             device,
             model_type=model_type,
-            pbar=pbar,
-            bigshifts=bigshifts
+            bigshifts=bigshifts,
+            pbar=pbar
         )
         for el in waveforms:
             if i == 0:
