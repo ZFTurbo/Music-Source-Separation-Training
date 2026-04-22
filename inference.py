@@ -125,6 +125,7 @@ def run_folder(
                 waveforms_orig,
                 device,
                 args.model_type,
+                pbar=detailed_pbar,
                 bigshifts=args.bigshifts
             )
 

@@ -388,6 +388,7 @@ def apply_tta(
     waveforms_orig: Union[dict[str, np.ndarray], np.ndarray],
     device: torch.device,
     model_type: str,
+    pbar: bool = False,
     bigshifts: int = 1
 ) -> Union[dict[str, np.ndarray], np.ndarray]:
     """
@@ -421,6 +422,7 @@ def apply_tta(
             augmented_mix,
             device,
             model_type=model_type,
+            pbar=pbar,
             bigshifts=bigshifts
         )
         for el in waveforms:
