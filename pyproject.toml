@@ -1,0 +1,144 @@
+[project]
+name = "music-source-separation-training"
+description = "Training and inference code for music source separation experiments."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Roman Solovyev (ZFTurbo)" }]
+keywords = []
+classifiers = []
+dependencies = [
+  "PyYAML",
+  "librosa",
+  "matplotlib",
+  "ml-collections",
+  "numpy>=2.0.0",
+  "omegaconf",
+  "pandas",
+  "requests",
+  "soundfile",
+  "torch>=2.0.1",
+  "torchaudio",
+  "tqdm",
+  "wxPython ; platform_python_implementation == 'CPython'"
+]
+dynamic = ["version"]
+
+[project.urls]
+Documentation = "https://github.com/ZFTurbo/Music-Source-Separation-Training/tree/main/docs"
+Homepage = "https://github.com/ZFTurbo/Music-Source-Separation-Training"
+Issues = "https://github.com/ZFTurbo/Music-Source-Separation-Training/issues"
+Repository = "https://github.com/ZFTurbo/Music-Source-Separation-Training"
+
+[project.optional-dependencies]
+accelerate = ["accelerate", "huggingface-hub>=0.23.0"]
+lora-loralib = ["loralib"]
+lora-peft = ["peft"]
+optimizer-8bit = ["bitsandbytes ; platform_system == 'Linux' and platform_machine == 'x86_64'"]
+optimizer-muon = ["pytorch-optimizer"]
+optimizer-prodigy = ["prodigyopt"]
+sageattention = ["sageattention ; platform_system == 'Linux' and platform_machine == 'x86_64'"]
+scheduler = ["transformers"]
+stream = ["keyboard", "pyaudio; python_version < '3.14'"]
+train = [
+  "audiomentations",
+  "auraloss",
+  "pedalboard",
+  "torch-l1-snr>=0.1.2",
+  "torch-log-wmse>=0.3.1",
+  "wandb"
+]
+validation = ["auraloss", "torch-l1-snr>=0.1.2", "torch-log-wmse>=0.3.1"]
+# models
+apollo = ["pytorch-lightning"]
+bandit = [
+  "fire",
+  "asteroid",
+  "pedalboard",
+  "pyloudnorm",
+  "pytorch-lightning",
+  "spafe",
+  "torch-audiomentations",
+  "torchmetrics"
+]
+bandit_v2 = ["pytorch-lightning"]
+bs_conformer = ["beartype", "einops", "packaging", "rotary-embedding-torch"]
+bs_mamba2 = [
+  "packaging",
+  "beartype",
+  "einops",
+  "mamba-ssm ; platform_system == 'Linux' and platform_machine == 'x86_64'",
+  "rotary-embedding-torch"
+]
+bs_roformer = [
+  "beartype",
+  "einops",
+  "packaging",
+  "rotary-embedding-torch",
+  "PoPE-pytorch"
+]
+bs_roformer_experimental = [
+  "packaging",
+  "beartype",
+  "einops",
+  "hyper-connections",
+  "rotary-embedding-torch"
+]
+conformer = ["conformer"]
+experimental_mdx23c_stht = ["loralib"]
+htdemucs = ["demucs", "einops", "openunmix"]
+mdx23c = ["loralib"]
+mel_band_conformer = [
+  "beartype",
+  "einops",
+  "packaging",
+  "rotary-embedding-torch"
+]
+mel_band_roformer = [
+  "beartype",
+  "einops",
+  "packaging",
+  "rotary-embedding-torch",
+  "PoPE-pytorch"
+]
+mel_band_roformer_experimental = [
+  "beartype",
+  "einops",
+  "packaging",
+  "hyper-connections",
+  "rotary-embedding-torch"
+]
+moises_light = ["moises-light"]
+scnet = []
+scnet_masked = []
+scnet_tran = ["einops", "rotary-embedding-torch", "packaging"]
+scnet_unofficial = [
+  "beartype",
+  "einops",
+  "mamba-ssm ; platform_system == 'Linux' and platform_machine == 'x86_64'"
+]
+segm_models = ["segmentation-models-pytorch", "timm"]
+swin_upernet = ["transformers"]
+torchseg = ["torchseg", "timm"]
+
+[build-system]
+requires = ["setuptools>=80", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
+py-modules = [
+  "ensemble",
+  "inference",
+  "train",
+  "train_accelerate",
+  "train_ddp",
+  "valid",
+  "valid_ddp"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["configs*", "gui*", "models*", "scripts*", "utils*"]
+namespaces = true

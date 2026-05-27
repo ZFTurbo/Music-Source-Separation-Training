@@ -12,7 +12,6 @@ from ml_collections import ConfigDict
 from torch.optim import Adam, AdamW, SGD, RAdam, RMSprop
 from tqdm.auto import tqdm
 from typing import Dict, List, Tuple, Any, Union, Optional
-import loralib as lora
 import torch.distributed as dist
 
 def bigshifts_wrapper(
@@ -592,6 +591,7 @@ def load_lora_weights(model: torch.nn.Module, lora_path: str, device: str = 'cpu
 
 def get_lora(args, config, model):
     if args.train_lora_loralib:
+        import loralib as lora
         model = bind_lora_to_model(config, model)
         lora.mark_only_lora_as_trainable(model)
     if args.train_lora_peft:
@@ -688,6 +688,8 @@ def bind_lora_to_model(config: Dict[str, Any], model: nn.Module) -> nn.Module:
 
     if 'lora' not in config:
         raise ValueError("Configuration must contain the 'lora' key with parameters for LoRA.")
+
+    import loralib as lora
 
     replaced_layers = 0  # Counter for replaced layers
     should_print = not dist.is_initialized() or dist.get_rank() == 0
@@ -849,6 +851,7 @@ def save_weights(
     if args.train_lora_peft:
         model.save_pretrained(store_path + '_lora_')
     elif args.train_lora_loralib:
+        import loralib as lora
         checkpoint["model_state_dict"] = lora.lora_state_dict(model)
     else:
         if dist.is_initialized():

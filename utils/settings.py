@@ -2,7 +2,6 @@ import os
 import random
 import time
 import yaml
-import wandb
 import numpy as np
 import torch
 import argparse
@@ -578,6 +577,7 @@ def wandb_init(args: argparse.Namespace, config: Union[ConfigDict, OmegaConf], b
     Returns:
         None
     """
+    import wandb
 
     if args.wandb_offline:
         wandb.init(mode='offline',
