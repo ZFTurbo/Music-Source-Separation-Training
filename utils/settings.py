@@ -304,66 +304,27 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple[nn.Module,
     config = load_config(model_type, config_path)
     if 'model_type' in config.training:
         model_type = config.training.model_type
-    if model_type == 'mdx23c':
-        from models.mdx23c_tfc_tdf_v3 import TFC_TDF_net
-        model = TFC_TDF_net(config)
-    elif model_type == 'htdemucs':
-        from models.demucs4ht import get_model
-        model = get_model(config)
-    elif model_type == 'segm_models':
-        from models.segm_models import Segm_Models_Net
-        model = Segm_Models_Net(config)
-    elif model_type == 'torchseg':
-        from models.torchseg_models import Torchseg_Net
-        model = Torchseg_Net(config)
-    elif model_type == 'mel_band_roformer':
-        from models.bs_roformer import MelBandRoformer
-        model = MelBandRoformer(**dict(config.model))
-    elif model_type == 'mel_band_conformer':
-        from models.bs_roformer import MelBandConformer
-        model = MelBandConformer(**dict(config.model))
-    elif model_type == 'mel_band_roformer_experimental':
-        from models.bs_roformer.mel_band_roformer_experimental import MelBandRoformer
-        model = MelBandRoformer(**dict(config.model))
-    elif model_type == 'bs_roformer':
-        from models.bs_roformer import BSRoformer
-        model = BSRoformer(**dict(config.model))
-    elif model_type == 'bs_conformer':
-        from models.bs_roformer import BSConformer
-        model = BSConformer(**dict(config.model))
-    elif model_type == 'bs_roformer_experimental':
-        from models.bs_roformer.bs_roformer_experimental import BSRoformer
-        model = BSRoformer(**dict(config.model))
-    elif model_type == 'bs_mamba2':
-        from models.bs_mamba2_code.bs_mamba2 import BSMamba2Model
-        model = BSMamba2Model(**dict(config.model))
-    elif model_type == 'swin_upernet':
-        from models.upernet_swin_transformers import Swin_UperNet_Model
-        model = Swin_UperNet_Model(config)
+    if model_type == 'apollo':
+        from models.look2hear.models import BaseModel
+        model = BaseModel.apollo(**config.model)
     elif model_type == 'bandit':
         from models.bandit.core.model import MultiMaskMultiSourceBandSplitRNNSimple
         model = MultiMaskMultiSourceBandSplitRNNSimple(**config.model)
     elif model_type == 'bandit_v2':
         from models.bandit_v2.bandit import Bandit
         model = Bandit(**config.kwargs)
-    elif model_type == 'scnet_unofficial':
-        from models.scnet_unofficial import SCNet
-        model = SCNet(**config.model)
-    elif model_type == 'scnet':
-        from models.scnet import SCNet
-        model = SCNet(**config.model)
-    elif model_type == 'scnet_tran':
-        from models.scnet.scnet_tran import SCNet_Tran
-        model = SCNet_Tran(**config.model)
-    elif model_type == 'apollo':
-        from models.look2hear.models import BaseModel
-        model = BaseModel.apollo(**config.model)
-    elif model_type == 'experimental_mdx23c_stht':
-        from models.mdx23c_tfc_tdf_v3_with_STHT import TFC_TDF_net
-        model = TFC_TDF_net(config)
-    elif model_type == 'scnet_masked':
-        from models.scnet.scnet_masked import SCNet
-        model = SCNet(**config.model)
+    elif model_type == 'bs_conformer':
+        from models.bs_roformer import BSConformer
+        model = BSConformer(**dict(config.model))
+    elif model_type == 'bs_mamba2':
+        from models.bs_mamba2_code.bs_mamba2 import BSMamba2Model
+        model = BSMamba2Model(**dict(config.model))
+    elif model_type == 'bs_roformer':
+        from models.bs_roformer import BSRoformer
+        model = BSRoformer(**dict(config.model))
+    elif model_type == 'bs_roformer_experimental':
+        from models.bs_roformer.bs_roformer_experimental import BSRoformer
+        model = BSRoformer(**dict(config.model))
     elif model_type == 'conformer':
         from models.conformer_model import ConformerMSS, NeuralModel
         model = ConformerMSS(
@@ -373,9 +334,48 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple[nn.Module,
             win_length=getattr(config.stft, 'win_length', config.stft.n_fft),
             center=config.stft.center
         )
+    elif model_type == 'experimental_mdx23c_stht':
+        from models.mdx23c_tfc_tdf_v3_with_STHT import TFC_TDF_net
+        model = TFC_TDF_net(config)
+    elif model_type == 'htdemucs':
+        from models.demucs4ht import get_model
+        model = get_model(config)
+    elif model_type == 'mdx23c':
+        from models.mdx23c_tfc_tdf_v3 import TFC_TDF_net
+        model = TFC_TDF_net(config)
+    elif model_type == 'mel_band_conformer':
+        from models.bs_roformer import MelBandConformer
+        model = MelBandConformer(**dict(config.model))
+    elif model_type == 'mel_band_roformer':
+        from models.bs_roformer import MelBandRoformer
+        model = MelBandRoformer(**dict(config.model))
+    elif model_type == 'mel_band_roformer_experimental':
+        from models.bs_roformer.mel_band_roformer_experimental import MelBandRoformer
+        model = MelBandRoformer(**dict(config.model))
     elif model_type == 'moises_light':
         from moises_light import MoisesLight
         model = MoisesLight(**dict(config.model))
+    elif model_type == 'scnet':
+        from models.scnet import SCNet
+        model = SCNet(**config.model)
+    elif model_type == 'scnet_masked':
+        from models.scnet.scnet_masked import SCNet
+        model = SCNet(**config.model)
+    elif model_type == 'scnet_tran':
+        from models.scnet.scnet_tran import SCNet_Tran
+        model = SCNet_Tran(**config.model)
+    elif model_type == 'scnet_unofficial':
+        from models.scnet_unofficial import SCNet
+        model = SCNet(**config.model)
+    elif model_type == 'segm_models':
+        from models.segm_models import Segm_Models_Net
+        model = Segm_Models_Net(config)
+    elif model_type == 'swin_upernet':
+        from models.upernet_swin_transformers import Swin_UperNet_Model
+        model = Swin_UperNet_Model(config)
+    elif model_type == 'torchseg':
+        from models.torchseg_models import Torchseg_Net
+        model = Torchseg_Net(config)
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
@@ -624,7 +624,7 @@ def setup_ddp(rank: int, world_size: int, seed: int) -> None:
     except:
         dist.init_process_group("gloo", rank=rank, world_size=world_size)
         if dist.get_rank() == 0:
-            print(f'NCCL are not available. Using "gloo" backend.')
+            print('NCCL are not available. Using "gloo" backend.')
 
     torch.cuda.set_device(rank)
 
