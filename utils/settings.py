@@ -62,7 +62,7 @@ def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argpar
     parser.add_argument("--loss", type=str, nargs='+', choices=[
         'masked_loss', 'mse_loss', 'l1_loss', 'multistft_loss', 'spec_masked_loss', 'spec_rmse_loss',
         'log_wmse_loss', 'l1_snr_loss', 'l1_snr_db_loss', 'stft_l1_snr_db_loss', 'multi_l1_snr_db_loss',
-        'fullness_penalty_loss'
+        'fullness_penalty_loss', 'bleedless_penalty_loss'
     ], default=['masked_loss'], help="List of loss functions to use")
     parser.add_argument("--masked_loss_coef", type=float, default=1., help="Coef for loss")
     parser.add_argument("--mse_loss_coef", type=float, default=1., help="Coef for loss")
@@ -77,6 +77,8 @@ def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argpar
     parser.add_argument("--multi_l1_snr_db_loss_coef", type=float, default=1., help="Coef for Multi-L1-SNR-DB loss")
     parser.add_argument("--fullness_penalty_loss_coef", type=float, default=0.00002,
                         help="Coef for the fullness penalty loss. This loss should be used in combination with a primary loss function.")
+    parser.add_argument("--bleedless_penalty_loss_coef", type=float, default=0.00002,
+                        help="Coef for the bleedless penalty loss. This loss should be used in combination with a primary loss function.")
     parser.add_argument("--wandb_key", type=str, default='', help='wandb API Key')
     parser.add_argument("--wandb_offline", action='store_true', help='local wandb')
     parser.add_argument("--pre_valid", action='store_true', help='Run validation before training')

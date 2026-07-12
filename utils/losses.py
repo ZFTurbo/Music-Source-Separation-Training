@@ -11,19 +11,23 @@ import librosa
 from torchaudio.transforms import AmplitudeToDB
 
 
-class FullnessPenaltyLoss(nn.Module):
+class BleedFullPenaltyLoss(nn.Module):
     """
-    Differentiable penalty for missing content (Fullness metric proxy).
-    Penalizes regions where the reference signal has higher energy than the estimate
-    in the log-mel spectrogram domain.
+    Differentiable penalty for missing content (Fullness) or added artifacts (Bleedless).
+    mode: 'fullness' penalizes regions where Reference > Estimate.
+    mode: 'bleedless' penalizes regions where Estimate > Reference.
     """
 
-    def __init__(self, sr=44100, n_fft=4096, hop_length=1024, n_mels=512):
+    def __init__(self, mode: str = 'fullness', sr: int = 44100, n_fft: int = 4096, hop_length: int = 1024,
+                 n_mels: int = 512):
         super().__init__()
+        if mode not in ['fullness', 'bleedless']:
+            raise ValueError("mode must be either 'fullness' or 'bleedless'")
+
+        self.mode = mode
         self.n_fft = n_fft
         self.hop_length = hop_length
 
-        # Initialize the window and mel-basis once in memory
         self.window = torch.hann_window(n_fft)
 
         mel_basis = librosa.filters.mel(sr=sr, n_fft=n_fft, n_mels=n_mels)
@@ -32,13 +36,11 @@ class FullnessPenaltyLoss(nn.Module):
         self.amplitude_to_db = AmplitudeToDB(stype="magnitude", top_db=80)
 
     def forward(self, estimate: torch.Tensor, reference: torch.Tensor) -> torch.Tensor:
-        # Automatically move tensors to the input data device (GPU/CPU)
         device = estimate.device
         window = self.window.to(device)
         mel_filter_bank = self.mel_filter_bank.to(device)
         self.amplitude_to_db = self.amplitude_to_db.to(device)
 
-        # Flatten batches and channels into a single dimension for STFT
         lenc = estimate.shape[-1]
         est_reshaped = estimate.view(-1, lenc)
         ref_reshaped = reference.view(-1, lenc)
@@ -54,16 +56,16 @@ class FullnessPenaltyLoss(nn.Module):
         S_est_db = self.amplitude_to_db(S_est_mel)
         S_ref_db = self.amplitude_to_db(S_ref_mel)
 
-        # Penalty for missing content (Reference > Estimate)
-        missing_content = torch.relu(S_ref_db - S_est_db)
+        # Choose what to penalize depending on the mode
+        if self.mode == 'fullness':
+            penalty = torch.relu(S_ref_db - S_est_db)
+        else:  # 'bleedless'
+            penalty = torch.relu(S_est_db - S_ref_db)
 
         # Calculate the mean only where there is an actual loss (as in metrics.py)
-        active_elements_count = torch.count_nonzero(missing_content)
-        if active_elements_count > 0:
-            loss = torch.sum(missing_content) / active_elements_count
-        else:
-            # Use sum to avoid breaking the computation graph if there are no losses
-            loss = torch.sum(missing_content)
+        # Use clamp(min=1) to prevent division by zero without triggering CPU-GPU synchronization
+        active_elements_count = torch.count_nonzero(penalty)
+        loss = torch.sum(penalty) / active_elements_count.clamp(min=1)
 
         return loss
 
@@ -447,12 +449,12 @@ def choice_loss(
         )
 
     if 'fullness_penalty_loss' in args.loss:
-        # Use this loss only with combination with some other basic loss
         sr = int(getattr(config.audio, 'sample_rate', 44100))
         n_fft = getattr(config.model, 'nfft', 4096)
         hop_length = getattr(config.model, 'hop_size', 1024)
 
-        fullness_loss_module = FullnessPenaltyLoss(
+        fullness_loss_module = BleedFullPenaltyLoss(
+            mode='fullness',
             sr=sr,
             n_fft=n_fft,
             hop_length=hop_length
@@ -460,6 +462,22 @@ def choice_loss(
 
         loss_fns.append(
             lambda y_pred, y_true, x=None: fullness_loss_module(y_pred, y_true) * args.fullness_penalty_loss_coef
+        )
+
+    if 'bleedless_penalty_loss' in args.loss:
+        sr = int(getattr(config.audio, 'sample_rate', 44100))
+        n_fft = getattr(config.model, 'nfft', 4096)
+        hop_length = getattr(config.model, 'hop_size', 1024)
+
+        bleedless_loss_module = BleedFullPenaltyLoss(
+            mode='bleedless',
+            sr=sr,
+            n_fft=n_fft,
+            hop_length=hop_length
+        )
+
+        loss_fns.append(
+            lambda y_pred, y_true, x=None: bleedless_loss_module(y_pred, y_true) * args.bleedless_penalty_loss_coef
         )
 
     def multi_loss(y_pred: Any, y_true: Any, x: Optional[Any] = None) -> torch.Tensor:
