@@ -216,6 +216,7 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
 
     metric_avg = metrics_avg[args.metric_for_scheduler]
     if metric_avg > best_metric:
+        best_metric = metric_avg
 
         if args.each_metrics_in_name:
             stem_parts = []
@@ -248,7 +249,6 @@ def compute_epoch_metrics(model: torch.nn.Module, args: argparse.Namespace, conf
                 args=args,
                 scheduler=scheduler
             )
-        best_metric = metric_avg
 
     if args.save_weights_every_epoch:
         metric_string = ''
