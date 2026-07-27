@@ -681,7 +681,7 @@ class MelBandConformer(Module):
         stft_repr = rearrange(stft_repr, 'b n (f s) t -> (b n s) f t', s=self.audio_channels)
 
         if self.zero_dc:
-            stft_repr = stft_repr.index_fill(1, torch.tensor(0, device=device), 0.)
+            stft_repr[:, 0] = 0.
 
         recon_audio = torch.istft(
             stft_repr,
