@@ -431,8 +431,9 @@ def get_metrics(
     if 'sdr' in metrics or 'k_sdr' in metrics:
         references = np.expand_dims(reference, axis=0)
         estimates = np.expand_dims(estimate, axis=0)
-        result['sdr'] = float(sdr(references, estimates))
-        result['k_sdr'] = k_sdr(float(sdr(references, estimates)), k)
+        sdr_val = np.mean(sdr(references, estimates))
+        result['sdr'] = float(sdr_val)
+        result['k_sdr'] = k_sdr(float(sdr_val), k)
     if 'si_sdr' in metrics:
         result['si_sdr'] = float(si_sdr(reference, estimate))
 
