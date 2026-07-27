@@ -688,7 +688,7 @@ class MelBandRoformer(Module):
 
         if self.zero_dc:
             # whether to dc filter
-            stft_repr = stft_repr.index_fill(1, tensor(0, device = device), 0.)
+            stft_repr[:, 0] = 0.
 
         recon_audio = torch.istft(stft_repr, **self.stft_kwargs, window=stft_window, return_complex=False,
                                   length=istft_length)
