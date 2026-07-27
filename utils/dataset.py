@@ -889,9 +889,11 @@ class MSSDataset(torch.utils.data.Dataset):
         while True:
             if self.dataset_type in [1, 4, 5, 6, 7]:
                 track_path, track_length = random.choice(metadata)
+                found_any = False
                 for extension in self.file_types:
                     path_to_audio_file = track_path + '/{}.{}'.format(instr, extension)
                     if os.path.isfile(path_to_audio_file):
+                        found_any = True
                         try:
                             source = load_chunk(path_to_audio_file, track_length, self.chunk_size)
                         except Exception as e:
@@ -900,6 +902,11 @@ class MSSDataset(torch.utils.data.Dataset):
                                 print('Error: {} Path: {}'.format(e, path_to_audio_file))
                             source = np.zeros((2, self.chunk_size), dtype=np.float32)
                         break
+                if not found_any:
+                    raise FileNotFoundError(
+                        f"Required stem '{instr}' not found in track folder '{track_path}' "
+                        f"with extensions {self.file_types}. "
+                    )
             else:
                 track_path, track_length = random.choice(metadata[instr])
                 try:
