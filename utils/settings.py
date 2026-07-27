@@ -393,18 +393,41 @@ def get_scheduler(config, optimizer):
     if scheduler_name == 'linear_scheduler':
         from transformers import get_linear_schedule_with_warmup
         num_training_steps = config.training.num_epochs * config.training.num_steps
-        num_warmup_steps = config.training.num_warmup_steps
+        num_warmup_steps = config.training.get('num_warmup_steps', 0)
         scheduler = get_linear_schedule_with_warmup(
             optimizer,
             num_warmup_steps=num_warmup_steps,
             num_training_steps=num_training_steps
         )
+    elif scheduler_name == 'cosine_scheduler':
+        num_training_steps = config.training.num_epochs * config.training.num_steps
+        num_warmup_steps = config.training.get('num_warmup_steps', 0)
+        # restart_cycle_epochs > 0 enables cosine warm restarts with that period
+        # (in epochs); the initial warmup applies only to the first cycle.
+        cycle_epochs = config.training.get('restart_cycle_epochs', 0)
+        if cycle_epochs and cycle_epochs > 0:
+            from transformers import get_cosine_with_hard_restarts_schedule_with_warmup
+            cycle_steps = cycle_epochs * config.training.num_steps
+            num_cycles = max(1, round((num_training_steps - num_warmup_steps) / cycle_steps))
+            scheduler = get_cosine_with_hard_restarts_schedule_with_warmup(
+                optimizer,
+                num_warmup_steps=num_warmup_steps,
+                num_training_steps=num_training_steps,
+                num_cycles=num_cycles
+            )
+        else:
+            from transformers import get_cosine_schedule_with_warmup
+            scheduler = get_cosine_schedule_with_warmup(
+                optimizer,
+                num_warmup_steps=num_warmup_steps,
+                num_training_steps=num_training_steps
+            )
     elif scheduler_name == 'ReduceLROnPlateau':
         from torch.optim.lr_scheduler import ReduceLROnPlateau
-        scheduler = ReduceLROnPlateau(optimizer, 'max', patience=config.training.patience,
-                                      factor=config.training.reduce_factor)
+        scheduler = ReduceLROnPlateau(optimizer, 'max', patience=config.training.get('patience', 10),
+                                      factor=config.training.get('reduce_factor', 0.5))
     else:
-        available_schedulers = ['linear_scheduler', 'ReduceLROnPlateau']
+        available_schedulers = ['linear_scheduler', 'cosine_scheduler', 'ReduceLROnPlateau']
         raise ValueError(
             f"Unknown scheduler '{scheduler_name}'. "
             f"Available options: {available_schedulers}. "

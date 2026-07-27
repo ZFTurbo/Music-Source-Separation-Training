@@ -148,7 +148,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
                 else:
                     ema_model.update_parameters(model)
 
-            if scheduler.name in ['linear_scheduler']:
+            if scheduler.name in ['linear_scheduler', 'cosine_scheduler']:
                 scheduler.step()
             optimizer.zero_grad(set_to_none=True)
         if ddp:
