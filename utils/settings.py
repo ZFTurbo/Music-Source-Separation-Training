@@ -84,10 +84,12 @@ def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argpar
     parser.add_argument("--pre_valid", action='store_true', help='Run validation before training')
     parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"],
                         choices=['k_sdr', 'sdr', 'l1_freq', 'si_sdr', 'log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
-                                 'fullness', 'l1_snr'], help='List of metrics to use.')
+                                 'fullness', 'l1_snr', 'bleedless_mr', 'fullness_mr'],
+                        help='List of metrics to use.')
     parser.add_argument("--metric_for_scheduler", default="sdr",
                         choices=['k_sdr','sdr', 'l1_freq', 'si_sdr', 'log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
-                                 'fullness', 'l1_snr'], help='Metric which will be used for scheduler.')
+                                 'fullness', 'l1_snr', 'bleedless_mr', 'fullness_mr'],
+                        help='Metric which will be used for scheduler.')
     parser.add_argument("--train_lora_peft", action='store_true', help="Training with LoRA from peft")
     parser.add_argument("--train_lora_loralib", action='store_true', help="Training with LoRA from loralib")
     parser.add_argument("--lora_checkpoint_peft", type=str, default='', help="Initial checkpoint to LoRA weights")
@@ -166,7 +168,8 @@ def parse_args_valid(dict_args: Union[Dict, None]) -> argparse.Namespace:
                              "While this triples the runtime, it reduces noise and slightly improves prediction quality.")
     parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"],
                         choices=['k_sdr', 'sdr', 'l1_freq', 'si_sdr', 'neg_log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
-                                 'fullness', 'l1_snr'], help='List of metrics to use.')
+                                 'fullness', 'l1_snr', 'bleedless_mr', 'fullness_mr'],
+                        help='List of metrics to use.')
     parser.add_argument("--lora_checkpoint_peft", type=str, default='', help="Initial checkpoint to LoRA weights")
     parser.add_argument("--lora_checkpoint_loralib", type=str, default='', help="Initial checkpoint to LoRA weights")
 
