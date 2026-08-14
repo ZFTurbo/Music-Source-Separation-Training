@@ -385,6 +385,67 @@ def bleed_full(
     return bleedless.cpu().numpy(), fullness.cpu().numpy()
 
 
+def bleed_full_multiresolution(
+        reference: np.ndarray,
+        estimate: np.ndarray,
+        sr: int = 44100,
+        n_fft: List[int] = [1024, 2048, 4096, 8192],
+        device: str = 'cpu',
+) -> Tuple[float, float]:
+    """
+    Multiresolution wrapper for the bleed/fullness metrics.
+
+    Computes ``bleed_full`` at several FFT resolutions and averages the results.
+    For each FFT size, the hop length and number of mel bins are derived as
+    ``hop_length = n_fft // 4`` and ``n_mels = n_fft // 8`` so only the FFT size
+    needs to be provided.
+
+    Parameters:
+    ----------
+    reference : np.ndarray
+        The reference audio signal, shape (channels, time).
+
+    estimate : np.ndarray
+        The estimated audio signal, shape (channels, time).
+
+    sr : int, optional
+        The sample rate of the audio signals. Default is 44100 Hz.
+
+    n_fft : List[int], optional
+        The list of FFT sizes used for the multi-resolution computation.
+        Default is [1024, 2048, 4096, 8192].
+
+    device : str, optional
+        The device for computation, either 'cpu' or 'cuda'. Default is 'cpu'.
+
+    Returns:
+    -------
+    tuple
+        A tuple containing two values averaged over the requested resolutions:
+        - `bleedless` (float): averaged bleedless score (higher is better).
+        - `fullness` (float): averaged fullness score (higher is better).
+    """
+    bleedless_vals = []
+    fullness_vals = []
+    for fft_size in n_fft:
+        b, f = bleed_full(
+            reference,
+            estimate,
+            sr=sr,
+            n_fft=int(fft_size),
+            hop_length=int(fft_size) // 4,
+            n_mels=int(fft_size) // 8,
+            device=device,
+        )
+        bleedless_vals.append(float(b))
+        fullness_vals.append(float(f))
+
+    bleedless = float(np.mean(bleedless_vals))
+    fullness = float(np.mean(fullness_vals))
+
+    return bleedless, fullness
+
+
 def get_metrics(
         metrics: List[str],
         reference: np.ndarray,
@@ -458,5 +519,12 @@ def get_metrics(
             result['bleedless'] = float(bleedless)
         if 'fullness' in metrics:
             result['fullness'] = float(fullness)
+
+    if 'bleedless_mr' in metrics or 'fullness_mr' in metrics:
+        bleedless_mr, fullness_mr = bleed_full_multiresolution(reference, estimate, device=device)
+        if 'bleedless_mr' in metrics:
+            result['bleedless_mr'] = float(bleedless_mr)
+        if 'fullness_mr' in metrics:
+            result['fullness_mr'] = float(fullness_mr)
 
     return result
