@@ -367,6 +367,9 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple[nn.Module,
     elif model_type == 'experimental_mdx23c_stht':
         from models.mdx23c_tfc_tdf_v3_with_STHT import TFC_TDF_net
         model = TFC_TDF_net(config)
+    elif model_type == 'dttnet':
+        from models.DTTNet import DPTDFNet
+        model = DPTDFNet(config)
     elif model_type == 'scnet_masked':
         from models.scnet.scnet_masked import SCNet
         model = SCNet(**config.model)

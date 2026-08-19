@@ -1,0 +1,70 @@
+audio:
+  chunk_size: 261120 # 6 seconds; hop_length * (dim_t - 1) => 1024 * (256 - 1)
+  dim_f: 2048
+  dim_t: 256
+  hop_length: 1024
+  n_fft: 4096
+  num_channels: 2
+  sample_rate: 44100
+  min_mean_abs: 0.000
+
+model:
+  norm: BatchNorm
+  act: relu
+  num_blocks: 5
+  g: 32
+  l: 3
+  k: 3
+  bn: 8
+  bias: false
+  block_type: TFC_TDF_Res2 #other option are: 'TFC_TDF_Res1' and 'TFC_TDF_v3'
+  bandsequence:
+    rnn_type: LSTM
+    bidirectional: true
+    num_layers: 4
+    n_heads: 2
+    
+
+training:
+  batch_size: 2
+  gradient_accumulation_steps: 1
+  grad_clip: 0.0
+  instruments:
+  - vocals
+  - other
+  lr: 0.0001
+  patience: 8
+  reduce_factor: 0.9
+  target_instrument: null
+  num_epochs: 1000
+  num_steps: 1000
+  q: 0.95
+  coarse_loss_clip: false
+  ema_momentum: 0.999
+  optimizer: adamw
+  read_metadata_procs: 8
+  other_fix: false
+  use_amp: true
+
+augmentations:
+  enable: true
+  loudness: true
+  loudness_min: 0.5
+  loudness_max: 2.0
+
+  all:
+    channel_shuffle: 0.5
+    random_polarity: 0.5
+
+  vocals:
+    seven_band_parametric_eq: 0.25
+    seven_band_parametric_eq_min_gain_db: -3
+    seven_band_parametric_eq_max_gain_db: 3
+    tanh_distortion: 0.1
+    tanh_distortion_min: 0.1
+    tanh_distortion_max: 0.4
+
+inference:
+  batch_size: 8
+  chunk_size: 261120
+  num_overlap: 4
