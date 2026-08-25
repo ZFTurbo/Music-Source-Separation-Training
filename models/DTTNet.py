@@ -200,7 +200,7 @@ class TFC(nn.Module):
         for i in range(l):
             self.H.append(
                 nn.Sequential(
-                    nn.Conv2d(in_channels=c_out if i > 0 else c_in, out_channels=c_out, kernel_size=k, stride=1, padding=k // 2, bias=False),
+                    nn.Conv2d(in_channels=c_out if i > 0 else c_in, out_channels=c_out, kernel_size=k, stride=1, padding=k // 2),
                     norm(c_out if i > 0 else c_in),
                     act,
                 )
@@ -219,7 +219,7 @@ class DenseTFC(nn.Module):
         for i in range(l):
             self.conv.append(
                 nn.Sequential(
-                    nn.Conv2d(in_channels=c_in, out_channels=c_out, kernel_size=k, stride=1, padding=k // 2, bias=False),
+                    nn.Conv2d(in_channels=c_in, out_channels=c_out, kernel_size=k, stride=1, padding=k // 2),
                     norm(c_out),
                     act,
                 )
@@ -432,7 +432,7 @@ class DPTDFNet(nn.Module):
             raise ValueError(f"Unknown block type {self.block_type}")
 
         self.first_conv = nn.Sequential(
-            nn.Conv2d(in_channels=dim_c, out_channels=self.g, kernel_size=(1, 1), bias=False),
+            nn.Conv2d(in_channels=dim_c, out_channels=self.g, kernel_size=(1, 1)),
             norm(self.g),
             act,
         )
@@ -446,7 +446,7 @@ class DPTDFNet(nn.Module):
             self.encoding_blocks.append(T_BLOCK(c_in, c, self.l, f, self.k, self.bn, norm, act, bias=self.bias))
             self.ds.append(
                 nn.Sequential(
-                    nn.Conv2d(in_channels=c, out_channels=c + self.g, kernel_size=scale, stride=scale, bias=False),
+                    nn.Conv2d(in_channels=c, out_channels=c + self.g, kernel_size=scale, stride=scale),
                     norm(c + self.g),
                     act,
                 )
@@ -473,7 +473,7 @@ class DPTDFNet(nn.Module):
             # print(f"i: {i}, in channels: {c}")
             self.us.append(
                 nn.Sequential(
-                    nn.ConvTranspose2d(in_channels=c, out_channels=c - self.g, kernel_size=scale, stride=scale, bias=False),
+                    nn.ConvTranspose2d(in_channels=c, out_channels=c - self.g, kernel_size=scale, stride=scale),
                     norm(c - self.g),
                     act,
                 )
@@ -485,7 +485,7 @@ class DPTDFNet(nn.Module):
             self.decoding_blocks.append(T_BLOCK(c, c, self.l, f, self.k, self.bn, norm, act, bias=self.bias))
 
         self.final_conv = nn.Sequential(
-            nn.Conv2d(in_channels=c, out_channels=self.num_target_instruments * dim_c, kernel_size=(1, 1), bias=False),
+            nn.Conv2d(in_channels=c, out_channels=self.num_target_instruments * dim_c, kernel_size=(1, 1)),
         )
 
         self.stft = STFT(config.audio)
