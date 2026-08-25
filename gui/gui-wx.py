@@ -214,7 +214,7 @@ class MainFrame(wx.Frame):
         # Model Type
         model_type_sizer = wx.BoxSizer(wx.HORIZONTAL)
         model_type_sizer.Add(wx.StaticText(panel, label="Model Type:"), 0, wx.ALIGN_CENTER_VERTICAL)
-        self.model_type = wx.Choice(panel, choices=["apollo", "bandit", "bandit_v2", "bs_roformer", "htdemucs", "mdx23c", "mel_band_roformer", "scnet", "scnet_unofficial", "segm_models", "swin_upernet", "torchseg"])
+        self.model_type = wx.Choice(panel, choices=["apollo", "bandit", "bandit_v2", "bs_roformer", "dttnet", "htdemucs", "mdx23c", "mel_band_roformer", "scnet", "scnet_unofficial", "segm_models", "swin_upernet", "torchseg"])
         self.model_type.SetFont(self.font)
         model_type_sizer.Add(self.model_type, 0, wx.LEFT, 5)
         sizer.Add(model_type_sizer, 0, wx.EXPAND | wx.ALL, 5)
@@ -265,7 +265,7 @@ class MainFrame(wx.Frame):
         # Model Type and Saved Combinations
         infer_model_type_sizer = wx.BoxSizer(wx.HORIZONTAL)
         infer_model_type_sizer.Add(wx.StaticText(panel, label="Model Type:"), 0, wx.ALIGN_CENTER_VERTICAL)
-        self.infer_model_type = wx.Choice(panel, choices=["apollo", "bandit", "bandit_v2", "bs_roformer", "htdemucs", "mdx23c", "mel_band_roformer", "scnet", "scnet_unofficial", "segm_models", "swin_upernet", "torchseg"])
+        self.infer_model_type = wx.Choice(panel, choices=["apollo", "bandit", "bandit_v2", "bs_roformer", "dttnet", "htdemucs", "mdx23c", "mel_band_roformer", "scnet", "scnet_unofficial", "segm_models", "swin_upernet", "torchseg"])
         self.infer_model_type.SetFont(self.font)
         infer_model_type_sizer.Add(self.infer_model_type, 0, wx.LEFT, 5)
 

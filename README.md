@@ -21,6 +21,7 @@ Available models for training:
 * Apollo [[Paper](https://arxiv.org/html/2409.08514v1), [Repository](https://github.com/JusperLee/Apollo)] Key: `apollo`.
 * BSMamba2 [[Paper](https://arxiv.org/abs/2508.14556), [Repository](https://github.com/EuiYeonKim/BSMamba2)] Key: `bs_mamba2`.
 * Conformer [[Paper](https://arxiv.org/abs/2005.08100), [Repository](https://github.com/lucidrains/conformer)] Key: `conformer`.
+* DTTNet [[Paper](https://arxiv.org/abs/2309.08684), [Repository](https://github.com/junyuchen-cjy/DTTNet-Pytorch)] Key: `dttnet`.
 * BS Conformer Key: `bs_conformer`
 * SCNet Tran Key: `scnet_tran`.
 * SCNet Masked Key: `scnet_masked`.
