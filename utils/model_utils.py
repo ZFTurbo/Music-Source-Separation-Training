@@ -153,12 +153,18 @@ def demix(
 
     if model_type == 'htdemucs':
         mode = 'demucs'
+        num_instruments = len(config.training.instruments)
     else:
         mode = 'generic'
+        num_instruments = len(prefer_target_instrument(config))
+
+    # keep whole track and accumulators on GPU (avoids per chunk transfers and slow CPU accumulation)
+    acc_device = _get_accumulation_device(device, (num_instruments + 1) * mix.numel() * 4 * 1.5)
+    mix = mix.to(acc_device)
+
     # Define processing parameters based on the mode
     if mode == 'demucs':
         chunk_size = config.training.samplerate * config.training.segment
-        num_instruments = len(config.training.instruments)
         num_overlap = config.inference.num_overlap
         step = chunk_size // num_overlap
     else:
@@ -166,14 +172,13 @@ def demix(
             chunk_size = config.inference.chunk_size
         else:
             chunk_size = config.audio.chunk_size
-        num_instruments = len(prefer_target_instrument(config))
         num_overlap = config.inference.num_overlap
 
         fade_size = chunk_size // 10
         step = chunk_size // num_overlap
         border = chunk_size - step
         length_init = mix.shape[-1]
-        windowing_array = _getWindowingArray(chunk_size, fade_size)
+        windowing_array = _getWindowingArray(chunk_size, fade_size).to(acc_device)
         # Add padding for generic mode to handle edge artifacts
         if length_init > 2 * border and border > 0:
             mix = nn.functional.pad(mix, (border, border), mode="reflect")
@@ -185,10 +190,10 @@ def demix(
 
     with torch.cuda.amp.autocast(enabled=use_amp):
         with torch.inference_mode():
-            # Initialize result and counter tensors
+            # Initialize result and counter tensors (counter is the same for all instruments and channels)
             req_shape = (num_instruments,) + mix.shape
-            result = torch.zeros(req_shape, dtype=torch.float32)
-            counter = torch.zeros(req_shape, dtype=torch.float32)
+            result = torch.zeros(req_shape, dtype=torch.float32, device=acc_device)
+            counter = torch.zeros(mix.shape[-1], dtype=torch.float32, device=acc_device)
 
             i = 0
             batch_data = []
@@ -220,7 +225,7 @@ def demix(
                     if pad_batch and arr.shape[0] < batch_size:
                         # keep batch shape constant for compiled model (avoid recompilation)
                         arr = nn.functional.pad(arr, (0, 0, 0, 0, 0, batch_size - arr.shape[0]))
-                    x = model(arr)
+                    x = model(arr).to(acc_device, torch.float32)
 
                     if mode == "generic":
                         window = windowing_array.clone() # using clone() fixes the clicks at chunk edges when using batch_size=1
@@ -231,11 +236,11 @@ def demix(
 
                     for j, (start, seg_len) in enumerate(batch_locations):
                         if mode == "generic":
-                            result[..., start:start + seg_len] += x[j, ..., :seg_len].cpu() * window[..., :seg_len]
-                            counter[..., start:start + seg_len] += window[..., :seg_len]
+                            result[..., start:start + seg_len] += x[j, ..., :seg_len] * window[..., :seg_len]
+                            counter[start:start + seg_len] += window[..., :seg_len]
                         else:
-                            result[..., start:start + seg_len] += x[j, ..., :seg_len].cpu()
-                            counter[..., start:start + seg_len] += 1.0
+                            result[..., start:start + seg_len] += x[j, ..., :seg_len]
+                            counter[start:start + seg_len] += 1.0
 
                     batch_data.clear()
                     batch_locations.clear()
@@ -247,14 +252,15 @@ def demix(
                 progress_bar.close()
 
             # Compute final estimated sources
-            estimated_sources = result / counter
-            estimated_sources = estimated_sources.cpu().numpy()
-            np.nan_to_num(estimated_sources, copy=False, nan=0.0)
+            estimated_sources = result.div_(counter)
 
             # Remove padding for generic mode
             if mode == "generic":
                 if length_init > 2 * border and border > 0:
                     estimated_sources = estimated_sources[..., border:-border]
+
+            estimated_sources = estimated_sources.cpu().numpy()
+            np.nan_to_num(estimated_sources, copy=False, nan=0.0)
 
     # Return the result as a dictionary or a single array
     if mode == "demucs":
@@ -486,6 +492,21 @@ def apply_tta(
         waveforms_orig[el] /= len(track_proc_list) + 1
 
     return waveforms_orig
+
+
+def _get_accumulation_device(device: Union[torch.device, str], required_bytes: float) -> torch.device:
+    """
+    Choose device to store the whole track and overlap-add accumulators in demix.
+
+    Use the CUDA device if the buffers take less than half of its available memory
+    (free + cached by PyTorch allocator), otherwise fall back to CPU (e.g. for very long tracks).
+    """
+    device = torch.device(device)
+    if device.type != 'cuda':
+        return torch.device('cpu')
+    free, _ = torch.cuda.mem_get_info(device)
+    available = free + torch.cuda.memory_reserved(device) - torch.cuda.memory_allocated(device)
+    return device if required_bytes < 0.5 * available else torch.device('cpu')
 
 
 def _getWindowingArray(window_size: int, fade_size: int) -> torch.Tensor:
