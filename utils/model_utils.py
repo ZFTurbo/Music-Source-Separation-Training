@@ -38,7 +38,7 @@ def compile_model(model: torch.nn.Module) -> torch.nn.Module:
     from torch._inductor.runtime.cache_dir_utils import default_cache_dir
     if os.environ.get("TORCHINDUCTOR_CACHE_DIR") in (None, default_cache_dir()):
         code_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        os.environ["TORCHINDUCTOR_CACHE_DIR"] = code_root + '/cache_for_test/torch_cache'
+        os.environ["TORCHINDUCTOR_CACHE_DIR"] = code_root + '/torch_cache'
     os.environ.setdefault("TORCHINDUCTOR_FX_GRAPH_CACHE", "1")
     print(f"torch.compile cache dir: {os.environ['TORCHINDUCTOR_CACHE_DIR']}")
 
