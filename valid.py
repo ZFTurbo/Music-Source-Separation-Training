@@ -19,7 +19,7 @@ from pathlib import Path
 from utils.settings import get_model_from_config, logging, write_results_in_file, parse_args_valid
 from utils.audio_utils import normalize_audio, denormalize_audio, read_audio_transposed, \
     draw_2_mel_spectrogram
-from utils.model_utils import demix, prefer_target_instrument, apply_tta, load_start_checkpoint
+from utils.model_utils import demix, prefer_target_instrument, apply_tta, load_start_checkpoint, compile_model
 from utils.metrics import get_metrics
 
 import warnings
@@ -859,8 +859,12 @@ def check_validation(dict_args):
         print('CUDA is not available. Run validation on CPU. It will be very slow...')
 
     if torch.cuda.is_available() and len(device_ids) > 1:
+        if getattr(args, 'compile', False):
+            print('Warning: --compile is supported only for single GPU validation, ignore it')
         metrics = valid_multi_gpu(model, args, config, device_ids, verbose=False)
     else:
+        if getattr(args, 'compile', False):
+            model = compile_model(model.eval().to(device))
         metrics = valid(model, args, config, device, verbose=True)
 
     del model

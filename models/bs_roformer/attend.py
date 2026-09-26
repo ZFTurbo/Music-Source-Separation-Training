@@ -13,6 +13,18 @@ from einops import rearrange, reduce
 
 FlashAttentionConfig = namedtuple('FlashAttentionConfig', ['enable_flash', 'enable_math', 'enable_mem_efficient'])
 
+try:
+    from torch.nn.attention import sdpa_kernel, SDPBackend
+    INFERENCE_SDPA_BACKENDS = [
+        SDPBackend.CUDNN_ATTENTION,
+        SDPBackend.FLASH_ATTENTION,
+        SDPBackend.EFFICIENT_ATTENTION,
+        SDPBackend.MATH,
+    ]
+    _HAS_SDPA_KERNEL = True
+except ImportError:
+    _HAS_SDPA_KERNEL = False
+
 # helpers
 
 def exists(val):
@@ -79,6 +91,12 @@ class Attend(nn.Module):
         if exists(self.scale):
             default_scale = q.shape[-1] ** -0.5
             q = q * (self.scale / default_scale)
+
+        # inference on cuda: prefer cuDNN attention (available on Windows builds, ~1.9x faster than
+        # mem efficient kernel for long sequences on Ampere/Blackwell), fall back to the others if unsupported
+        if is_cuda and not self.training and _HAS_SDPA_KERNEL:
+            with sdpa_kernel(INFERENCE_SDPA_BACKENDS, set_priority=True):
+                return F.scaled_dot_product_attention(q, k, v)
 
         # Check if there is a compatible device for flash attention
 

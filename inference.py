@@ -19,7 +19,7 @@ sys.path.append(current_dir)
 from utils.audio_utils import normalize_audio, denormalize_audio, draw_spectrogram
 from utils.settings import get_model_from_config, parse_args_inference
 from utils.model_utils import bigshifts_wrapper
-from utils.model_utils import prefer_target_instrument, apply_tta, load_start_checkpoint
+from utils.model_utils import prefer_target_instrument, apply_tta, load_start_checkpoint, compile_model
 
 import warnings
 
@@ -222,6 +222,12 @@ def proc_folder(dict_args):
         model = nn.DataParallel(model, device_ids=args.device_ids)
 
     model = model.to(device)
+
+    if args.compile:
+        if isinstance(model, nn.DataParallel) or device in ("cpu", "mps"):
+            print('Warning: --compile is supported only for single CUDA GPU, ignore it')
+        else:
+            model = compile_model(model.eval())
 
     print("Model load time: {:.2f} sec".format(time.time() - model_load_start_time))
 

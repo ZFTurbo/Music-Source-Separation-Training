@@ -13,6 +13,53 @@ from torch.optim import Adam, AdamW, SGD, RAdam, RMSprop
 from tqdm.auto import tqdm
 from typing import Dict, List, Tuple, Any, Union, Optional
 import torch.distributed as dist
+import shutil
+
+
+def compile_model(model: torch.nn.Module) -> torch.nn.Module:
+    """
+    Use torch.compile for faster inference (fuses elementwise ops: norms, rotary, gates, casts).
+
+    For roformer-like models (layers + band_split + mask_estimators) submodules are compiled in place:
+    all transformer blocks share one compiled graph, so compilation takes seconds instead of minutes
+    (whole-model compile is only ~4% faster but needs ~1.5 min of tracing on every run).
+    Shapes are static: demix pads every batch to `inference.batch_size`, so there are no recompilations.
+    """
+    # triton builds its helper module with the compiler from CC env var; if it points to a missing
+    # executable (e.g. "cc -mavx2" on Windows), drop it so triton uses its bundled TinyCC / MSVC
+    cc = os.environ.get("CC")
+    if cc and shutil.which(cc.split()[0]) is None:
+        print(f"torch.compile: CC='{cc}' not found, ignore it for triton")
+        os.environ.pop("CC")
+
+    # persistent on-disk cache of compiled graphs and triton kernels (separate entries for each GPU arch),
+    # so only the first run compiles from scratch. Can be overridden by setting env vars before the run.
+    # Some imports already fill TORCHINDUCTOR_CACHE_DIR with torch default (temp dir), so replace the default too
+    from torch._inductor.runtime.cache_dir_utils import default_cache_dir
+    if os.environ.get("TORCHINDUCTOR_CACHE_DIR") in (None, default_cache_dir()):
+        code_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        os.environ["TORCHINDUCTOR_CACHE_DIR"] = code_root + '/cache_for_test/torch_cache'
+    os.environ.setdefault("TORCHINDUCTOR_FX_GRAPH_CACHE", "1")
+    print(f"torch.compile cache dir: {os.environ['TORCHINDUCTOR_CACHE_DIR']}")
+
+    if all(hasattr(model, name) for name in ("layers", "band_split", "mask_estimators")):
+        print("Use torch.compile for model submodules (first batch will be slower due to compilation)")
+        for layer in model.layers:
+            for block in layer:
+                block.compile(dynamic=False)
+        model.band_split.compile(dynamic=False)
+        for mask_estimator in model.mask_estimators:
+            mask_estimator.compile(dynamic=False)
+        model.compiled_submodules = True
+        return model
+
+    print("Use torch.compile for model (first batch will be slow due to compilation)")
+    return torch.compile(model, dynamic=False)
+
+
+def is_compiled_model(model: torch.nn.Module) -> bool:
+    return hasattr(model, "_orig_mod") or getattr(model, "compiled_submodules", False)
+
 
 def bigshifts_wrapper(
     config: ConfigDict,
@@ -132,6 +179,7 @@ def demix(
             mix = nn.functional.pad(mix, (border, border), mode="reflect")
 
     batch_size = config.inference.batch_size
+    pad_batch = is_compiled_model(model)
 
     use_amp = getattr(config.training, 'use_amp', True)
 
@@ -169,6 +217,9 @@ def demix(
                 # Process batch if it's full or the end is reached
                 if len(batch_data) >= batch_size or i >= mix.shape[1]:
                     arr = torch.stack(batch_data, dim=0)
+                    if pad_batch and arr.shape[0] < batch_size:
+                        # keep batch shape constant for compiled model (avoid recompilation)
+                        arr = nn.functional.pad(arr, (0, 0, 0, 0, 0, batch_size - arr.shape[0]))
                     x = model(arr)
 
                     if mode == "generic":
