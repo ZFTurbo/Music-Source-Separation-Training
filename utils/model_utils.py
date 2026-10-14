@@ -789,6 +789,8 @@ def bind_lora_to_model(config: Dict[str, Any], model: nn.Module) -> nn.Module:
                         **config['lora']
                     )
                 )
+                # Keep the pretrained weight/bias (lora_A/lora_B stay at their init)
+                getattr(parent_module, layer_name).load_state_dict(module.state_dict(), strict=False)
                 replaced_layers += 1  # Increment the counter
 
             except Exception as e:
