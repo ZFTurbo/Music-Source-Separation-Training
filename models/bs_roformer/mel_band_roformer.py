@@ -713,6 +713,9 @@ class MelBandRoformer(Module):
 
         target_sel = target[:, stem_ids]
 
+        if recon_audio.ndim == 3:  # num_stems == 1 squeezed the stem dim above; the loss expects b n s t
+            recon_audio = rearrange(recon_audio, 'b s t -> b 1 s t')
+
         loss = F.l1_loss(recon_audio, target_sel)
 
         multi_stft_resolution_loss = 0.
