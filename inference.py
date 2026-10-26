@@ -215,6 +215,10 @@ def proc_folder(dict_args):
     if args.start_check_point:
         checkpoint = torch.load(args.start_check_point, weights_only=False, map_location='cpu')
         load_start_checkpoint(args, model, checkpoint, type_='inference', config=config)
+    if args.lora_checkpoint_peft:
+        from peft import PeftModel
+        model = PeftModel.from_pretrained(model, args.lora_checkpoint_peft)
+        model = model.merge_and_unload()
 
     print("Instruments: {}".format(config.training.instruments))
 
