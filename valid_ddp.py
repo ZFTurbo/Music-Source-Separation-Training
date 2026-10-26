@@ -23,7 +23,7 @@ def check_validation_single(rank: int, world_size: int, args=None):
 
     if args.start_check_point:
         checkpoint = torch.load(args.start_check_point, weights_only=False, map_location='cpu')
-        load_start_checkpoint(args, model, checkpoint, type_='valid')
+        load_start_checkpoint(args, model, checkpoint, type_='valid', config=config)
 
     if dist.get_rank() == 0:
         print(f"Instruments: {config.training.instruments}")
