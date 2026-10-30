@@ -16,14 +16,17 @@ import torch.distributed as dist
 import shutil
 
 
-def compile_model(model: torch.nn.Module) -> torch.nn.Module:
+def compile_model(model: torch.nn.Module, inplace: bool = False) -> torch.nn.Module:
     """
-    Use torch.compile for faster inference (fuses elementwise ops: norms, rotary, gates, casts).
+    Use torch.compile for faster inference and training (fuses elementwise ops: norms, rotary, gates, casts).
 
     For roformer-like models (layers + band_split + mask_estimators) submodules are compiled in place:
     all transformer blocks share one compiled graph, so compilation takes seconds instead of minutes
     (whole-model compile is only ~4% faster but needs ~1.5 min of tracing on every run).
     Shapes are static: demix pads every batch to `inference.batch_size`, so there are no recompilations.
+    inplace=True compiles other models in place too (state_dict keys stay the same, needed for training).
+    Don't use it with DataParallel: replicas share the compiled function bound to the original module,
+    so they would silently run the weights of the GPU 0 copy.
     """
     # triton builds its helper module with the compiler from CC env var; if it points to a missing
     # executable (e.g. "cc -mavx2" on Windows), drop it so triton uses its bundled TinyCC / MSVC
@@ -54,10 +57,15 @@ def compile_model(model: torch.nn.Module) -> torch.nn.Module:
         return model
 
     print("Use torch.compile for model (first batch will be slow due to compilation)")
+    if inplace:
+        model.compile(dynamic=False)
+        model.compiled_submodules = True
+        return model
     return torch.compile(model, dynamic=False)
 
 
 def is_compiled_model(model: torch.nn.Module) -> bool:
+    model = getattr(model, "module", model)  # DDP / DataParallel wrapper
     return hasattr(model, "_orig_mod") or getattr(model, "compiled_submodules", False)
 
 
@@ -189,7 +197,9 @@ def demix(
     use_amp = getattr(config.training, 'use_amp', True)
 
     with torch.cuda.amp.autocast(enabled=use_amp):
-        with torch.inference_mode():
+        # no_grad, not inference_mode: during training validation the model fills its lazy caches
+        # (rotary 'cached_freqs'), and inference tensors there break the next compiled training backward
+        with torch.no_grad():
             # Initialize result and counter tensors (counter is the same for all instruments and channels)
             req_shape = (num_instruments,) + mix.shape
             result = torch.zeros(req_shape, dtype=torch.float32, device=acc_device)

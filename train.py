@@ -28,6 +28,25 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
+def update_ema(ema_model, model):
+    """
+    Buffers like rotary 'cached_freqs' are caches created on the first forward (None -> [seq_len, dim]),
+    while AveragedModel copies buffers in place and fails if their number or shapes differ.
+    So bring EMA buffers in line first. (With DataParallel the cache is filled only on replicas,
+    so it never showed up.)
+    """
+    model = getattr(model, 'module', model)
+    ema_buffers = dict(ema_model.module.named_buffers())
+    for name, b in model.named_buffers():
+        b_ema = ema_buffers.get(name)
+        if b_ema is None or b_ema.shape != b.shape:
+            module_name, _, buffer_name = name.rpartition('.')
+            persistent = buffer_name not in model.get_submodule(module_name)._non_persistent_buffers_set
+            ema_model.module.get_submodule(module_name).register_buffer(
+                buffer_name, b.detach().clone(), persistent=persistent)
+    ema_model.update_parameters(model)
+
+
 def forward_step(x, y, active_stem_ids, get_internal_loss, model, multi_loss, device_ids):
     if get_internal_loss:
         loss = model(x, y, active_stem_ids=active_stem_ids)
@@ -144,9 +163,9 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
 
             if ema_model is not None:
                 if ddp:
-                    ema_model.update_parameters(model.module)
+                    update_ema(ema_model, model.module)
                 else:
-                    ema_model.update_parameters(model)
+                    update_ema(ema_model, model)
 
             if scheduler.name in ['linear_scheduler', 'cosine_scheduler']:
                 scheduler.step()
@@ -298,7 +317,7 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
     from utils.model_utils import get_lora
     from utils.losses import choice_loss
     from torch.cuda.amp.grad_scaler import GradScaler
-    from utils.model_utils import get_optimizer, log_model_info
+    from utils.model_utils import get_optimizer, log_model_info, compile_model
 
     args = parse_args_train(args)
     ddp = True if world_size else False
@@ -355,6 +374,15 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
         if not dist.is_initialized() or dist.get_rank() == 0:
             print(f"Initializing EMA with decay: {config.training.ema_momentum}")
         ema_model = AveragedModel(model_module, multi_avg_fn=get_ema_multi_avg_fn(config.training.ema_momentum))
+
+    # Compiled in place, so state_dict keys don't change (checkpoints and EMA work as usual)
+    if args.compile:
+        # DataParallel replicas reuse the compiled function bound to the original module -> wrong weights
+        if not ddp and torch.cuda.is_available() and len(device_ids) > 1:
+            print('Warning: --compile is not supported with DataParallel (several device_ids without DDP), ignore it. '
+                  'Use train_ddp.py for multi-GPU training with --compile')
+        else:
+            compile_model(model_module, inplace=True)
         
     if args.pre_valid:
         model_to_valid = ema_model if ema_model is not None else model

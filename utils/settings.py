@@ -111,6 +111,9 @@ def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argpar
     parser.add_argument("--freeze_layers", nargs="+", type=str,
                         help="List of layers to freeze. Use prefixes e.g. layer1 - will freeze all layers whose names "
                              "starts with layer1. You can set mulitple parameters.")
+    parser.add_argument("--compile", action='store_true',
+                        help="Use torch.compile for training (single GPU or DDP, not DataParallel). "
+                             "First run compiles for a few minutes, then graphs are taken from the on-disk cache")
 
     if dict_args is not None:
         args = parser.parse_args([])
