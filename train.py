@@ -497,6 +497,12 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
                     metrics_avg=metrics_avg,
                     all_metrics=all_metrics
                 )
+            # scheduler.step() runs only on rank 0 (inside compute_epoch_metrics): share its lr,
+            # otherwise ranks update weights with different lr and silently drift apart
+            lrs = torch.tensor([g['lr'] for g in optimizer.param_groups], dtype=torch.float64, device=device)
+            dist.broadcast(lrs, src=0)
+            for g, lr in zip(optimizer.param_groups, lrs.tolist()):
+                g['lr'] = lr
         else:
             best_metric = compute_epoch_metrics(
                 model=model,
