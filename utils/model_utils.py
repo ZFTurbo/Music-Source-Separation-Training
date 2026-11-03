@@ -362,7 +362,12 @@ def get_optimizer(config: ConfigDict, model: torch.nn.Module) -> torch.optim.Opt
     elif name_optimizer == 'rmsprop':
         optimizer = RMSprop(model.parameters(), lr=config.training.lr, **optim_params)
     elif name_optimizer == 'prodigy':
-        from prodigyopt import Prodigy
+        # In-repo multi-tensor version of prodigyopt 1.1.2 (same math and checkpoint state, much faster step);
+        # prodigyopt itself is only needed for FSDP
+        if optim_params.get('fsdp_in_use', False):
+            from prodigyopt import Prodigy
+        else:
+            from utils.prodigy import Prodigy
         # you can choose weight decay value based on your problem, 0 by default
         # We recommend using lr=1.0 (default) for all networks.
         optimizer = Prodigy(model.parameters(), lr=config.training.lr, **optim_params)
