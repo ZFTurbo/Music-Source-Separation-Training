@@ -1,4 +1,5 @@
 import math
+from collections import defaultdict
 from typing import List, Tuple
 
 import torch
@@ -126,6 +127,10 @@ class Muon(BaseOptimizer):
 
         super().__init__(params, kwargs)
 
+    # Updates of the same 2D shape are orthogonalized with one batched Newton-Schulz call (one call per
+    # parameter is very slow for models with many matrices). Max elements per call bounds the temporary memory.
+    ns_batch_numel: int = 2 ** 26
+
     def __str__(self) -> str:
         return 'Muon'
 
@@ -164,57 +169,77 @@ class Muon(BaseOptimizer):
             else:
                 group['step'] += 1
 
-            for p in group['params']:
-                if p.grad is None:
-                    continue
+            params = [p for p in group['params'] if p.grad is not None]
+            if not params:
+                continue
+            # a parameter that got its first gradient after the first step
+            self.init_group({'params': [p for p in params if len(self.state[p]) == 0], 'use_muon': group['use_muon']})
+            grads = [p.grad for p in params]
 
-                grad = p.grad
+            if self.maximize:
+                torch._foreach_neg_(grads)
 
-                self.maximize_gradient(grad, maximize=self.maximize)
+            if group['weight_decouple']:
+                if group['weight_decay'] != 0.0:
+                    torch._foreach_mul_(params, 1.0 - group['weight_decay'] * group['lr'])
+            elif group['weight_decay'] > 0.0:
+                torch._foreach_add_(grads, params, alpha=group['weight_decay'])
 
-                state = self.state[p]
-
-                self.apply_weight_decay(
-                    p,
-                    grad=grad,
-                    lr=group['lr'],
-                    weight_decay=group['weight_decay'],
-                    weight_decouple=group['weight_decouple'],
-                    fixed_decay=False,
-                )
-
-                if group['use_muon']:
-                    buf = state['momentum_buffer']
-                    buf.lerp_(grad, weight=1.0 - group['momentum'])
-
-                    update = grad.lerp_(buf, weight=group['momentum']) if group['nesterov'] else buf
-                    if update.ndim > 2:
-                        update = update.view(len(update), -1)
-
-                    update = zero_power_via_newton_schulz_5(update, num_steps=group['ns_steps'])
-
-                    if group.get('cautious'):
-                        self.apply_cautious(update, grad)
-
-                    lr: float = get_adjusted_lr(group['lr'], p.size(), use_adjusted_lr=group['use_adjusted_lr'])
-
-                    p.add_(update.reshape(p.shape), alpha=-lr)
-                else:
-                    exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
-
-                    beta1, beta2 = group['betas']
-
-                    bias_correction1: float = self.debias(beta1, group['step'])
-                    bias_correction2_sq: float = math.sqrt(self.debias(beta2, group['step']))
-
-                    exp_avg.lerp_(grad, weight=1.0 - beta1)
-                    exp_avg_sq.lerp_(grad.square(), weight=1.0 - beta2)
-
-                    de_nom = exp_avg_sq.sqrt().add_(group['eps']).div_(bias_correction2_sq)
-
-                    p.addcdiv_(exp_avg / bias_correction1, de_nom, value=-group['lr'])
+            if group['use_muon']:
+                self._muon_update(group, params, grads)
+            else:
+                self._adam_update(group, params, grads)
 
         return loss
+
+    def _muon_update(self, group: ParamGroup, params: List[torch.Tensor], grads: List[torch.Tensor]) -> None:
+        bufs = [self.state[p]['momentum_buffer'] for p in params]
+        torch._foreach_lerp_(bufs, grads, 1.0 - group['momentum'])
+        if group['nesterov']:
+            torch._foreach_lerp_(grads, bufs, group['momentum'])
+            updates = grads
+        else:
+            updates = bufs
+
+        # >2D parameters are flattened to (dim0, -1)
+        buckets = defaultdict(list)
+        for i, u in enumerate(updates):
+            buckets[(len(u), u.numel() // len(u), u.device)].append(i)
+
+        for (rows, cols, _), bucket in buckets.items():
+            per_call = max(1, self.ns_batch_numel // (rows * cols))
+            # lr depends only on the parameter shape, so it is the same for the whole bucket
+            lr: float = get_adjusted_lr(group['lr'], params[bucket[0]].size(), use_adjusted_lr=group['use_adjusted_lr'])
+            for start in range(0, len(bucket), per_call):
+                idx = bucket[start:start + per_call]
+                # Newton-Schulz runs in bfloat16 anyway: stacking in bf16 halves the temporary memory
+                stacked = torch.stack([updates[i].reshape(rows, cols).bfloat16() for i in idx])
+                ortho = zero_power_via_newton_schulz_5(stacked, num_steps=group['ns_steps']).unbind(0)
+
+                if group.get('cautious'):
+                    for i, o in zip(idx, ortho):
+                        self.apply_cautious(o, grads[i].reshape(rows, cols))
+
+                ps = [params[i] for i in idx]
+                torch._foreach_add_(ps, [o.reshape(p.shape).to(p.dtype) for o, p in zip(ortho, ps)], alpha=-lr)
+
+    def _adam_update(self, group: ParamGroup, params: List[torch.Tensor], grads: List[torch.Tensor]) -> None:
+        exp_avgs = [self.state[p]['exp_avg'] for p in params]
+        exp_avg_sqs = [self.state[p]['exp_avg_sq'] for p in params]
+
+        beta1, beta2 = group['betas']
+
+        bias_correction1: float = self.debias(beta1, group['step'])
+        bias_correction2_sq: float = math.sqrt(self.debias(beta2, group['step']))
+
+        torch._foreach_lerp_(exp_avgs, grads, 1.0 - beta1)
+        torch._foreach_lerp_(exp_avg_sqs, torch._foreach_mul(grads, grads), 1.0 - beta2)
+
+        de_nom = torch._foreach_sqrt(exp_avg_sqs)
+        torch._foreach_add_(de_nom, group['eps'])
+        torch._foreach_div_(de_nom, bias_correction2_sq)
+
+        torch._foreach_addcdiv_(params, torch._foreach_div(exp_avgs, bias_correction1), de_nom, value=-group['lr'])
 
 
 class DistributedMuon(BaseOptimizer):  # pragma: no cover
