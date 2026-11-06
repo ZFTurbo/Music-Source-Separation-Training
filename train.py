@@ -68,6 +68,25 @@ def forward_step(x, y, active_stem_ids, get_internal_loss, model, multi_loss, de
 
 
 
+def compute_training_loss(model, config, args, data, device, device_ids, multi_loss, use_amp):
+    normalize = getattr(config.training, 'normalize', False)
+    get_internal_loss = (args.model_type in ('mel_band_roformer', 'bs_roformer', 'bs_mamba2', 'mel_band_conformer', 'bs_conformer') and not args.use_standard_loss)
+    if len(data)==3:
+        batch, mixes, active_stem_ids = data
+    elif len(data)==2:
+        batch, mixes = data
+        active_stem_ids = None
+    else:
+        raise ValueError(f'len data is {len(data)}')
+    x = mixes.to(device)
+    y = batch.to(device)
+
+    if normalize:
+        x, y = normalize_batch(x, y)
+    with torch.cuda.amp.autocast(enabled=use_amp):
+        return forward_step(x, y, active_stem_ids, get_internal_loss, model, multi_loss, device_ids), None
+
+
 def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.Namespace,
                     optimizer: torch.optim.Optimizer,
                     device: torch.device, device_ids: List[int], epoch: int, use_amp: bool,
@@ -126,28 +145,14 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
         pbar = tqdm(train_loader)
 
     for i, data in enumerate(pbar):
-        if len(data)==3:
-            batch, mixes, active_stem_ids = data
-        elif len(data)==2:
-            batch, mixes = data
-            active_stem_ids = None
-        else:
-            raise ValueError(f'len data is {len(data)}')
-        x = mixes.to(device)
-        y = batch.to(device)
-
-        if normalize:
-            x, y = normalize_batch(x, y)
         if safe_mode:
             try:
-                with torch.cuda.amp.autocast(enabled=use_amp):
-                    loss = forward_step(x, y, active_stem_ids, get_internal_loss, model, multi_loss, device_ids)
+                loss, _ = compute_training_loss(model, config, args, data, device, device_ids, multi_loss, use_amp)
             except Exception as e:
                 print(f'Error: {e}')
                 continue
         else:
-            with torch.cuda.amp.autocast(enabled=use_amp):
-                loss = forward_step(x, y, active_stem_ids, get_internal_loss, model, multi_loss, device_ids)
+            loss, _ = compute_training_loss(model, config, args, data, device, device_ids, multi_loss, use_amp)
         loss /= gradient_accumulation_steps
         scaler.scale(loss).backward()
 
@@ -335,10 +340,10 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
     else:
         batch_size = config.training.batch_size * len(device_ids)
 
-    if not dist.is_initialized() or dist.get_rank() == 0:
-        wandb_init(args, config, batch_size)
-
-    train_loader = prepare_data(config, args, batch_size)
+    if not args.do_max_batch:
+        if not dist.is_initialized() or dist.get_rank() == 0:
+            wandb_init(args, config, batch_size)
+        train_loader = prepare_data(config, args, batch_size)
 
     if args.start_check_point:
         checkpoint = torch.load(args.start_check_point, weights_only=False, map_location='cpu')
@@ -384,6 +389,16 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
         else:
             compile_model(model_module, inplace=True)
         
+    if args.do_max_batch:
+        if ddp:
+            raise ValueError('--do_max_batch requires standard single-GPU training')
+        from utils.auto_batch import select_max_batch
+        resume_optimizer = checkpoint.get('optimizer_state_dict') if args.start_check_point and args.load_optimizer else None
+        select_max_batch(model, ema_model, config, args, device, device_ids, use_amp, resume_optimizer)
+        batch_size = config.training.batch_size
+        wandb_init(args, config, batch_size)
+        train_loader = prepare_data(config, args, batch_size)
+
     if args.pre_valid:
         model_to_valid = ema_model if ema_model is not None else model
         if ddp:

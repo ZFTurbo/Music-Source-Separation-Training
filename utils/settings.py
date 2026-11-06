@@ -81,6 +81,11 @@ def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argpar
                         help="Coef for the bleedless penalty loss. This loss should be used in combination with a primary loss function.")
     parser.add_argument("--wandb_key", type=str, default='', help='wandb API Key')
     parser.add_argument("--wandb_offline", action='store_true', help='local wandb')
+    parser.add_argument("--do_max_batch", action='store_true', help="Probe batch size before standard single-GPU training")
+    parser.add_argument("--max_batch_limit", type=int, default=64, help="Maximum batch size to try")
+    parser.add_argument("--max_batch_memory_fraction", type=float, default=0.90, help="Maximum estimated peak fraction of GPU memory")
+    parser.add_argument("--max_batch_probe_steps", type=int, default=3, help="Minimum real training steps per candidate")
+    parser.add_argument("--max_batch_chunk_reduction", type=float, default=0.0, help="Optional maximum fractional chunk reduction (0 to 0.10)")
     parser.add_argument("--pre_valid", action='store_true', help='Run validation before training')
     parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"],
                         choices=['k_sdr', 'sdr', 'l1_freq', 'si_sdr', 'log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',

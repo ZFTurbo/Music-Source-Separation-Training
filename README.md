@@ -136,3 +136,7 @@ pip install msst
       primaryClass={cs.SD}
 }
 ```
+
+## Automatic batch calibration
+
+Use `--do_max_batch` for opt-in single-GPU calibration before training. See [usage, limits and Slurm checks](docs/auto_batch.md).
