@@ -237,15 +237,13 @@ def demix(
                         arr = nn.functional.pad(arr, (0, 0, 0, 0, 0, batch_size - arr.shape[0]))
                     x = model(arr).to(acc_device, torch.float32)
 
-                    if mode == "generic":
-                        window = windowing_array.clone() # using clone() fixes the clicks at chunk edges when using batch_size=1
-                        if i - step == 0:  # First audio chunk, no fadein
-                            window[:fade_size] = 1
-                        elif i >= mix.shape[1]:  # Last audio chunk, no fadeout
-                            window[-fade_size:] = 1
-
                     for j, (start, seg_len) in enumerate(batch_locations):
                         if mode == "generic":
+                            window = windowing_array.clone()
+                            if start == 0:  # First audio chunk, no fadein
+                                window[:fade_size] = 1
+                            if start + step >= mix.shape[1]:  # Last audio chunk, no fadeout
+                                window[-fade_size:] = 1
                             result[..., start:start + seg_len] += x[j, ..., :seg_len] * window[..., :seg_len]
                             counter[start:start + seg_len] += window[..., :seg_len]
                         else:
