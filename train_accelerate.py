@@ -282,7 +282,7 @@ def train_model(args):
             y = batch
             x = mixes
 
-            if args.model_type in ['mel_band_roformer', 'bs_roformer', 'bs_mamba2', 'mel_band_conformer', 'bs_conformer']:
+            if args.model_type in ['mel_band_roformer', 'bs_roformer', 'bs_mamba2', 'mel_band_conformer', 'bs_conformer', 'sub_roformer']:
                 # loss is computed in forward pass
                 loss = model(x, y)
             else:
