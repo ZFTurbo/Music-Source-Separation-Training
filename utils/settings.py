@@ -398,6 +398,15 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple[nn.Module,
     elif model_type == 'moises_light':
         from moises_light import MoisesLight
         model = MoisesLight(**dict(config.model))
+    elif model_type == 'dbs_bsrnn':
+        from models.dynamic_band_splitting import DBSBSRNN
+        model = DBSBSRNN(**dict(config.model))
+    elif model_type == 'dbs_bs_roformer':
+        from models.dynamic_band_splitting import DBSBSRoformer
+        model = DBSBSRoformer(**dict(config.model))
+    elif model_type == 'dbs_mel_roformer':
+        from models.dynamic_band_splitting import DBSMelRoformer
+        model = DBSMelRoformer(**dict(config.model))
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
