@@ -126,7 +126,7 @@ def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argpar
     if args.metric_for_scheduler not in args.metrics:
         args.metrics += [args.metric_for_scheduler]
 
-    get_internal_loss = (args.model_type in ('mel_band_conformer', 'dbs_bsrnn') or 'roformer' in args.model_type
+    get_internal_loss = (args.model_type in ('mel_band_conformer',) or 'roformer' in args.model_type
                          ) and not args.use_standard_loss
     if get_internal_loss:
         args.loss = [f'{args.model_type}_loss']
@@ -413,6 +413,9 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple[nn.Module,
     elif model_type == 'bs_roformer_official':
         from models.BSRoFormer_official import BSRoFormer
         model = BSRoFormer(**dict(config.model))
+    elif model_type == 'vit_mel_roformer':
+        from models.VitMelRoFormer import VitMelRoformer
+        model = VitMelRoformer(**dict(config.model))
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
