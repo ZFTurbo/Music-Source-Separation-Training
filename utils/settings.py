@@ -407,6 +407,12 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple[nn.Module,
     elif model_type == 'dbs_mel_roformer':
         from models.dynamic_band_splitting import DBSMelRoformer
         model = DBSMelRoformer(**dict(config.model))
+    elif model_type == 'mel_roformer_official':
+        from models.BSRoFormer_official import MelRoFormer
+        model = MelRoFormer(**dict(config.model))
+    elif model_type == 'bs_roformer_official':
+        from models.BSRoFormer_official import BSRoFormer
+        model = BSRoFormer(**dict(config.model))
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
