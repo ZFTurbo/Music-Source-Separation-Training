@@ -25,6 +25,7 @@ Available models for training:
 * BS Conformer Key: `bs_conformer`
 * SCNet Tran Key: `scnet_tran`.
 * SCNet Masked Key: `scnet_masked`.
+* SubRoformer [[Paper](https://arxiv.org/abs/2611.08130), [Repository](https://github.com/ArchiMickey/SubRoformer), [Official weights](https://huggingface.co/archimickey/SubRoformer/tree/main)] Key: `sub_roformer`.
 
 1. **Note 1**: For `segm_models` there are many different encoders is possible. [Look here](https://github.com/qubvel/segmentation_models.pytorch#encoders-).
 2. **Note 2**: Thanks to [@lucidrains](https://github.com/lucidrains) for recreating the RoFormer models based on papers.
