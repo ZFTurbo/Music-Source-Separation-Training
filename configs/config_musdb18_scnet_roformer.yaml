@@ -10,10 +10,10 @@ model:
   dims: [16, 32, 64, 128]
   nfft: 4096
   hop_size: 1024
-  band_SR: [0.02, 0.2, 0.3, 0.01, 0.1, 0.37]
-  band_stride: [1, 2, 4, 6, 6, 10]
-  band_kernel: [3, 2, 4, 6, 6, 10]
-  conv_depths: [3, 3, 3, 3, 3, 3]
+  band_SR: [0.1975, 0.0508, 0.26545, 0.48625]
+  band_stride: [1, 2, 4, 8]
+  band_kernel: [3, 2, 4, 8]
+  conv_depths: [3, 3, 3, 3]
   conv_expansion: 4
   conv_kernel: 3
   num_dplayer: 6
