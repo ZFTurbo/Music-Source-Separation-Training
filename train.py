@@ -121,6 +121,7 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
         'dbs_bsrnn',
         'dbs_bs_roformer',
         'dbs_mel_roformer',
+        'scnet_roformer',
     ) and not args.use_standard_loss)
 
     if ddp:
