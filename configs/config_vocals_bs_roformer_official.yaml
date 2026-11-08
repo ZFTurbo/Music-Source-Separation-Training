@@ -1,0 +1,42 @@
+audio:
+  chunk_size: 131584
+  dim_f: 1024
+  dim_t: 256
+  hop_length: 512
+  n_fft: 2048
+  num_channels: 2
+  sample_rate: 44100
+  min_mean_abs: 0.001
+
+model:
+  input_channels: 2
+  output_channels: 2
+  depth: 6
+  num_feature: 128
+  window_size: 2048
+  hop_size: 512
+
+training:
+  batch_size: 1
+  gradient_accumulation_steps: 4
+  grad_clip: 1.0
+  instruments: [vocals, other]
+  target_instrument: vocals
+  lr: 5.0e-5
+  patience: 100
+  reduce_factor: 0.5
+  num_epochs: 500
+  num_steps: 1000
+  q: 0.95
+  optimizer: adam
+  use_amp: true
+
+augmentations:
+  enable: true
+  loudness: true
+  loudness_min: 0.5
+  loudness_max: 1.5
+
+inference:
+  batch_size: 1
+  num_overlap: 4
