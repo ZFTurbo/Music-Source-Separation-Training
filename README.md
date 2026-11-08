@@ -14,6 +14,7 @@ Available models for training:
 * TorchSeg based on [TorchSeg module](https://github.com/qubvel/segmentation_models.pytorch). Key: `torchseg`.
 * Band Split RoFormer [[Paper](https://arxiv.org/abs/2309.02612), [Repository](https://github.com/lucidrains/BS-RoFormer)] . Key: `bs_roformer`.
 * Mel-Band RoFormer [[Paper](https://arxiv.org/abs/2310.01809), [Repository](https://github.com/lucidrains/BS-RoFormer)]. Key: `mel_band_roformer`.
+* Bandsplit/Mel Roformer official [[Paper](https://arxiv.org/abs/2309.02612),[Paper](https://arxiv.org/abs/2310.01809) [Repository](https://github.com/asriverwang/BS-RoFormer)] Key: `mel_roformer_official`, `bs_roformer_official`.
 * Swin Upernet [[Paper](https://arxiv.org/abs/2103.14030)] Key: `swin_upernet`.
 * BandIt Plus [[Paper](https://arxiv.org/abs/2309.02539), [Repository](https://github.com/karnwatcharasupat/bandit)] Key: `bandit`.
 * SCNet [[Paper](https://arxiv.org/abs/2401.13276), [Official Repository](https://github.com/starrytong/SCNet), [Unofficial Repository](https://github.com/amanteur/SCNet-PyTorch)] Key: `scnet`.
@@ -27,6 +28,7 @@ Available models for training:
 * SCNet Masked Key: `scnet_masked`.
 * SubRoformer [[Paper](https://arxiv.org/abs/2611.08130), [Repository](https://github.com/ArchiMickey/SubRoformer), [Official weights](https://huggingface.co/archimickey/SubRoformer/tree/main)] Key: `sub_roformer`.
 * DBS - Dynamic-Band-Splitting  [[Paper](https://arxiv.org/pdf/2610.14993), [Repository](https://github.com/JusperLee/Dynamic-Band-Splitting)] Key: `dbs_bsrnn`, `dbs_mel_roformer`, `dbs_bs_roformer`.
+
 
 1. **Note 1**: For `segm_models` there are many different encoders is possible. [Look here](https://github.com/qubvel/segmentation_models.pytorch#encoders-).
 2. **Note 2**: Thanks to [@lucidrains](https://github.com/lucidrains) for recreating the RoFormer models based on papers.
