@@ -368,6 +368,9 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple[nn.Module,
     elif model_type == 'scnet':
         from models.scnet import SCNet
         model = SCNet(**config.model)
+    elif model_type == 'scnet_roformer':
+        from models.scnet_roformer import SCNetRoformer
+        model = SCNetRoformer(**dict(config.model))
     elif model_type == 'scnet_tran':
         from models.scnet.scnet_tran import SCNet_Tran
         model = SCNet_Tran(**config.model)
