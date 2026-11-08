@@ -585,8 +585,9 @@ def initialize_environment_ddp(rank: int, world_size: int, seed: int = 0, resuls
     Returns:
         None
     """
-    seed = (seed + int(time.time())) % 55535 + 10000
-    setup_ddp(rank, world_size, seed)
+    # Time-based so restarts see other random chunks; the rank offset gives each GPU its own data
+    seed = (seed + int(time.time())) % 55535 + 10000 + rank * 100003
+    setup_ddp(rank, world_size)
     manual_seed(seed)
 
     try:
@@ -663,7 +664,7 @@ def find_free_port():
         return s.getsockname()[1]
 
 
-def setup_ddp(rank: int, world_size: int, seed: int) -> None:
+def setup_ddp(rank: int, world_size: int) -> None:
     """
     Initialize a Distributed Data Parallel (DDP) process group.
 
@@ -672,16 +673,17 @@ def setup_ddp(rank: int, world_size: int, seed: int) -> None:
     and falls back to the Gloo backend if NCCL is unavailable. Also sets the
     current CUDA device to match the process rank.
 
+    MASTER_PORT must already be set by the parent process before spawning,
+    so that all ranks use the same port.
+
     Args:
         rank (int): Rank of the current process in the DDP group.
         world_size (int): Total number of processes participating in DDP.
-        seed:
     Returns:
         None
     """
 
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = str(seed)
     os.environ["USE_LIBUV"] = "0"
     try:
         dist.init_process_group("nccl", rank=rank, world_size=world_size)
