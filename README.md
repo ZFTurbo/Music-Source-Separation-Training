@@ -129,15 +129,28 @@ pip install msst
 
 ## Citation
 
-* [arxiv paper](https://arxiv.org/abs/2305.07489)
+* [MSST paper](https://arxiv.org/abs/2607.23395)
+* [Benchmarks paper](https://reference-global.com/download/article/10.5334/tismir.366.pdf)
 
 ```text
-@misc{solovyev2023benchmarks,
-      title={Benchmarks and leaderboards for sound demixing tasks}, 
-      author={Roman Solovyev and Alexander Stempkovskiy and Tatiana Habruseva},
-      year={2023},
-      eprint={2305.07489},
-      archivePrefix={arXiv},
-      primaryClass={cs.SD}
+@misc{solovyev2026musicsourceseparationtrainingmsstunifiedframework,
+  title={Music-Source-Separation-Training (MSST): A Unified Framework for Training and Evaluating Music Demixing Models}, 
+  author={Roman Solovyev and Ilya Kiselev and Alexander Stempkovskiy and Tatiana Gabruseva},
+  year={2026},
+  eprint={2607.23395},
+  archivePrefix={arXiv},
+  primaryClass={cs.SD},
+  url={https://arxiv.org/abs/2607.23395}, 
+}
+
+@article{solovyev2026evaluation,
+  title={Evaluation Platform and Benchmarks for Music Source Separation},
+  author={Solovyev, Roman and Habruseva, Tatiana and Bonnot, Jeremy and Stempkovskiy, Alexander and van Wijnen, Ferdinand},
+  journal={Transactions of the International Society for Music Information Retrieval},
+  volume={9},
+  number={1},
+  pages={625--639},
+  year={2026},
+  publisher={Ubiquity Press}
 }
 ```
