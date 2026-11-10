@@ -596,6 +596,10 @@ class RMSNorm2d(nn.Module):
         self.eps = eps
         self.scale = nn.Parameter(torch.ones(1, dim, 1, 1))
 
+    # Excluded from torch.compile: inside the full model graph inductor (torch 2.11) returns the grad of
+    # `scale` with shape (dim,) instead of (1, dim, 1, 1) -> "CompiledFunctionBackward returned an invalid
+    # gradient". Used only in the fusion block, so the graph break costs almost nothing.
+    @torch.compiler.disable
     def forward(self, x: Tensor) -> Tensor:
         r"""RMSNorm over channel dimension for 2D feature map.
 

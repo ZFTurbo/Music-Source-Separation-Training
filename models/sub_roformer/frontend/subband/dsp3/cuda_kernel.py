@@ -52,10 +52,12 @@ if triton is not None:
         else:
             phase_steps = values.to(tl.uint32)
         phase_words = (phase_steps * sample_indices * stride).to(tl.int32)
+        # 2 * pi / 2**32 as a literal: torch.compile (inductor) re-generates user triton kernels
+        # without the module globals, so `math.pi` here fails with "NameError: math is not defined"
         if double:
-            phase = phase_words.to(tl.float64) * tl.full((), 2 * math.pi / (1 << 32), tl.float64)
+            phase = phase_words.to(tl.float64) * tl.full((), 1.4629180792671596e-09, tl.float64)
         else:
-            phase = phase_words.to(tl.float32) * (2 * math.pi / (1 << 32))
+            phase = phase_words.to(tl.float32) * 1.4629180792671596e-09
         if double:
             real_oscillator = libdevice.cos(phase)
             imag_oscillator = libdevice.sin(phase)
