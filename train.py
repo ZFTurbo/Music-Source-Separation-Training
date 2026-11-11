@@ -16,7 +16,7 @@ from typing import List, Callable, Union
 import torch.distributed as dist
 from torch.optim.swa_utils import AveragedModel, get_ema_multi_avg_fn
 
-from utils.settings import get_scheduler, parse_args_train, initialize_environment_ddp, \
+from utils.settings import INTERNAL_LOSS_MODELS, get_scheduler, parse_args_train, initialize_environment_ddp, \
     initialize_environment, get_model_from_config, wandb_init
 from utils.model_utils import save_weights, normalize_batch, \
     save_last_weights, initialize_model_and_device
@@ -70,7 +70,7 @@ def forward_step(x, y, active_stem_ids, get_internal_loss, model, multi_loss, de
 
 def compute_training_loss(model, config, args, data, device, device_ids, multi_loss, use_amp):
     normalize = getattr(config.training, 'normalize', False)
-    get_internal_loss = (args.model_type in ('mel_band_roformer', 'bs_roformer', 'bs_mamba2', 'mel_band_conformer', 'bs_conformer') and not args.use_standard_loss)
+    get_internal_loss = args.model_type in INTERNAL_LOSS_MODELS and not args.use_standard_loss
     if len(data)==3:
         batch, mixes, active_stem_ids = data
     elif len(data)==2:
@@ -127,16 +127,6 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
     loss_val = 0.
     total = 0
     all_losses[f'epoch_{epoch}'] = []
-
-    normalize = getattr(config.training, 'normalize', False)
-
-    get_internal_loss = (args.model_type in (
-        'mel_band_roformer',
-        'bs_roformer',
-        'bs_mamba2',
-        'mel_band_conformer',
-        'bs_conformer'
-    ) and not args.use_standard_loss)
 
     if ddp:
         pbar = tqdm(train_loader,

@@ -581,6 +581,17 @@ def prefer_target_instrument(config: ConfigDict) -> List[str]:
         return config.training.instruments
 
 
+def strip_compile_prefix(state_dict: dict) -> dict:
+    """
+    Remove the `_orig_mod.` parts that torch.compile (not in place) adds to state_dict keys,
+    e.g. "blocks.0._orig_mod.time_block.norm1.scale" -> "blocks.0.time_block.norm1.scale".
+    Without it such checkpoints load silently without these weights in train mode and fail in valid mode.
+    """
+    if not any('_orig_mod.' in k for k in state_dict):
+        return state_dict
+    return {k.replace('_orig_mod.', ''): v for k, v in state_dict.items()}
+
+
 def load_not_compatible_weights(model: torch.nn.Module, old_model: dict, verbose: bool = False) -> None:
     """
     Load a possibly incompatible state dict into `model` with best-effort matching.
@@ -612,7 +623,9 @@ def load_not_compatible_weights(model: torch.nn.Module, old_model: dict, verbose
     if 'model_state_dict' in old_model:
         # Fix for full_check_point
         old_model = old_model['model_state_dict']
+    old_model = strip_compile_prefix(old_model)
 
+    missing, skipped, resized = [], [], []
     for el in new_model:
         if el in old_model:
             if should_print:
@@ -622,9 +635,12 @@ def load_not_compatible_weights(model: torch.nn.Module, old_model: dict, verbose
                     print('Action: Just copy weights!')
                 new_model[el] = old_model[el]
             else:
-                if len(new_model[el].shape) != len(old_model[el].shape) and should_print:
-                    print('Action: Different dimension! Too lazy to write the code... Skip it')
+                if len(new_model[el].shape) != len(old_model[el].shape):
+                    skipped.append(el)
+                    if should_print:
+                        print('Action: Different dimension! Too lazy to write the code... Skip it')
                 else:
+                    resized.append(el)
                     if should_print:
                         print(f'Shape is different: {tuple(new_model[el].shape)} != {tuple(old_model[el].shape)}')
                     ln = len(new_model[el].shape)
@@ -645,11 +661,41 @@ def load_not_compatible_weights(model: torch.nn.Module, old_model: dict, verbose
                     max_matrix = torch.from_numpy(max_matrix)
                     new_model[el] = max_matrix[slices_new]
         else:
+            missing.append(el)
             if should_print:
                 print(f'Match not found for {el}!')
     model.load_state_dict(
         new_model
     )
+    report_partial_load(new_model, old_model, missing, skipped, resized)
+
+
+def report_partial_load(new_model: dict, old_model: dict, missing: List[str], skipped: List[str],
+                        resized: List[str], max_names: int = 5) -> None:
+    """
+    Warn (rank 0, always, not only with verbose) when the tolerant load did not copy every tensor of the model:
+    otherwise training silently starts from random weights for these layers (e.g. a "module." prefix
+    from DataParallel or another naming scheme in the checkpoint).
+    """
+    if dist.is_initialized() and dist.get_rank() != 0:
+        return
+    unused = [k for k in old_model if k not in new_model]
+    if not (missing or skipped or resized or unused):
+        return
+
+    def names(keys):
+        return ', '.join(keys[:max_names]) + (f', ... (+{len(keys) - max_names})' if len(keys) > max_names else '')
+
+    loaded = len(new_model) - len(missing) - len(skipped)
+    print(f'Warning: checkpoint loaded partially: {loaded}/{len(new_model)} model tensors taken from it')
+    if missing:
+        print(f'  Not found in checkpoint, left as initialized: {len(missing)}: {names(missing)}')
+    if skipped:
+        print(f'  Different number of dimensions, left as initialized: {len(skipped)}: {names(skipped)}')
+    if resized:
+        print(f'  Different shape, zero-padded/cropped: {len(resized)}: {names(resized)}')
+    if unused:
+        print(f'  Checkpoint tensors not used by the model: {len(unused)}: {names(unused)}')
 
 
 def load_lora_weights(model: torch.nn.Module, lora_path: str, device: str = 'cpu') -> None:
@@ -727,7 +773,7 @@ def load_start_checkpoint(args: argparse.Namespace,
         if not args.load_only_compatible_weights:
             load_not_compatible_weights(model, old_model, verbose=False)
         else:
-            model.load_state_dict(torch.load(args.start_check_point))
+            model.load_state_dict(strip_compile_prefix(torch.load(args.start_check_point)))
     else:
         device = 'cpu'
         if args.model_type in ['htdemucs', 'apollo']:
@@ -748,7 +794,7 @@ def load_start_checkpoint(args: argparse.Namespace,
             if 'model_state_dict' in old_model:
                 # Fix for full_check_point
                 old_model = old_model['model_state_dict']
-        model.load_state_dict(old_model)
+        model.load_state_dict(strip_compile_prefix(old_model))
 
     if args.lora_checkpoint_loralib:
         if should_print:

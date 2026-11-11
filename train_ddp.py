@@ -5,7 +5,8 @@ __version__ = '1.0.1'
 import torch
 import torch.multiprocessing as mp
 from train import train_model
-from utils.settings import  cleanup_ddp
+from utils.settings import cleanup_ddp, find_free_port
+import os
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -29,6 +30,7 @@ def train_model_single(rank: int, world_size: int, args=None):
 
 def train_model_ddp(args=None):
     world_size = torch.cuda.device_count()
+    os.environ['MASTER_PORT'] = str(find_free_port())  # chosen here so that all ranks share it
     try:
         mp.spawn(train_model_single, args=(world_size, args), nprocs=world_size, join=True)
     except Exception as e:

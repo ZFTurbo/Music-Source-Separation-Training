@@ -5,7 +5,8 @@ __version__ = '1.0.1'
 
 import torch
 from utils.model_utils import load_start_checkpoint
-from utils.settings import get_model_from_config, parse_args_valid, initialize_environment_ddp
+from utils.settings import get_model_from_config, parse_args_valid, initialize_environment_ddp, find_free_port
+import os
 import warnings
 import torch.multiprocessing as mp
 from valid import valid_multi_gpu
@@ -36,6 +37,7 @@ def check_validation_single(rank: int, world_size: int, args=None):
 
 def check_validation(args=None):
     world_size = torch.cuda.device_count()
+    os.environ['MASTER_PORT'] = str(find_free_port())  # chosen here so that all ranks share it
     mp.spawn(check_validation_single, args=(world_size, args), nprocs=world_size, join=True)
 
 

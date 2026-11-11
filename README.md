@@ -14,6 +14,7 @@ Available models for training:
 * TorchSeg based on [TorchSeg module](https://github.com/qubvel/segmentation_models.pytorch). Key: `torchseg`.
 * Band Split RoFormer [[Paper](https://arxiv.org/abs/2309.02612), [Repository](https://github.com/lucidrains/BS-RoFormer)] . Key: `bs_roformer`.
 * Mel-Band RoFormer [[Paper](https://arxiv.org/abs/2310.01809), [Repository](https://github.com/lucidrains/BS-RoFormer)]. Key: `mel_band_roformer`.
+* Bandsplit/Mel Roformer official [[Paper](https://arxiv.org/abs/2309.02612), [Paper](https://arxiv.org/abs/2310.01809), [Repository](https://github.com/asriverwang/BS-RoFormer)] Key: `mel_roformer_official`, `bs_roformer_official`.
 * Swin Upernet [[Paper](https://arxiv.org/abs/2103.14030)] Key: `swin_upernet`.
 * BandIt Plus [[Paper](https://arxiv.org/abs/2309.02539), [Repository](https://github.com/karnwatcharasupat/bandit)] Key: `bandit`.
 * SCNet [[Paper](https://arxiv.org/abs/2401.13276), [Official Repository](https://github.com/starrytong/SCNet), [Unofficial Repository](https://github.com/amanteur/SCNet-PyTorch)] Key: `scnet`.
@@ -25,6 +26,10 @@ Available models for training:
 * BS Conformer Key: `bs_conformer`
 * SCNet Tran Key: `scnet_tran`.
 * SCNet Masked Key: `scnet_masked`.
+* SubRoformer [[Paper](https://arxiv.org/abs/2611.08130), [Repository](https://github.com/ArchiMickey/SubRoformer), [Official weights](https://huggingface.co/archimickey/SubRoformer/tree/main)] Key: `sub_roformer`.
+* DBS - Dynamic-Band-Splitting  [[Paper](https://arxiv.org/pdf/2610.14993), [Repository](https://github.com/JusperLee/Dynamic-Band-Splitting)] Key: `dbs_bsrnn`, `dbs_mel_roformer`, `dbs_bs_roformer`.
+* VitMel_RoFormer [[Repository](https://github.com/qiuqiangkong/music_source_separation)] Key: `vit_mel_roformer`.
+
 
 1. **Note 1**: For `segm_models` there are many different encoders is possible. [Look here](https://github.com/qubvel/segmentation_models.pytorch#encoders-).
 2. **Note 2**: Thanks to [@lucidrains](https://github.com/lucidrains) for recreating the RoFormer models based on papers.
@@ -124,16 +129,29 @@ pip install msst
 
 ## Citation
 
-* [arxiv paper](https://arxiv.org/abs/2305.07489)
+* [MSST paper](https://arxiv.org/abs/2607.23395)
+* [Benchmarks paper](https://reference-global.com/download/article/10.5334/tismir.366.pdf)
 
 ```text
-@misc{solovyev2023benchmarks,
-      title={Benchmarks and leaderboards for sound demixing tasks}, 
-      author={Roman Solovyev and Alexander Stempkovskiy and Tatiana Habruseva},
-      year={2023},
-      eprint={2305.07489},
-      archivePrefix={arXiv},
-      primaryClass={cs.SD}
+@misc{solovyev2026musicsourceseparationtrainingmsstunifiedframework,
+  title={Music-Source-Separation-Training (MSST): A Unified Framework for Training and Evaluating Music Demixing Models}, 
+  author={Roman Solovyev and Ilya Kiselev and Alexander Stempkovskiy and Tatiana Gabruseva},
+  year={2026},
+  eprint={2607.23395},
+  archivePrefix={arXiv},
+  primaryClass={cs.SD},
+  url={https://arxiv.org/abs/2607.23395}, 
+}
+
+@article{solovyev2026evaluation,
+  title={Evaluation Platform and Benchmarks for Music Source Separation},
+  author={Solovyev, Roman and Habruseva, Tatiana and Bonnot, Jeremy and Stempkovskiy, Alexander and van Wijnen, Ferdinand},
+  journal={Transactions of the International Society for Music Information Retrieval},
+  volume={9},
+  number={1},
+  pages={625--639},
+  year={2026},
+  publisher={Ubiquity Press}
 }
 ```
 

@@ -14,6 +14,19 @@ from torch import nn
 import soundfile as sf
 
 
+INTERNAL_LOSS_MODELS = (
+        'mel_band_roformer',
+        'bs_roformer',
+        'bs_mamba2',
+        'mel_band_conformer',
+        'bs_conformer',
+        'sub_roformer',
+        'dbs_bsrnn',
+        'dbs_bs_roformer',
+        'dbs_mel_roformer',
+        'scnet_roformer',)
+
+
 def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argparse.Namespace:
     """
     Parse command-line arguments for training configuration.
@@ -131,8 +144,7 @@ def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argpar
     if args.metric_for_scheduler not in args.metrics:
         args.metrics += [args.metric_for_scheduler]
 
-    get_internal_loss = (args.model_type in ('mel_band_conformer',) or 'roformer' in args.model_type
-                         ) and not args.use_standard_loss
+    get_internal_loss = args.model_type in INTERNAL_LOSS_MODELS and not args.use_standard_loss
     if get_internal_loss:
         args.loss = [f'{args.model_type}_loss']
     return args
@@ -346,6 +358,9 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple[nn.Module,
     elif model_type == 'bs_roformer':
         from models.bs_roformer import BSRoformer
         model = BSRoformer(**dict(config.model))
+    elif model_type == 'sub_roformer':
+        from models.sub_roformer import SBRoformer
+        model = SBRoformer(**dict(config.model))
     elif model_type == 'bs_conformer':
         from models.bs_roformer import BSConformer
         model = BSConformer(**dict(config.model))
@@ -370,6 +385,9 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple[nn.Module,
     elif model_type == 'scnet':
         from models.scnet import SCNet
         model = SCNet(**config.model)
+    elif model_type == 'scnet_roformer':
+        from models.scnet_roformer import SCNetRoformer
+        model = SCNetRoformer(**dict(config.model))
     elif model_type == 'scnet_tran':
         from models.scnet.scnet_tran import SCNet_Tran
         model = SCNet_Tran(**config.model)
@@ -400,6 +418,24 @@ def get_model_from_config(model_type: str, config_path: str) -> Tuple[nn.Module,
     elif model_type == 'moises_light':
         from moises_light import MoisesLight
         model = MoisesLight(**dict(config.model))
+    elif model_type == 'dbs_bsrnn':
+        from models.dynamic_band_splitting import DBSBSRNN
+        model = DBSBSRNN(**dict(config.model))
+    elif model_type == 'dbs_bs_roformer':
+        from models.dynamic_band_splitting import DBSBSRoformer
+        model = DBSBSRoformer(**dict(config.model))
+    elif model_type == 'dbs_mel_roformer':
+        from models.dynamic_band_splitting import DBSMelRoformer
+        model = DBSMelRoformer(**dict(config.model))
+    elif model_type == 'mel_roformer_official':
+        from models.BSRoFormer_official import MelRoFormer
+        model = MelRoFormer(**dict(config.model))
+    elif model_type == 'bs_roformer_official':
+        from models.BSRoFormer_official import BSRoFormer
+        model = BSRoFormer(**dict(config.model))
+    elif model_type == 'vit_mel_roformer':
+        from models.VitMelRoFormer import VitMelRoformer
+        model = VitMelRoformer(**dict(config.model))
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
@@ -569,8 +605,9 @@ def initialize_environment_ddp(rank: int, world_size: int, seed: int = 0, resuls
     Returns:
         None
     """
-    seed = (seed + int(time.time())) % 55535 + 10000
-    setup_ddp(rank, world_size, seed)
+    # Time-based so restarts see other random chunks; the rank offset gives each GPU its own data
+    seed = (seed + int(time.time())) % 55535 + 10000 + rank * 100003
+    setup_ddp(rank, world_size)
     manual_seed(seed)
 
     try:
@@ -647,7 +684,7 @@ def find_free_port():
         return s.getsockname()[1]
 
 
-def setup_ddp(rank: int, world_size: int, seed: int) -> None:
+def setup_ddp(rank: int, world_size: int) -> None:
     """
     Initialize a Distributed Data Parallel (DDP) process group.
 
@@ -656,16 +693,17 @@ def setup_ddp(rank: int, world_size: int, seed: int) -> None:
     and falls back to the Gloo backend if NCCL is unavailable. Also sets the
     current CUDA device to match the process rank.
 
+    MASTER_PORT must already be set by the parent process before spawning,
+    so that all ranks use the same port.
+
     Args:
         rank (int): Rank of the current process in the DDP group.
         world_size (int): Total number of processes participating in DDP.
-        seed:
     Returns:
         None
     """
 
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = str(seed)
     os.environ["USE_LIBUV"] = "0"
     try:
         dist.init_process_group("nccl", rank=rank, world_size=world_size)

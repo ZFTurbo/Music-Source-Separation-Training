@@ -1,0 +1,59 @@
+audio:
+  chunk_size: 131584
+  dim_f: 1024
+  dim_t: 256
+  hop_length: 512
+  n_fft: 2048
+  num_channels: 2
+  sample_rate: 44100
+  min_mean_abs: 0.00
+
+model:
+  dim: 192
+  depth: 6
+  num_stems: 1
+  stereo: true
+  heads: 8
+  dim_head: 64
+  ff_mult: 4
+  region_configs:
+    - {start: 0, end: 64, target_ratio: 2, max_chunks: 32}
+    - {start: 64, end: 128, target_ratio: 2, max_chunks: 32}
+    - {start: 128, end: 576, target_ratio: 14, max_chunks: 32}
+    - {start: 576, end: 1025, target_ratio: 14.03125, max_chunks: 32}
+  ratio_loss_weight: 0.01
+  multi_stft_resolution_loss_weight: 1.0
+  squeeze_mono_output: false
+  activation_checkpointing: false
+
+training:
+  batch_size: 1
+  gradient_accumulation_steps: 1
+  grad_clip: 1.0
+  instruments: [vocals, instrumental]
+  target_instrument: vocals
+  lr: 5.0e-5
+  patience: 100
+  reduce_factor: 0.9
+  num_epochs: 500
+  num_steps: 1000
+  q: 0.95
+  coarse_loss_clip: true
+  optimizer: adamw
+  other_fix: false
+  use_amp: true
+
+augmentations:
+  enable: false
+  loudness: true
+  loudness_min: 0.5
+  loudness_max: 1.5
+  mixup: true
+  mixup_probs: !!python/tuple [0.2, 0.02]
+  mixup_loudness_min: 0.5
+  mixup_loudness_max: 1.5
+
+inference:
+  batch_size: 1
+  dim_t: 256
+  num_overlap: 4
