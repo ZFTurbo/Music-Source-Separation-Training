@@ -236,6 +236,8 @@ def demix(
                         # keep batch shape constant for compiled model (avoid recompilation)
                         arr = nn.functional.pad(arr, (0, 0, 0, 0, 0, batch_size - arr.shape[0]))
                     x = model(arr).to(acc_device, torch.float32)
+                    if x.ndim == 3 and model_type in ("bs_roformer_official", "mel_roformer_official"):
+                        x = x.unsqueeze(1)
 
                     for j, (start, seg_len) in enumerate(batch_locations):
                         if mode == "generic":

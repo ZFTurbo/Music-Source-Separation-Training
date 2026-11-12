@@ -181,7 +181,7 @@ class MelRoFormer(nn.Module):
                 separated_real.transpose(2, 3).contiguous(),
                 separated_imag.transpose(2, 3).contiguous()), length=mix.shape[-1])
 
-        return audio.to(mix.dtype).unsqueeze(1)
+        return audio.to(mix.dtype)
 
 
 # ── Tests ────────────────────────────────────────────────────

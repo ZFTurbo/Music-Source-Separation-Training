@@ -3,6 +3,7 @@ __author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
 
 
 import os
+import tempfile
 import random
 import numpy as np
 import torch
@@ -730,7 +731,13 @@ class MSSDataset(torch.utils.data.Dataset):
         if os.path.isfile(self.metadata_path):
             if self.verbose and should_print:
                 print('Found metadata cache file: {}'.format(self.metadata_path))
-            old_metadata = pickle.load(open(self.metadata_path, 'rb'))
+            try:
+                with open(self.metadata_path, 'rb') as cache_file:
+                    old_metadata = pickle.load(cache_file)
+            except (EOFError, pickle.UnpicklingError):
+                if should_print:
+                    print(f'Invalid metadata cache; rebuilding: {self.metadata_path}')
+                return track_paths, metadata
         else:
             return track_paths, metadata
 
@@ -880,7 +887,15 @@ class MSSDataset(torch.utils.data.Dataset):
             exit()
 
         # Save metadata
-        pickle.dump(metadata, open(self.metadata_path, 'wb'))
+        temporary_cache = None
+        try:
+            with tempfile.NamedTemporaryFile(dir=os.path.dirname(self.metadata_path) or '.', delete=False) as cache_file:
+                temporary_cache = cache_file.name
+                pickle.dump(metadata, cache_file)
+            os.replace(temporary_cache, self.metadata_path)
+        finally:
+            if temporary_cache and os.path.exists(temporary_cache):
+                os.unlink(temporary_cache)
         return metadata
 
 

@@ -37,6 +37,8 @@ Available models for training:
 
 ## How to: Train
 
+The source repository requires PyTorch 2.6 or newer. Use a matching torchaudio build and a CUDA-enabled PyTorch build for GPU training.
+
 To train model you need to:
 
 1) Choose model type with option `--model_type`, including: `mdx23c`, `htdemucs`, `segm_models`, `mel_band_roformer`, `bs_roformer`.

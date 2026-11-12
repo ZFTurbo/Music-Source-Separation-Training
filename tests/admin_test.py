@@ -1,4 +1,4 @@
-from test import test_settings
+from test import test_settings as run_test_settings
 from scripts.redact_config import redact_config
 from utils.settings import load_config
 from pathlib import Path
@@ -167,7 +167,7 @@ def run_tests() -> None:
 
         test_args.update(args)
 
-        test_settings(test_args, 'admin')
+        run_test_settings(test_args, 'admin')
         print(f"Tests for model {model_type} completed successfully.")
 
     # Remove test_cache

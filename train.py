@@ -3,6 +3,7 @@ __author__ = 'Roman Solovyev (ZFTurbo): https://github.com/ZFTurbo/'
 __version__ = '1.0.5'
 
 import argparse
+import math
 import sys
 
 import numpy as np
@@ -55,6 +56,8 @@ def forward_step(x, y, active_stem_ids, get_internal_loss, model, multi_loss, de
         return loss
     else:
         y_ = model(x)
+        if y_.ndim == y.ndim - 1 and y.shape[1] == 1:
+            y_ = y_.unsqueeze(1)
 
         # Uncomment this if you have problem with gradients with enabled amp
         if 0:
@@ -153,16 +156,25 @@ def train_one_epoch(model: torch.nn.Module, config: ConfigDict, args: argparse.N
             if config.training.grad_clip:
                 nn.utils.clip_grad_norm_(model.parameters(), config.training.grad_clip)
 
+            previous_scale = scaler.get_scale()
+            if not math.isfinite(previous_scale) or previous_scale <= 0:
+                optimizer.zero_grad(set_to_none=True)
+                raise RuntimeError('AMP gradient scale is non-finite or zero; training cannot continue')
             scaler.step(optimizer)
             scaler.update()
+            current_scale = scaler.get_scale()
+            if not math.isfinite(current_scale) or current_scale <= 0:
+                optimizer.zero_grad(set_to_none=True)
+                raise RuntimeError('AMP gradient scale is non-finite or zero; training cannot continue')
+            step_succeeded = current_scale >= previous_scale
 
-            if ema_model is not None:
+            if step_succeeded and ema_model is not None:
                 if ddp:
                     update_ema(ema_model, model.module)
                 else:
                     update_ema(ema_model, model)
 
-            if scheduler.name in ['linear_scheduler', 'cosine_scheduler']:
+            if step_succeeded and scheduler.name in ['linear_scheduler', 'cosine_scheduler']:
                 scheduler.step()
             optimizer.zero_grad(set_to_none=True)
         if ddp:
@@ -307,6 +319,33 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
         None
     """
 
+    # Locate an unambiguous report destination before full argument validation,
+    # so even a malformed training option invalidates a previous successful run.
+    if args is None:
+        pre_parser = argparse.ArgumentParser(add_help=False)
+        pre_parser.add_argument('--do_max_batch', action='store_true')
+        pre_parser.add_argument('--results_path')
+        try:
+            preliminary, _ = pre_parser.parse_known_args()
+        except SystemExit:
+            preliminary = None
+        if any(value in ('-h', '--help') for value in sys.argv[1:]):
+            preliminary = None
+    elif isinstance(args, argparse.Namespace):
+        preliminary = args
+    else:
+        preliminary = argparse.Namespace(**args)
+    if (not world_size and preliminary is not None
+            and getattr(preliminary, 'do_max_batch', False)
+            and getattr(preliminary, 'results_path', None)):
+        from utils.auto_batch import batch_attempt
+        with batch_attempt(preliminary.results_path) as attempt:
+            parsed = parse_args_train(args)
+            return _train_model(parsed, rank, world_size, attempt)
+    return _train_model(parse_args_train(args), rank, world_size)
+
+
+def _train_model(args, rank, world_size, batch_report_attempt=None):
     from utils.dataset import prepare_data
     from utils.model_utils import load_start_checkpoint
     from utils.model_utils import get_lora
@@ -314,7 +353,6 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
     from torch.cuda.amp.grad_scaler import GradScaler
     from utils.model_utils import get_optimizer, log_model_info, compile_model
 
-    args = parse_args_train(args)
     ddp = True if world_size else False
     if ddp:
         initialize_environment_ddp(rank, world_size, args.seed, args.results_path)
@@ -323,6 +361,8 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
     model, config = get_model_from_config(args.model_type, args.config_path)
     if 'model_type' in config.training:
         args.model_type = config.training.model_type
+    from utils.settings import resolve_training_loss
+    resolve_training_loss(args)
     use_amp = getattr(config.training, 'use_amp', True)
     device_ids = args.device_ids
     if ddp:
@@ -365,7 +405,6 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
 
     ema_model = None
     if hasattr(config.training, 'ema_momentum') and config.training.ema_momentum > 0:
-        from torch.optim.swa_utils import AveragedModel, get_ema_multi_avg_fn
         if not dist.is_initialized() or dist.get_rank() == 0:
             print(f"Initializing EMA with decay: {config.training.ema_momentum}")
         ema_model = AveragedModel(model_module, multi_avg_fn=get_ema_multi_avg_fn(config.training.ema_momentum))
@@ -384,7 +423,8 @@ def train_model(args: Union[argparse.Namespace, None], rank=None, world_size=Non
             raise ValueError('--do_max_batch requires standard single-GPU training')
         from utils.auto_batch import select_max_batch
         resume_optimizer = checkpoint.get('optimizer_state_dict') if args.start_check_point and args.load_optimizer else None
-        select_max_batch(model, ema_model, config, args, device, device_ids, use_amp, resume_optimizer)
+        select_max_batch(model, ema_model, config, args, device, device_ids, use_amp,
+                         resume_optimizer, attempt=batch_report_attempt)
         batch_size = config.training.batch_size
         wandb_init(args, config, batch_size)
         train_loader = prepare_data(config, args, batch_size)

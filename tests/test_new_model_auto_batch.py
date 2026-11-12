@@ -81,7 +81,7 @@ def test_new_model_batch_probe(name, tmp_path):
     if name.endswith("_official"):
         with torch.no_grad():
             prediction = model(torch.randn(2, 2, length + 1, device="cuda"))
-        assert prediction.shape == (2, 1, 2, length + 1)
+        assert prediction.shape == (2, 2, length + 1)
         assert prediction.isfinite().all()
     args = parse_args_train(
         dict(

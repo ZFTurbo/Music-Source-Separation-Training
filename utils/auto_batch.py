@@ -2,11 +2,16 @@
 from __future__ import annotations
 
 import copy
+from contextlib import contextmanager
 import gc
 import json
 import math
 import os
 import random
+import tempfile
+import uuid
+
+from filelock import FileLock
 
 import numpy as np
 import soundfile as sf
@@ -33,15 +38,104 @@ def _chunk_candidates(original, reduction):
     return list(dict.fromkeys(max(1, round(original * (1 - value))) for value in fractions))
 
 
+def _write_report(path, report):
+    """Replace the report atomically, so readers never see a partial JSON file."""
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', dir=os.path.dirname(path),
+                                         delete=False) as file:
+            temporary = file.name
+            json.dump(report, file, indent=2)
+        os.replace(temporary, path)
+    finally:
+        if temporary and os.path.exists(temporary):
+            os.unlink(temporary)
+
+
+class _BatchAttempt:
+    def __init__(self, results_path):
+        self.path = os.path.join(results_path, 'auto_batch.json')
+        self.lock = FileLock(self.path + '.lock')
+        self.report = {'status': 'running', 'attempt_id': uuid.uuid4().hex}
+        self.finished = False
+
+    def start(self):
+        os.makedirs(os.path.dirname(self.path) or '.', exist_ok=True)
+        with self.lock:
+            try:
+                with open(self.path, encoding='utf-8') as file:
+                    old = json.load(file)
+                if isinstance(old, dict):
+                    previous = old if old.get('status', 'completed') == 'completed' else old.get('previous_success')
+                    if previous is not None:
+                        self.report['previous_success'] = previous
+            except (FileNotFoundError, json.JSONDecodeError):
+                pass
+            _write_report(self.path, self.report)
+
+    def finish(self, report):
+        with self.lock:
+            try:
+                with open(self.path, encoding='utf-8') as file:
+                    current = json.load(file)
+            except (FileNotFoundError, json.JSONDecodeError) as error:
+                raise RuntimeError('Auto batch report disappeared or became invalid during the attempt') from error
+            if not isinstance(current, dict) or not current.get('attempt_id'):
+                raise RuntimeError('Auto batch report has no valid attempt identifier')
+            if current['attempt_id'] == self.report['attempt_id']:
+                _write_report(self.path, report)
+        self.finished = True
+
+    def complete(self, report):
+        report.update(status='completed', attempt_id=self.report['attempt_id'])
+        self.finish(report)
+
+    def fail(self, error):
+        report = dict(self.report, status='failed', error_type=type(error).__name__, error=str(error))
+        self.finish(report)
+
+
+@contextmanager
+def batch_attempt(results_path):
+    """Track a batch attempt from startup, without overwriting newer attempts."""
+    attempt = _BatchAttempt(results_path)
+    attempt.start()
+    try:
+        yield attempt
+    except BaseException as error:
+        if not attempt.finished:
+            try:
+                attempt.fail(error)
+            except Exception as report_error:
+                if hasattr(error, 'add_note'):
+                    error.add_note(f'Could not update the auto batch report: {report_error}')
+        raise
+
+
 def select_max_batch(model, ema_model, config, args, device, device_ids,
-                     use_amp, resume_optimizer=None):
+                     use_amp, resume_optimizer=None, *, attempt=None):
+    """Choose a batch and record its result for the current attempt."""
+    def select(attempt):
+        report = _select_max_batch(model, ema_model, config, args, device, device_ids,
+                                   use_amp, resume_optimizer)
+        attempt.complete(report)
+
+    if attempt is not None:
+        select(attempt)
+    else:
+        with batch_attempt(args.results_path) as attempt:
+            select(attempt)
+
+
+def _select_max_batch(model, ema_model, config, args, device, device_ids,
+                      use_amp, resume_optimizer=None):
     """Choose a batch size; model, EMA, RNG and any resumed optimizer are untouched."""
     rng = (random.getstate(), np.random.get_state(), torch.get_rng_state(), torch.cuda.get_rng_state_all())
-    from train import compute_training_loss
+    from train import compute_training_loss, update_ema
     from valid import get_mixture_paths, process_audio_files
     from utils.dataset import prepare_data
     from utils.losses import choice_loss
-    from utils.model_utils import get_optimizer
+    from utils.model_utils import get_optimizer, prefer_target_instrument
 
     if device.type != 'cuda' or len(device_ids) != 1:
         raise ValueError('--do_max_batch requires exactly one CUDA device')
@@ -108,32 +202,80 @@ def select_max_batch(model, ema_model, config, args, device, device_ids,
         probe_args.num_workers = 0
         probe_args.persistent_workers = False
         probe_args.prefetch_factor = None
-        loader = prepare_data(config, probe_args, batch)
+        probe_config = copy.deepcopy(config)
+        probe_augment = getattr(probe_config, 'augmentations', {})
+        if (getattr(probe_augment, 'enable', False)
+                and getattr(probe_augment, 'chunk_size_augm', False)
+                and 'chunk_size_min' in probe_augment and 'chunk_size_max' in probe_augment):
+            max_chunk = min(chunk, int(probe_augment.chunk_size_max))
+            if int(probe_augment.chunk_size_min) < 1 or int(probe_augment.chunk_size_min) > max_chunk:
+                raise ValueError('Invalid chunk_size_augm range for the available chunk length')
+            probe_augment.chunk_size_min = max_chunk
+            probe_augment.chunk_size_max = max_chunk
+        loader = prepare_data(probe_config, probe_args, batch)
         iterator = iter(loader)
         steps = max(args.max_batch_probe_steps, accumulation * 2)
+        max_steps = steps + 16 * accumulation
+        processed = 0
+        successful_updates = 0
         model.train()
-        for i in range(steps):
-            try:
-                data = next(iterator)
-            except StopIteration:
-                iterator = iter(loader)
-                data = next(iterator)
-            loss, _ = compute_training_loss(model, config, args, data, device, device_ids, loss_fn, use_amp)
-            scaler.scale(loss / accumulation).backward()
-            if (i + 1) % accumulation == 0 or i == steps - 1:
-                scaler.unscale_(optimizer)
-                if config.training.grad_clip:
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), config.training.grad_clip)
-                scaler.step(optimizer)
-                scaler.update()
+        while (processed < steps or successful_updates < 2) and processed < max_steps:
+            window = min(accumulation, steps - processed) if processed < steps else accumulation
+            for _ in range(window):
+                try:
+                    data = next(iterator)
+                except StopIteration:
+                    iterator = iter(loader)
+                    data = next(iterator)
+                loss, _ = compute_training_loss(model, config, args, data, device, device_ids, loss_fn, use_amp)
+                if not torch.isfinite(loss).all():
+                    raise RuntimeError('Auto batch probe encountered non-finite training loss')
+                scaler.scale(loss / accumulation).backward()
+                processed += 1
+                del data, loss
+            scaler.unscale_(optimizer)
+            if not scaler.is_enabled() and any(
+                not torch.isfinite(p.grad).all() for p in model.parameters() if p.grad is not None
+            ):
+                raise RuntimeError('Auto batch probe encountered non-finite gradients')
+            if config.training.grad_clip:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), config.training.grad_clip)
+            old_scale = scaler.get_scale()
+            if not math.isfinite(old_scale) or old_scale <= 0:
+                raise RuntimeError('AMP gradient scale is non-finite or zero during auto batch')
+            scaler.step(optimizer)
+            scaler.update()
+            current_scale = scaler.get_scale()
+            if not math.isfinite(current_scale) or current_scale <= 0:
+                raise RuntimeError('AMP gradient scale is non-finite or zero during auto batch')
+            step_succeeded = current_scale >= old_scale
+            if step_succeeded:
+                successful_updates += 1
                 if ema_model is not None:
-                    __import__("train").update_ema(ema_model, model)
-                optimizer.zero_grad(set_to_none=True)
-            del data, loss
+                    update_ema(ema_model, model)
+            optimizer.zero_grad(set_to_none=True)
+        if successful_updates < 2:
+            raise RuntimeError('Auto batch probe could not complete two optimizer updates due to AMP overflow')
         validation_model = ema_model if ema_model is not None else model
         validation_model.eval()
+        required = {(metric, instr) for metric in args.metrics
+                    for instr in prefer_target_instrument(config)}
+        coverage = set()
+        validation_paths = [validation_path] + [path for path in paths if path != validation_path]
         with torch.no_grad():
-            process_audio_files([validation_path], validation_model, args, config, device, is_tqdm=False)
+            for path in validation_paths:
+                metrics = process_audio_files([path], validation_model, args, config, device, is_tqdm=False)
+                for metric, per_instrument in metrics.items():
+                    for instr, measurements in per_instrument.items():
+                        if not all(math.isfinite(float(value)) for value in measurements):
+                            raise RuntimeError('Auto batch validation produced no finite metrics')
+                        if measurements:
+                            coverage.add((metric, instr))
+                if required.issubset(coverage):
+                    break
+        if not required.issubset(coverage):
+            missing = ', '.join(f'{metric}/{instr}' for metric, instr in sorted(required - coverage))
+            raise RuntimeError(f'Auto batch validation produced no finite metrics for: {missing}')
         torch.cuda.synchronize(device)
         free, _ = torch.cuda.mem_get_info(device)
         external = max(external, total - free - torch.cuda.memory_reserved(device))
@@ -189,7 +331,6 @@ def select_max_batch(model, ema_model, config, args, device, device_ids,
               'original_chunk_size': original_chunk,
               'memory_fraction_limit': args.max_batch_memory_fraction,
               'validation_path': os.fspath(validation_path), 'attempts': attempts}
-    with open(os.path.join(args.results_path, 'auto_batch.json'), 'w', encoding='utf-8') as file:
-        json.dump(report, file, indent=2)
     print(f'Auto batch selected: batch={selected[0]}, chunk={selected[1]} samples '
           '(config file unchanged)', flush=True)
+    return report

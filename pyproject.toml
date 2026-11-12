@@ -18,7 +18,8 @@ dependencies = [
   "pandas",
   "requests",
   "soundfile",
-  "torch>=2.0.1",
+  "torch>=2.6.0",
+  "filelock>=3.12",
   "torchaudio",
   "tqdm",
   "wxPython ; platform_python_implementation == 'CPython'"

@@ -27,6 +27,19 @@ INTERNAL_LOSS_MODELS = (
         'scnet_roformer',)
 
 
+def resolve_training_loss(args):
+    """Resolve the loss after the effective model type is known."""
+    if (not hasattr(args, '_requested_loss')
+            or (hasattr(args, '_resolved_loss') and args.loss != args._resolved_loss)):
+        args._requested_loss = list(args.loss)
+    if args.model_type in INTERNAL_LOSS_MODELS and not args.use_standard_loss:
+        args.loss = [f'{args.model_type}_loss']
+    else:
+        args.loss = list(args._requested_loss)
+    args._resolved_loss = list(args.loss)
+    return args
+
+
 def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argparse.Namespace:
     """
     Parse command-line arguments for training configuration.
@@ -136,7 +149,7 @@ def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argpar
     if dict_args is not None:
         args = parser.parse_args([])
         args_dict = vars(args)
-        args_dict.update(dict_args)
+        args_dict.update(vars(dict_args) if isinstance(dict_args, argparse.Namespace) else dict_args)
         args = argparse.Namespace(**args_dict)
     else:
         args = parser.parse_args()
@@ -144,10 +157,7 @@ def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argpar
     if args.metric_for_scheduler not in args.metrics:
         args.metrics += [args.metric_for_scheduler]
 
-    get_internal_loss = args.model_type in INTERNAL_LOSS_MODELS and not args.use_standard_loss
-    if get_internal_loss:
-        args.loss = [f'{args.model_type}_loss']
-    return args
+    return resolve_training_loss(args)
 
 
 def parse_args_valid(dict_args: Union[Dict, None]) -> argparse.Namespace:
@@ -725,4 +735,5 @@ def cleanup_ddp() -> None:
     Returns:
         None
     """
-    dist.destroy_process_group()
+    if dist.is_initialized():
+        dist.destroy_process_group()
