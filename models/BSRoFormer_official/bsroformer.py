@@ -186,7 +186,7 @@ class BSRoFormer(nn.Module):
             # (b, c, t, f) -> (b, c, f, t) for iSTFT
             audio = self.istft(torch.complex(
                 separated_real.transpose(2, 3).contiguous(),
-                separated_imag.transpose(2, 3).contiguous()))
+                separated_imag.transpose(2, 3).contiguous()), length=mix.shape[-1])
 
         return audio.to(mix.dtype)
 

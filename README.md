@@ -37,6 +37,8 @@ Available models for training:
 
 ## How to: Train
 
+The source repository requires PyTorch 2.6 or newer. Use a matching torchaudio build and a CUDA-enabled PyTorch build for GPU training.
+
 To train model you need to:
 
 1) Choose model type with option `--model_type`, including: `mdx23c`, `htdemucs`, `segm_models`, `mel_band_roformer`, `bs_roformer`.
@@ -154,3 +156,7 @@ pip install msst
   publisher={Ubiquity Press}
 }
 ```
+
+## Automatic batch calibration
+
+Use `--do_max_batch` for opt-in single-GPU calibration before training. See [usage, limits and Slurm checks](docs/auto_batch.md).

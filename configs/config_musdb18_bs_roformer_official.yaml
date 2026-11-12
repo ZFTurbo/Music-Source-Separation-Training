@@ -21,7 +21,7 @@ training:
   gradient_accumulation_steps: 4
   grad_clip: 1.0
   instruments: [drums, bass, other, vocals]
-  target_instrument: null
+  target_instrument: vocals  # One official separator predicts one target.
   lr: 1.0e-4
   patience: 10
   reduce_factor: 0.5

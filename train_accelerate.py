@@ -288,6 +288,8 @@ def train_model(args):
                 loss = model(x, y)
             else:
                 y_ = model(x)
+                if y_.ndim == y.ndim - 1 and y.shape[1] == 1:
+                    y_ = y_.unsqueeze(1)
                 if args.use_multistft_loss:
                     y1_ = torch.reshape(y_, (y_.shape[0], y_.shape[1] * y_.shape[2], y_.shape[3]))
                     y1 = torch.reshape(y, (y.shape[0], y.shape[1] * y.shape[2], y.shape[3]))

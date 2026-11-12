@@ -14,6 +14,32 @@ from torch import nn
 import soundfile as sf
 
 
+INTERNAL_LOSS_MODELS = (
+        'mel_band_roformer',
+        'bs_roformer',
+        'bs_mamba2',
+        'mel_band_conformer',
+        'bs_conformer',
+        'sub_roformer',
+        'dbs_bsrnn',
+        'dbs_bs_roformer',
+        'dbs_mel_roformer',
+        'scnet_roformer',)
+
+
+def resolve_training_loss(args):
+    """Resolve the loss after the effective model type is known."""
+    if (not hasattr(args, '_requested_loss')
+            or (hasattr(args, '_resolved_loss') and args.loss != args._resolved_loss)):
+        args._requested_loss = list(args.loss)
+    if args.model_type in INTERNAL_LOSS_MODELS and not args.use_standard_loss:
+        args.loss = [f'{args.model_type}_loss']
+    else:
+        args.loss = list(args._requested_loss)
+    args._resolved_loss = list(args.loss)
+    return args
+
+
 def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argparse.Namespace:
     """
     Parse command-line arguments for training configuration.
@@ -81,6 +107,11 @@ def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argpar
                         help="Coef for the bleedless penalty loss. This loss should be used in combination with a primary loss function.")
     parser.add_argument("--wandb_key", type=str, default='', help='wandb API Key')
     parser.add_argument("--wandb_offline", action='store_true', help='local wandb')
+    parser.add_argument("--do_max_batch", action='store_true', help="Probe batch size before standard single-GPU training")
+    parser.add_argument("--max_batch_limit", type=int, default=64, help="Maximum batch size to try")
+    parser.add_argument("--max_batch_memory_fraction", type=float, default=0.90, help="Maximum estimated peak fraction of GPU memory")
+    parser.add_argument("--max_batch_probe_steps", type=int, default=3, help="Minimum real training steps per candidate")
+    parser.add_argument("--max_batch_chunk_reduction", type=float, default=0.0, help="Optional maximum fractional chunk reduction (0 to 0.10)")
     parser.add_argument("--pre_valid", action='store_true', help='Run validation before training')
     parser.add_argument("--metrics", nargs='+', type=str, default=["sdr"],
                         choices=['k_sdr', 'sdr', 'l1_freq', 'si_sdr', 'log_wmse', 'aura_stft', 'aura_mrstft', 'bleedless',
@@ -118,7 +149,7 @@ def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argpar
     if dict_args is not None:
         args = parser.parse_args([])
         args_dict = vars(args)
-        args_dict.update(dict_args)
+        args_dict.update(vars(dict_args) if isinstance(dict_args, argparse.Namespace) else dict_args)
         args = argparse.Namespace(**args_dict)
     else:
         args = parser.parse_args()
@@ -126,11 +157,7 @@ def parse_args_train(dict_args: Union[argparse.Namespace, Dict, None]) -> argpar
     if args.metric_for_scheduler not in args.metrics:
         args.metrics += [args.metric_for_scheduler]
 
-    get_internal_loss = (args.model_type in ('mel_band_conformer',) or 'roformer' in args.model_type
-                         ) and not args.use_standard_loss
-    if get_internal_loss:
-        args.loss = [f'{args.model_type}_loss']
-    return args
+    return resolve_training_loss(args)
 
 
 def parse_args_valid(dict_args: Union[Dict, None]) -> argparse.Namespace:
@@ -708,4 +735,5 @@ def cleanup_ddp() -> None:
     Returns:
         None
     """
-    dist.destroy_process_group()
+    if dist.is_initialized():
+        dist.destroy_process_group()

@@ -236,13 +236,17 @@ def demix(
                         # keep batch shape constant for compiled model (avoid recompilation)
                         arr = nn.functional.pad(arr, (0, 0, 0, 0, 0, batch_size - arr.shape[0]))
                     x = model(arr).to(acc_device, torch.float32)
+                    if x.ndim == 3 and model_type in ("bs_roformer_official", "mel_roformer_official"):
+                        x = x.unsqueeze(1)
 
                     for j, (start, seg_len) in enumerate(batch_locations):
                         if mode == "generic":
-                            window = windowing_array.clone()
-                            if start == 0:  # First audio chunk, no fadein
+                            first = start == 0
+                            last = start + step >= mix.shape[1]
+                            window = windowing_array.clone() if fade_size and (first or last) else windowing_array
+                            if fade_size and first:
                                 window[:fade_size] = 1
-                            if start + step >= mix.shape[1]:  # Last audio chunk, no fadeout
+                            if fade_size and last:
                                 window[-fade_size:] = 1
                             result[..., start:start + seg_len] += x[j, ..., :seg_len] * window[..., :seg_len]
                             counter[start:start + seg_len] += window[..., :seg_len]
@@ -771,7 +775,7 @@ def load_start_checkpoint(args: argparse.Namespace,
         if not args.load_only_compatible_weights:
             load_not_compatible_weights(model, old_model, verbose=False)
         else:
-            model.load_state_dict(torch.load(args.start_check_point))
+            model.load_state_dict(strip_compile_prefix(torch.load(args.start_check_point)))
     else:
         device = 'cpu'
         if args.model_type in ['htdemucs', 'apollo']:
