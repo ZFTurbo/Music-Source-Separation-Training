@@ -1,0 +1,2 @@
+configs/config_musdb18_bs_roformer_official.yaml whitespace=cr-at-eol
+configs/config_musdb18_mel_roformer_official.yaml whitespace=cr-at-eol
