@@ -14,6 +14,18 @@ def exists(val):
     return val is not None
 
 
+def complex_l1_loss(a: torch.Tensor, b: torch.Tensor, eps: float = 1e-20) -> torch.Tensor:
+    """
+    Mean |a - b| of complex tensors, same as F.l1_loss(a, b), but with a finite gradient everywhere.
+    torch.compile (inductor) computes |z| as sqrt(re^2 + im^2): for a denormal difference (~1e-40, e.g.
+    zero reconstruction vs denormal noise of a silent target) the squares underflow to 0 and the gradient
+    z / |z| becomes inf/nan, which spoils the whole training step. eps keeps the root away from 0
+    (adds at most sqrt(eps) = 1e-10 per element).
+    """
+    d = torch.view_as_real(a - b)
+    return torch.sqrt(d.square().sum(-1) + eps).mean()
+
+
 def autocast_disabled(device):
     if device.type in {"cuda", "cpu", "xpu", "hpu", "mps"}:
         return torch.amp.autocast(device_type=device.type, enabled=False)
@@ -776,7 +788,7 @@ class SCNetRoformer(nn.Module):
             recon_Y = torch.stft(rearrange(recon_audio, 'b n s t -> (b n s) t'),**res_stft_kwargs)
             target_Y = torch.stft(rearrange(target_sel, 'b n s t -> (b n s) t'),**res_stft_kwargs)
 
-            multi_stft_resolution_loss = multi_stft_resolution_loss + F.l1_loss(recon_Y, target_Y)
+            multi_stft_resolution_loss = multi_stft_resolution_loss + complex_l1_loss(recon_Y, target_Y)
 
         weighted_multi_resolution_loss = multi_stft_resolution_loss * self.multi_stft_resolution_loss_weight
 
