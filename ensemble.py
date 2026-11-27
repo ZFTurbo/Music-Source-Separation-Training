@@ -9,27 +9,17 @@ import argparse
 
 
 def stft(wave, nfft, hl):
-    wave_left = np.asfortranarray(wave[0])
-    wave_right = np.asfortranarray(wave[1])
-    spec_left = librosa.stft(wave_left, n_fft=nfft, hop_length=hl)
-    spec_right = librosa.stft(wave_right, n_fft=nfft, hop_length=hl)
-    spec = np.asfortranarray([spec_left, spec_right])
-    return spec
+    return librosa.stft(np.asarray(wave), n_fft=nfft, hop_length=hl)
 
 
 def istft(spec, hl, length):
-    spec_left = np.asfortranarray(spec[0])
-    spec_right = np.asfortranarray(spec[1])
-    wave_left = librosa.istft(spec_left, hop_length=hl, length=length)
-    wave_right = librosa.istft(spec_right, hop_length=hl, length=length)
-    wave = np.asfortranarray([wave_left, wave_right])
-    return wave
+    return librosa.istft(spec, hop_length=hl, length=length)
 
 
 def absmax(a, *, axis):
     dims = list(a.shape)
     dims.pop(axis)
-    indices = np.ogrid[tuple(slice(0, d) for d in dims)]
+    indices = list(np.ogrid[tuple(slice(0, d) for d in dims)])
     argmax = np.abs(a).argmax(axis=axis)
     indices.insert((len(a.shape) + axis) % len(a.shape), argmax)
     return a[tuple(indices)]
@@ -38,7 +28,7 @@ def absmax(a, *, axis):
 def absmin(a, *, axis):
     dims = list(a.shape)
     dims.pop(axis)
-    indices = np.ogrid[tuple(slice(0, d) for d in dims)]
+    indices = list(np.ogrid[tuple(slice(0, d) for d in dims)])
     argmax = np.abs(a).argmin(axis=axis)
     indices.insert((len(a.shape) + axis) % len(a.shape), argmax)
     return a[tuple(indices)]
@@ -149,6 +139,7 @@ def ensemble_files(args):
             exit()
         print('Reading file: {}'.format(f))
         wav, sr = librosa.load(f, sr=None, mono=False)
+        wav = np.atleast_2d(wav)
         # wav, sr = sf.read(f)
         print("Waveform shape: {} sample rate: {}".format(wav.shape, sr))
         data.append(wav)

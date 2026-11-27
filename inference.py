@@ -129,6 +129,12 @@ def run_folder(
                 pbar=detailed_pbar
             )
 
+        # Denormalize output audio if normalization was applied
+        if "normalize" in config.inference:
+            if config.inference["normalize"] is True:
+                for key in waveforms_orig:
+                    waveforms_orig[key] = denormalize_audio(waveforms_orig[key], norm_params)
+
         # Extract instrumental track if requested
         if args.extract_instrumental:
             instr = "vocals" if "vocals" in instruments else instruments[0]
@@ -138,11 +144,6 @@ def run_folder(
 
         for instr in instruments:
             estimates = waveforms_orig[instr]
-
-            # Denormalize output audio if normalization was applied
-            if "normalize" in config.inference:
-                if config.inference["normalize"] is True:
-                    estimates = denormalize_audio(estimates, norm_params)
 
             peak: float = float(np.abs(estimates).max())
             if peak <= 1.0 and args.pcm_type != 'FLOAT':
