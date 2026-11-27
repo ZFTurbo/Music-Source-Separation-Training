@@ -9,25 +9,52 @@ from typing import List, Tuple, Dict, Optional, Union
 import argparse
 
 
+TARGET_SR = 44100
+TARGET_CHANNELS = 2
+
+
+def load_audio(path: str) -> np.ndarray:
+    """
+    Reads an audio file as float32 stereo array with shape (num_samples, 2).
+    Mono files are duplicated to both channels. Files with a sample rate other
+    than TARGET_SR or with more than 2 channels raise ValueError.
+    """
+    data, sr = sf.read(path, dtype='float32', always_2d=True)
+    if sr != TARGET_SR:
+        raise ValueError(f"Sample rate {sr} != {TARGET_SR}: {path}")
+    if data.shape[1] == 1:
+        data = np.repeat(data, TARGET_CHANNELS, axis=1)
+    elif data.shape[1] != TARGET_CHANNELS:
+        raise ValueError(f"Unsupported number of channels {data.shape[1]}: {path}")
+    return data
+
+
+def fit_length(data: np.ndarray, length: int) -> np.ndarray:
+    """
+    Pads with zeros or trims an array of shape (num_samples, channels) to the given length.
+    """
+    if len(data) < length:
+        return np.pad(data, ((0, length - len(data)), (0, 0)), 'constant')
+    return data[:length]
+
+
 def combine_audio_files(files: List[str]) -> Tuple[np.ndarray, int]:
     """
     Combines multiple audio files into one by overlaying them.
+    Shorter files are padded with zeros to the length of the longest one.
     Parameters:
     - files (List[str]): List of file paths to be combined.
     Returns:
-    - Tuple[np.ndarray, int]: A Tuple containing the combined audio data array and sample rate.
+    - Tuple[np.ndarray, int]: A Tuple containing the combined float32 stereo audio and sample rate.
     """
-    combined_data, sample_rate = sf.read(files[0])
+    combined_data = load_audio(files[0])
 
     for file in files[1:]:
-        data, sr = sf.read(file)
-        if len(data) > len(combined_data):
-            combined_data = np.pad(combined_data, ((0, len(data) - len(combined_data)), (0, 0)), 'constant')
-        elif len(combined_data) > len(data):
-            data = np.pad(data, ((0, len(combined_data) - len(data)), (0, 0)), 'constant')
-        combined_data += data
+        data = load_audio(file)
+        length = max(len(data), len(combined_data))
+        combined_data = fit_length(combined_data, length) + fit_length(data, length)
 
-    return combined_data, sample_rate
+    return combined_data, TARGET_SR
 
 
 # Finds all .wav files located in folders that do not contain specified categories in their folder names
@@ -57,132 +84,78 @@ def files_to_categories(src_folder: str, categories: List[str]) -> Dict[str, Lis
 
 
 # Processes a folder containing audio tracks, copying and combining necessary files into the target structure
-def process_folder(src_folder: str, dest_folder: str, stems: List[str], trim: bool = False) -> None:
+def process_folder(src_folder: str, dest_folder: str, stems: List[str], trim: bool = False,
+                   subtype: str = 'FLOAT') -> None:
     """
     Processes a folder containing audio tracks, copying and combining necessary files into the target structure.
+    All output files are 44.1 kHz stereo with the same length, and mixture.wav is exactly
+    the sum of the written stems. Missing stems are written as silence.
     Parameters:
     - src_folder (str): Path to the source folder of MoisesDB.
     - dest_folder (str): Path to the target folder for MUSDB18.
     - stems (List[str]): List of stem categories to process.
-    - trim (bool): If True, trim all stems to the length of the shortest one.
+    - trim (bool): If True, trim all stems to the length of the shortest one,
+      otherwise pad all stems with zeros to the length of the longest one.
+    - subtype (str): soundfile subtype for output WAV files. 'FLOAT' keeps values
+      outside [-1, 1] intact. For PCM subtypes all files of the track are scaled
+      by one common gain if needed, so that nothing clips and mixture stays equal to the sum of stems.
     """
+    categories = list(stems) + ['other']
+    all_files = files_to_categories(src_folder, stems)
 
-    if not os.path.exists(dest_folder):
-        os.makedirs(dest_folder)
+    if not any(all_files[category] for category in categories):
+        print(f"Skip {src_folder} — no .wav files found")
+        return
 
-    categories = stems
+    stem_data = {}
+    for category in categories:
+        files = all_files[category]
+        if files:
+            stem_data[category], _ = combine_audio_files(files)
 
-    if trim:
-        # First pass: load all stems and find the minimum length
-        stem_data = {}
-        sample_rate = None
-        min_length = float('inf')
-        all_files = files_to_categories(src_folder, categories)
+    lengths = [len(data) for data in stem_data.values()]
+    length = min(lengths) if trim else max(lengths)
+    if min(lengths) != max(lengths):
+        print(f"Warning: stem lengths differ in {src_folder} ({min(lengths)} != {max(lengths)}), "
+              f"{'trimmed' if trim else 'padded'} to {length}")
 
-        # Using tqdm to display progress for categories
-        for category in tqdm(categories, desc=f"Processing categories in {os.path.basename(src_folder)}"):
-            files = all_files[category]
-            if files:
-                if len(files) > 1:
-                    combined_data, sr = combine_audio_files(files)
-                else:
-                    combined_data, sr = sf.read(files[0])
-
-                stem_data[category] = combined_data
-                sample_rate = sr
-                min_length = min(min_length, len(combined_data))
-
-        # Process 'other' files
-        other_files = all_files['other']
-        if other_files:
-            other_combined_data, sr = combine_audio_files(other_files)
-            stem_data['other'] = other_combined_data
-            sample_rate = sr
-            min_length = min(min_length, len(other_combined_data))
-
-        # If no stems were found, set a default sample rate
-        if sample_rate is None:
-            sample_rate = 44100
-            min_length = 0
-
-        # Second pass: trim all stems to min_length and save
-        for category in categories:
-            if category in stem_data:
-                trimmed_data = stem_data[category][:min_length]
-                sf.write(os.path.join(dest_folder, f"{category}.wav"), trimmed_data, sample_rate)
-            else:
-                # Create silence with min_length
-                silence = np.zeros((min_length, 2), dtype=np.float32)
-                sf.write(os.path.join(dest_folder, f"{category}.wav"), silence, sample_rate)
-
-        # Save 'other' stem
-        if 'other' in stem_data:
-            trimmed_other = stem_data['other'][:min_length]
-            sf.write(os.path.join(dest_folder, "other.wav"), trimmed_other, sample_rate)
+    for category in categories:
+        if category in stem_data:
+            stem_data[category] = fit_length(stem_data[category], length)
         else:
-            silence = np.zeros((min_length, 2), dtype=np.float32)
-            sf.write(os.path.join(dest_folder, "other.wav"), silence, sample_rate)
+            stem_data[category] = np.zeros((length, TARGET_CHANNELS), dtype=np.float32)
 
-        # Create mixture.wav from all files, then trim to min_length
-        all_files_list = [file for sublist in all_files.values() for file in sublist]
-        if all_files_list:
-            mixture_data, sample_rate = combine_audio_files(all_files_list)
-            mixture_data = mixture_data[:min_length]
-            sf.write(os.path.join(dest_folder, "mixture.wav"), mixture_data, sample_rate)
-        else:
-            # If no files at all, create silent mixture
-            silence = np.zeros((min_length, 2), dtype=np.float32)
-            sf.write(os.path.join(dest_folder, "mixture.wav"), silence, sample_rate)
-    else:
-        # Original behavior: If the required stem does not exist in the source folder (src_folder),
-        # we add silence instead of the file with the same duration as the standard file.
-        problem_categories = []
-        duration = 0
-        all_files = files_to_categories(src_folder, categories)
+    mixture = np.sum([stem_data[category] for category in categories], axis=0, dtype=np.float32)
 
-        # Using tqdm to display progress for categories
-        for category in tqdm(categories, desc=f"Processing categories in {os.path.basename(src_folder)}"):
-            files = all_files[category]
-            if files:
-                if len(files) > 1:
-                    combined_data, sample_rate = combine_audio_files(files)
-                else:
-                    combined_data, sample_rate = sf.read(files[0])
+    if subtype != 'FLOAT':
+        peak = max(float(np.abs(data).max(initial=0.0)) for data in list(stem_data.values()) + [mixture])
+        if peak > 0.999:
+            gain = np.float32(0.999 / peak)
+            print(f"Warning: peak {peak:.3f} in {src_folder}, all files scaled by {gain:.3f} to avoid clipping")
+            stem_data = {category: data * gain for category, data in stem_data.items()}
+            mixture = np.sum([stem_data[category] for category in categories], axis=0, dtype=np.float32)
 
-                sf.write(os.path.join(dest_folder, f"{category}.wav"), combined_data, sample_rate)
-                duration = max(duration, len(combined_data) / sample_rate)
-            else:
-                problem_categories.append(category)
-
-        other_files = all_files['other']
-        if other_files:
-            other_combined_data, sample_rate = combine_audio_files(other_files)
-            sf.write(os.path.join(dest_folder, "other.wav"), other_combined_data, sample_rate)
-        else:
-            problem_categories.append('other')
-
-        for category in problem_categories:
-            silence = np.zeros((int(duration * sample_rate), 2), dtype=np.float32)
-            sf.write(os.path.join(dest_folder, f"{category}.wav"), silence, sample_rate)
-        # mixture.wav
-        all_files_list = [file for sublist in all_files.values() for file in sublist]
-        mixture_data, sample_rate = combine_audio_files(all_files_list)
-        sf.write(os.path.join(dest_folder, "mixture.wav"), mixture_data, sample_rate)
+    os.makedirs(dest_folder, exist_ok=True)
+    for category in categories:
+        sf.write(os.path.join(dest_folder, f"{category}.wav"), stem_data[category], TARGET_SR, subtype=subtype)
+    sf.write(os.path.join(dest_folder, "mixture.wav"), mixture, TARGET_SR, subtype=subtype)
 
 
 # Wrapper function for 'process_folder' that unpacks the arguments
-def process_folder_wrapper(args: Tuple[str, str, List[str], bool]) -> None:
+def process_folder_wrapper(args: Tuple[str, str, List[str], bool, str]) -> None:
     """
     A wrapper function for 'process_folder' that unpacks the arguments.
     Parameters:
-    - args (Tuple[str, str, List[str], bool]): A Tuple containing the source folder, destination folder paths, stems, and trim flag.
+    - args (Tuple[str, str, List[str], bool, str]): A Tuple containing the source folder, destination folder paths,
+      stems, trim flag and output subtype.
     """
-    src_folder, dest_folder, stems, trim = args
-    return process_folder(src_folder, dest_folder, stems, trim)
+    src_folder, dest_folder, stems, trim, subtype = args
+    return process_folder(src_folder, dest_folder, stems, trim, subtype)
 
 
 # Converts MoisesDB dataset to MUSDB18 format for a specified number of folders
-def convert_dataset(src_root: str, dest_root: str, stems: List[str], max_folders: int = 240, num_workers: int = 4, trim: bool = False) -> None:
+def convert_dataset(src_root: str, dest_root: str, stems: List[str], max_folders: int = 240, num_workers: int = 4,
+                    trim: bool = False, subtype: str = 'FLOAT') -> None:
     """
     Converts MoisesDB dataset to MUSDB18 format for a specified number of folders.
     Parameters:
@@ -191,6 +164,7 @@ def convert_dataset(src_root: str, dest_root: str, stems: List[str], max_folders
     - max_folders (int): Maximum number of folders to process.
     - num_workers (int): Number of parallel workers for processing.
     - trim (bool): If True, trim all stems to the length of the shortest one.
+    - subtype (str): soundfile subtype for output WAV files.
     """
     folders_to_process = []
     for folder in os.listdir(src_root):
@@ -201,12 +175,14 @@ def convert_dataset(src_root: str, dest_root: str, stems: List[str], max_folders
         dest_folder = os.path.join(dest_root, folder)
 
         if os.path.isdir(src_folder):
-            folders_to_process.append((src_folder, dest_folder, stems, trim))
+            folders_to_process.append((src_folder, dest_folder, stems, trim, subtype))
         else:
             print(f"Skip {src_folder} — not dir")
 
     with Pool(num_workers) as pool:
-        pool.map(process_folder_wrapper, folders_to_process)
+        for _ in tqdm(pool.imap_unordered(process_folder_wrapper, folders_to_process),
+                      total=len(folders_to_process), desc="Converting tracks"):
+            pass
 
 
 # Count number of subfolders in a folder
@@ -285,6 +261,9 @@ def parse_args(dict_args: Union[Dict, None]) -> argparse.Namespace:
                                  'bowed_strings', 'wind', 'other_plucked'], help='List of stems to use.')
     parser.add_argument('--mixture_name', type=str, default='mixture.wav', help="Name of mixture tracks")
     parser.add_argument('--trim', action='store_true', help="Trim all stems to the length of the shortest one")
+    parser.add_argument('--subtype', type=str, default='FLOAT', choices=['FLOAT', 'PCM_24', 'PCM_16'],
+                        help="Output WAV subtype. FLOAT keeps the mixture equal to the sum of stems without clipping; "
+                             "PCM subtypes scale each track by a common gain if its peak exceeds 1.0")
 
     if dict_args is not None:
         args = parser.parse_args([])
@@ -308,12 +287,15 @@ def main(args: Optional[argparse.Namespace] = None) -> None:
     stems = args.stems
     max_folders = args.max_folders
     trim = args.trim
+    subtype = args.subtype
 
     print(f'num_workers: {num_workers}, '
           f'categories: {stems + ["other"]}, '
-          f'trim: {trim}')
+          f'trim: {trim}, '
+          f'subtype: {subtype}')
 
-    convert_dataset(source_directory, destination_directory, stems, max_folders=max_folders, num_workers=num_workers, trim=trim)
+    convert_dataset(source_directory, destination_directory, stems, max_folders=max_folders,
+                    num_workers=num_workers, trim=trim, subtype=subtype)
 
     print(f'All {max_folders} files have been processed, time: {time.time() - start:.2f} sec')
 
