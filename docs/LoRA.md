@@ -8,7 +8,7 @@ LoRA (Low-Rank Adaptation) is a technique designed to reduce the computational a
 
 To include LoRA in your training pipeline, you need to:
 
-Add the `--train_lora` flag to the training command.
+Add the `--train_lora_loralib` flag to the training command.
 
 Add the following configuration for LoRA in your config file:
 
@@ -20,7 +20,6 @@ lora:
   lora_dropout: 0.05
   merge_weights: False
   fan_in_fan_out: False
-  enable_lora: [True]
 ```
 
 Configuration Parameters Explained:
@@ -34,11 +33,8 @@ Configuration Parameters Explained:
 *  `merge_weights`: Whether to merge the LoRA weights into the original model weights during inference. Set this to True only if you want to save the final model with merged weights for deployment.
   
 *  `fan_in_fan_out`: Defines the weight initialization convention. Leave this as False for most scenarios unless your model uses a specific convention requiring it.
-  
-*  `enable_lora`: A list of booleans specifying whether LoRA should be applied to certain layers.
-   * For example, `[True, False, True]` enables LoRA for the 1st and 3rd layers but not the 2nd.
-   * The number of output neurons in the layer must be divisible by the length of enable_lora to ensure proper distribution of LoRA parameters across layers.
-   * For transformer architectures such as GPT models, `enable_lora = [True, False, True]` is typically used to apply LoRA to the Query (Q) and Value (V) projection matrices while skipping the Key (K) projection matrix. This setup allows efficient fine-tuning of the attention mechanism while maintaining computational efficiency.
+
+LoRA is added to every `nn.Linear` layer of the model (as `loralib.Linear`), so there is no per-layer `enable_lora` option.
 
 ### Benefits of Using LoRA
 
@@ -50,13 +46,13 @@ Configuration Parameters Explained:
 
 ### To train a model using both pretrained weights and LoRA weights, you need to:
 
-1. Include the `--lora_checkpoint` parameter in the training command.
+1. Include the `--lora_checkpoint_loralib` parameter in the training command (together with `--train_lora_loralib`).
 
 2. Specify the path to the LoRA checkpoint file.
 
 ### Validating and Inferencing with LoRA
 
-When using a model fine-tuned with LoRA for validation or inference, you must provide the LoRA checkpoint using the `--lora_checkpoint` parameter.
+When using a model fine-tuned with LoRA for validation or inference, you must provide the LoRA checkpoint using the `--lora_checkpoint_loralib` parameter (or `--lora_checkpoint_peft` for an adapter trained with `--train_lora_peft`).
 
 ### Example Commands
 
@@ -72,7 +68,7 @@ python train.py --model_type scnet \
   --device_ids 0 \
   --metrics neg_log_wmse l1_freq sdr \
   --metric_for_scheduler neg_log_wmse \
-  --train_lora
+  --train_lora_loralib
 ```
 
 * Validating with LoRA
@@ -83,12 +79,13 @@ python valid.py --model_type scnet \
   --store_dir results_store/ \
   --valid_path datasets/moisesdb/valid \
   --device_ids 0 \
-  --metrics neg_log_wmse l1_freq si_sdr sdr aura_stft aura_mrstft bleedless fullness
+  --metrics neg_log_wmse l1_freq si_sdr sdr aura_stft aura_mrstft bleedless fullness \
+  --lora_checkpoint_loralib weights/lora_last_scnet.ckpt
 ```
 
 * Inference with LoRA
 ```
-python inference.py --lora_checkpoint weights/lora_last_scnet.ckpt \
+python inference.py --lora_checkpoint_loralib weights/lora_last_scnet.ckpt \
   --model_type scnet \
   --config_path configs/config_musdb18_scnet_large_starrytong.yaml \
   --start_check_point weights/last_scnet.ckpt \
@@ -110,5 +107,5 @@ python train.py --model_type bs_roformer \
   --valid_path musdb18hq/test \
   --device_ids 0 \
   --metrics sdr \
-  --train_lora
+  --train_lora_loralib
 ```

@@ -705,6 +705,8 @@ def load_lora_weights(model: torch.nn.Module, lora_path: str, device: str = 'cpu
     Load LoRA weights into a model.
     This function updates the given model with LoRA-specific weights from the specified checkpoint file.
     It does not require the checkpoint to match the model's full state dictionary, as only LoRA layers are updated.
+    Accepts a bare LoRA state dict or a train.py checkpoint (weights under 'model_state_dict'), and strips the
+    'module.' prefix that DataParallel/DDP runs leave on the keys. The LoRA layers must already be bound.
 
     Parameters:
     ----------
@@ -719,15 +721,36 @@ def load_lora_weights(model: torch.nn.Module, lora_path: str, device: str = 'cpu
     -------
     None
         The model is updated in place.
+
+    Raises:
+    ------
+    RuntimeError
+        If the file has no LoRA weights, or some of its weights have no matching layer in the model.
     """
     lora_state_dict = torch.load(lora_path, map_location=device)
-    model.load_state_dict(lora_state_dict, strict=False)
+    if 'model_state_dict' in lora_state_dict:
+        # Checkpoints saved by train.py keep the LoRA weights under 'model_state_dict'
+        lora_state_dict = lora_state_dict['model_state_dict']
+    # DataParallel/DDP runs save the keys with a 'module.' prefix
+    lora_state_dict = {k.removeprefix('module.'): v for k, v in lora_state_dict.items()}
+    if not any('lora_' in k for k in lora_state_dict):
+        raise RuntimeError(f"No LoRA weights found in {lora_path}.")
+    unexpected_keys = model.load_state_dict(lora_state_dict, strict=False).unexpected_keys
+    if unexpected_keys:
+        raise RuntimeError(
+            f"{len(unexpected_keys)} weights in {lora_path} have no matching layer in the model "
+            f"(e.g. {unexpected_keys[0]}). Check that the 'lora' section of the config matches the one used in training."
+        )
 
 
 def get_lora(args, config, model):
     if args.train_lora_loralib:
         import loralib as lora
         model = bind_lora_to_model(config, model)
+        if args.lora_checkpoint_loralib:
+            if not dist.is_initialized() or dist.get_rank() == 0:
+                print(f"Loading LoRA weights from: {args.lora_checkpoint_loralib}")
+            load_lora_weights(model, args.lora_checkpoint_loralib)
         lora.mark_only_lora_as_trainable(model)
     if args.train_lora_peft:
         if args.lora_checkpoint_peft:
@@ -748,7 +771,8 @@ def get_lora(args, config, model):
 def load_start_checkpoint(args: argparse.Namespace,
                           model: torch.nn.Module,
                           old_model,
-                          type_: str = 'train') -> None:
+                          type_: str = 'train',
+                          config=None) -> None:
     """
     Load an initial checkpoint into `model`.
 
@@ -756,13 +780,15 @@ def load_start_checkpoint(args: argparse.Namespace,
     checkpoint dict) via `load_not_compatible_weights`, allowing partial shape mismatches.
     For other modes, loads a strict state dict from `args.start_check_point`, with special
     handling for HTDemucs/Apollo checkpoints (keys under "state"/"state_dict"). If
-    `args.lora_checkpoint` is set, LoRA weights are applied after the base load.
+    `args.lora_checkpoint_loralib` is set, LoRA layers are bound using `config` and their
+    weights are applied after the base load (for training this is done in `get_lora`).
 
     Args:
-        args: Namespace with at least `start_check_point`, `model_type`, and optionally `lora_checkpoint`.
+        args: Namespace with at least `start_check_point`, `model_type`, and optionally `lora_checkpoint_loralib`.
         model: Target PyTorch module to receive weights.
         old_model: Source weights for tolerant loading in train mode (state dict or checkpoint dict).
         type_: Loading strategy; "train" uses tolerant loading, otherwise strict loading from path.
+        config: Model config; its 'lora' section is needed when `args.lora_checkpoint_loralib` is set.
 
     Returns:
         None
@@ -798,9 +824,13 @@ def load_start_checkpoint(args: argparse.Namespace,
                 old_model = old_model['model_state_dict']
         model.load_state_dict(strip_compile_prefix(old_model))
 
-    if args.lora_checkpoint_loralib:
+    if args.lora_checkpoint_loralib and type_ != 'train':
         if should_print:
             print(f"Loading LoRA weights from: {args.lora_checkpoint_loralib}")
+        if config is None:
+            raise ValueError("load_start_checkpoint needs the model config to bind LoRA layers for --lora_checkpoint_loralib")
+        # The LoRA layers have to exist before their weights can be loaded
+        bind_lora_to_model(config, model)
         load_lora_weights(model, args.lora_checkpoint_loralib)
 
 
@@ -811,7 +841,7 @@ def bind_lora_to_model(config: Dict[str, Any], model: nn.Module) -> nn.Module:
     Parameters:
     ----------
     config : Dict[str, Any]
-        Configuration containing parameters for LoRA. It should include a 'lora' key with parameters for `MergedLinear`.
+        Configuration containing parameters for LoRA. It should include a 'lora' key with parameters for `lora.Linear`.
     model : nn.Module
         The original model in which the layers will be replaced.
 
